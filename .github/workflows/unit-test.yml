@@ -36,10 +36,10 @@ jobs:
         run: dotnet restore
  
       - name: Bouw de applicatie
-        run: dotnet build Grocery.App/Grocery.App.csproj --configuration Release --no-restore --framework net8.0-android /p:ApplicationId=nl.windesheim.groceryapp
-
-      - name: Voer unit tests uit en genereer rapport
-        run: dotnet test --configuration Release --verbosity normal --results-directory "TestResults" --logger "trx;LogFileName=testresults.trx"
+        run: dotnet build --configuration Release --no-restore
+ 
+      - name: Voer unit tests uit
+        run: dotnet test --configuration Release --no-restore --no-build --verbosity normal
 
       - name: Upload test resultaten
         uses: actions/upload-artifact@v4
