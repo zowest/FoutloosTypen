@@ -1,22 +1,21 @@
 ﻿using FoutloosTypen.ViewModels;
-using Microsoft.Maui.Controls; // Add this if missing
 
-namespace FoutloosTypen.Views // Fix typo in namespace
+namespace FoutloosTypen.Views;
+
+public partial class LessonView : ContentPage
 {
-    public partial class LessonView : ContentPage
+    private readonly LessonViewModel _vm;
+
+    public LessonView(LessonViewModel vm)
     {
-        private readonly LessonViewModel _vm;
-
-        public LessonView(LessonViewModel vm)
-        {
-            InitializeComponent();
-            BindingContext = _vm = vm;
-        }
-
-        protected override async void OnAppearing()
-        {
-            base.OnAppearing();
-            await _vm.OnAppearingAsync();
-        }
+        InitializeComponent();
+        BindingContext = _vm = vm;
     }
+
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+        await _vm.OnAppearingAsync();
+    }
+
 }

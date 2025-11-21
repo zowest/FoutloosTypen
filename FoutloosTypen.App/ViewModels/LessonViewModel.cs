@@ -22,7 +22,6 @@ namespace FoutloosTypen.ViewModels
 
         public async Task OnAppearingAsync()
         {
-            // Load lessons when the view appears
             var items = _lessonService.GetAll();
             Lessons.Clear();
             foreach (var lesson in items)

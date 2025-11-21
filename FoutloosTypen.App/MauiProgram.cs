@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using FoutloosTypen.ViewModels;
 using FoutloosTypen.Views;
 using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Services;
-using Microsoft.Maui;
-
+using FoutloosTypen.Core.Interfaces.Repositories; 
+using FoutloosTypen.Core.Data.Repositories;      
 
 namespace FoutloosTypen
 {
@@ -21,15 +21,19 @@ namespace FoutloosTypen
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
 
-            // Register your services and viewmodels for dependency injection
-            builder.Services.AddTransient<LessonViewModel>();
-            builder.Services.AddTransient<CourseViewModel>();
+            // Repositories
+            builder.Services.AddSingleton<ILessonRepository, LessonRepository>();
+
+            // Services
             builder.Services.AddSingleton<ILessonService, LessonService>();
             builder.Services.AddSingleton<ICourseService, CourseService>();
+
+            // ViewModels
+            builder.Services.AddTransient<LessonViewModel>();
+            builder.Services.AddTransient<CourseViewModel>();
 #if DEBUG
             builder.Logging.AddDebug();
 #endif
-
             return builder.Build();
         }
     }

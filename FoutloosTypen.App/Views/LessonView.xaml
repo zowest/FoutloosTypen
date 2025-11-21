@@ -30,7 +30,7 @@
             </CollectionView.ItemTemplate>
 
         </CollectionView>
-        
+
         <Button 
             Text="Start"
             WidthRequest="150"
