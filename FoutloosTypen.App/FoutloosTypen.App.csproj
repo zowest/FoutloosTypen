@@ -69,6 +69,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\FoutloosTypen.Core.Data\FoutloosTypen.Core.Data.csproj" />
+	  <ProjectReference Include="..\FoutloosTypen.Core\FoutloosTypen.Core.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <None Update="Views\LoginView.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </None>
