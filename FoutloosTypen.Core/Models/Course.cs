@@ -8,13 +8,12 @@ namespace FoutloosTypen.Core.Models
 {
     public partial class Course : Model
     {
-        public String Name { get; set; }
-        public String Description { get; set; }
+        // Removed duplicate Name property (Model already provides Name via ObservableProperty)
+        public string Description { get; set; }
         public int Difficulty { get; set; }
 
-        public Course(int id, string name, string description, int difficulty) : base(id, "")
+        public Course(int id, string name, string description, int difficulty) : base(id, name)
         {
-            Name = name;
             Description = description;
             Difficulty = difficulty;
         }
