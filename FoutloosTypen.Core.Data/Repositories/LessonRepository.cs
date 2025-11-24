@@ -1,9 +1,6 @@
 ﻿using FoutloosTypen.Core.Interfaces.Repositories;
 using FoutloosTypen.Core.Models;
 using Microsoft.Data.Sqlite;
-using System.Data;
-using System.Diagnostics;
-using System.Security.Cryptography.X509Certificates;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
@@ -19,7 +16,8 @@ namespace FoutloosTypen.Core.Data.Repositories
                         [Description] NVARCHAR(250),
                         [IsTest] BOOL,
                         [IsDone] BOOL,
-                        [CourseId] INTEGER NOT NULL)");
+                        [CourseId] INTEGER NOT NULL
+                )");
 
             List<string> insertQueries = new()
         {

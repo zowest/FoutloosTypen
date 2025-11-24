@@ -1,54 +1,53 @@
 ﻿using FoutloosTypen.Core.Interfaces.Repositories;
 using FoutloosTypen.Core.Models;
 using Microsoft.Data.Sqlite;
-using System.Collections.Generic;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
     public class CourseRepository : DatabaseConnection, ICourseRepository
     {
-        private readonly List<Course> courses = new();
+        private readonly List<Course> courses = [];
 
-        public CourseRepository()
+    public CourseRepository()
         {
             CreateTable(@"
-                CREATE TABLE IF NOT EXISTS Courses (
-                    [Id] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                    [Name] NVARCHAR(80) UNIQUE NOT NULL,
-                    [Description] NVARCHAR(250),
-                    [Difficulty] INTEGER
-                )");
+            CREATE TABLE IF NOT EXISTS Courses (
+                [Id] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                [Name] NVARCHAR(80) UNIQUE NOT NULL,
+                [Description] NVARCHAR(250),
+                [Difficulty] INTEGER
+            )");
 
-            // Insert demo courses
             List<string> insertQueries = new()
-            {
-                @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('Easy', 'Leer de basics van typen', 1)",
-                @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('Medium', 'Voor snelle typers', 2)",
-                @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('Hard', 'Voor de echte pro's', 3)"
-            };
+        {
+            @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('Easy', 'Leer de basics van typen', 1)",
+            @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('Medium', 'Voor snelle typers', 2)",
+            @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('Hard', 'Voor de echte pro's', 3)"
+        };
 
             InsertMultipleWithTransaction(insertQueries);
             GetAll();
         }
+
         public List<Course> GetAll()
         {
             courses.Clear();
 
-            string query = "SELECT Id, Name, Description, Difficulty FROM Courses";
-
+            string selectQuery = "SELECT Id, Name, Description, Difficulty FROM Courses";
             OpenConnection();
 
-            using (SqliteCommand cmd = new SqliteCommand(query, Connection))
-            using (SqliteDataReader reader = cmd.ExecuteReader())
+            using (SqliteCommand command = new(selectQuery, Connection))
             {
+                SqliteDataReader reader = command.ExecuteReader();
+
                 while (reader.Read())
                 {
-                    courses.Add(new Course(
-                        reader.GetInt32(0),
-                        reader.GetString(1),
-                        reader.GetString(2),
-                        reader.GetInt32(3)
-                    ));
+                    int id = reader.GetInt32(0);
+                    string name = reader.GetString(1);
+                    string description = reader.GetString(2);
+                    int difficulty = reader.GetInt32(3);
+
+                    courses.Add(new Course(id, name, description, difficulty));
                 }
             }
 
@@ -58,28 +57,28 @@ namespace FoutloosTypen.Core.Data.Repositories
 
         public Course Get(int id)
         {
-            Course course = null;
-
-            string query = $"SELECT Id, Name, Description, Difficulty FROM Courses WHERE Id = {id}";
+            string selectQuery = $"SELECT Id, Name, Description, Difficulty FROM Courses WHERE Id = {id}";
+            Course tmpCourse = null;
 
             OpenConnection();
 
-            using (SqliteCommand cmd = new SqliteCommand(query, Connection))
-            using (SqliteDataReader reader = cmd.ExecuteReader())
+            using (SqliteCommand command = new(selectQuery, Connection))
             {
+                SqliteDataReader reader = command.ExecuteReader();
+
                 if (reader.Read())
                 {
-                    course = new Course(
-                        reader.GetInt32(0),
-                        reader.GetString(1),
-                        reader.GetString(2),
-                        reader.GetInt32(3)
-                    );
+                    int Id = reader.GetInt32(0);
+                    string name = reader.GetString(1);
+                    string description = reader.GetString(2);
+                    int difficulty = reader.GetInt32(3);
+
+                    tmpCourse = new Course(Id, name, description, difficulty);
                 }
             }
 
             CloseConnection();
-            return course;
+            return tmpCourse;
         }
     }
 }
