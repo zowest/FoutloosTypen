@@ -9,8 +9,8 @@ namespace FoutloosTypen.ViewModels
 {
     public partial class BaseViewModel
     {
-    //    [ObservableProperty]
-    //   string title = "";
+        //    [ObservableProperty]
+        //   string title = "";
 
         public virtual void Load() { }
         public virtual void OnAppearing() { }

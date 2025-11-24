@@ -53,7 +53,7 @@ namespace FoutloosTypen.Core.Data.Repositories
                     bool isDone = reader.GetBoolean(4);
                     int courseId = reader.GetInt32(5);
 
-                    lessons.Add(new Lesson(id, name, description, isTest, isDone, courseId));  
+                    lessons.Add(new Lesson(id, name, description, isTest, isDone, courseId));
                 }
             }
 

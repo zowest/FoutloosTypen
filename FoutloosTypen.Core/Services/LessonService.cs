@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FoutloosTypen.Core.Interfaces.Repositories;
+using FoutloosTypen.Core.Interfaces.Services;
+using FoutloosTypen.Core.Models;
+using FoutloosTypen.Core.Services;
 
 namespace FoutloosTypen.Core.Services
 {
@@ -13,7 +17,7 @@ namespace FoutloosTypen.Core.Services
         {
             _lessonRepository = lessonRepository;
         }
-        public List<Lesson> GetAll()
+        public IEnumerable<Lesson> GetAll()
         {
             return _lessonRepository.GetAll();
         }

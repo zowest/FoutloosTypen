@@ -1,7 +1,7 @@
-﻿
-using FoutloosTypen.Core.Data.Helpers;
+﻿using FoutloosTypen.Core.Data.Helpers;
 using Microsoft.Data.Sqlite;
 using System.Diagnostics;
+using Microsoft.Maui.Storage; // for FileSystem.AppDataDirectory
 
 namespace FoutloosTypen.Core.Data
 {
@@ -14,9 +14,8 @@ namespace FoutloosTypen.Core.Data
         {
             databaseName = ConnectionHelper.ConnectionStringValue("FoutloosTypenDb");
 
-            string workingDirectory = Environment.CurrentDirectory;
-            //string projectDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            string dbpath = Path.Combine(workingDirectory, databaseName);
+            string dbDirectory = FileSystem.AppDataDirectory;
+            string dbpath = Path.Combine(dbDirectory, databaseName);
 
             Connection = new SqliteConnection($"Data Source={dbpath}");
         }
