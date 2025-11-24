@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage 
+<ContentPage
+    BackgroundColor="White"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="FoutloosTypen.Views.LessonView"
@@ -21,12 +22,13 @@
             <Label Text="Cursussen" 
                        FontSize="22" 
                        FontAttributes="Bold" 
-                       HorizontalOptions="Center"/>
-            <Button Text="Cursus 5"
+                       HorizontalOptions="Center"
+                   TextColor="Black"/>
+                <Button Text="Cursus 5"
                         WidthRequest="625"
                         HeightRequest="150"
                         FontSize="30"/>
-            <Button Text="Cursus 4"
+                <Button Text="Cursus 4"
                         WidthRequest="625"
                         HeightRequest="150"
                         FontSize="30"/>
@@ -85,7 +87,8 @@
                                        VerticalOptions="Center" 
                                        HorizontalOptions="Center" WidthRequest="75" 
                                        HorizontalTextAlignment="Center" 
-                                       FontSize="25"/>
+                                       FontSize="25"
+                                       TextColor="Black"/>
                                 <Border.GestureRecognizers>
                                 <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type CollectionView}}, 
                                         Path=BindingContext.SelectLessonCommand}" 
@@ -98,7 +101,8 @@
                 <Label Text="Start"
                 HorizontalOptions="Center"
                 FontSize="40"
-                VerticalOptions="Start"/>
+                VerticalOptions="Start"
+                       TextColor="Black"/>
 
 
             </VerticalStackLayout>
@@ -111,28 +115,33 @@
                 HorizontalOptions="Center" 
                 VerticalOptions="Center" 
                 Spacing="20">
-            <Label Text="{Binding SelectedLesson.Name}" 
+                <Label Text="{Binding SelectedLesson.Name}" 
                         FontSize="40" WidthRequest="500" 
                         HorizontalTextAlignment="Center" 
                         VerticalTextAlignment="Start" 
-                        LineBreakMode="WordWrap"/>
-            <Label Text="☆ ☆ ☆"
+                        LineBreakMode="WordWrap"
+                        TextColor="Black"/>
+                <Label Text="☆ ☆ ☆"
                        HorizontalOptions="Center"
-                       FontSize="200"/>
+                       FontSize="200"
+                       TextColor="Black"/>
             <Label Text="Score 0" 
                            HorizontalOptions="Center"/>
             <Label Text="Beschrijving" 
                        FontSize="26" 
                        FontAttributes="Bold" 
-                       HorizontalOptions="Center"/>
+                       HorizontalOptions="Center"
+                   TextColor="Black"/>
             <Label Text="{Binding SelectedLesson.Description}" 
                        FontSize="18" WidthRequest="500" 
                        HorizontalTextAlignment="Center" 
                        VerticalTextAlignment="Center" 
-                       LineBreakMode="WordWrap"/>
+                       LineBreakMode="WordWrap"
+                   TextColor="Black"/>
             <Label Text="▶"
                        HorizontalOptions="Center"
-                       FontSize="140"/>
+                       FontSize="140"
+                   TextColor="Black"/>
         </VerticalStackLayout>
         </Grid>
     </ContentPage.Content>
