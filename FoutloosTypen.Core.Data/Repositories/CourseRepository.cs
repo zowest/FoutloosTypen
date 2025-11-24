@@ -20,9 +20,9 @@ namespace FoutloosTypen.Core.Data.Repositories
 
             List<string> insertQueries = new()
         {
-            @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('Easy', 'Leer de basics van typen', 1)",
-            @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('Medium', 'Voor snelle typers', 2)",
-            @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('Hard', 'Voor de echte pro's', 3)"
+            @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('Course 1', 'Leer de basics van typen', 1)",
+            @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('Course 2', 'Voor snelle typers', 2)",
+            @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('Course 3', 'Voor de echte pro's', 3)"
         };
 
             InsertMultipleWithTransaction(insertQueries);
