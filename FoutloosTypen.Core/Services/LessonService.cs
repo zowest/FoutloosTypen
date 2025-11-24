@@ -17,7 +17,7 @@ namespace FoutloosTypen.Core.Services
         {
             _lessonRepository = lessonRepository;
         }
-        public List<Lesson> GetAll()
+        public IEnumerable<Lesson> GetAll()
         {
             return _lessonRepository.GetAll();
         }

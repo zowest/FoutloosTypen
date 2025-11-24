@@ -26,7 +26,6 @@ namespace FoutloosTypen.Core.Data.Repositories
         };
 
             InsertMultipleWithTransaction(insertQueries);
-            GetAll();
         }
 
         public List<Course> GetAll()

@@ -31,6 +31,7 @@ namespace FoutloosTypen
 
             // ViewModels
             builder.Services.AddTransient<LessonViewModel>();
+            builder.Services.AddTransient<LessonView>();
 #if DEBUG
             builder.Logging.AddDebug();
 #endif

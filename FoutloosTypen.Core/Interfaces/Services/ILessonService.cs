@@ -5,7 +5,7 @@ namespace FoutloosTypen.Core.Interfaces.Services
 {
     public interface ILessonService
     {
-        public List<Lesson> GetAll();
+        public IEnumerable<Lesson> GetAll();
         public Lesson? Get(int id);
     }
 }

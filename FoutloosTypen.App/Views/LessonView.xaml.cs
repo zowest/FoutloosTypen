@@ -1,21 +1,28 @@
 ﻿using FoutloosTypen.ViewModels;
+using Microsoft.Maui.Controls;
 
-namespace FoutloosTypen.Views;
-
-public partial class LessonView : ContentPage
+namespace FoutloosTypen.Views
 {
-    private readonly LessonViewModel _vm;
-
-    public LessonView(LessonViewModel vm)
+    public partial class LessonView : ContentPage
     {
-        InitializeComponent();
-        BindingContext = _vm = vm;
-    }
+        private readonly LessonViewModel? _vm;
 
-    protected override async void OnAppearing()
-    {
-        base.OnAppearing();
-        await _vm.OnAppearingAsync();
-    }
+        // Parameterless ctor required by XAML tooling / generated partial class
+        public LessonView()
+        {
+            InitializeComponent();
+        }
 
+        public LessonView(LessonViewModel vm) : this()
+        {
+            BindingContext = _vm = vm;
+        }
+
+        protected override async void OnAppearing()
+        {
+            base.OnAppearing();
+            if (_vm is not null)
+                await _vm.OnAppearingAsync();
+        }
+    }
 }

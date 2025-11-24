@@ -4,69 +4,136 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="FoutloosTypen.Views.LessonView"
     Title="Lessen">
-
-    <Grid>
+    <ContentPage.Content>
+        <Grid ColumnSpacing="0">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="2" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="2" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+        <!-- Cursus kolom -->
+        <VerticalStackLayout Grid.Column="0" 
+                                 HorizontalOptions="Center" 
+                                 VerticalOptions="Center" 
+                                 Spacing="20">
+            <Label Text="Cursussen" 
+                       FontSize="22" 
+                       FontAttributes="Bold" 
+                       HorizontalOptions="Center"/>
+            <Button Text="Cursus 5"
+                        WidthRequest="625"
+                        HeightRequest="150"
+                        FontSize="30"/>
+            <Button Text="Cursus 4"
+                        WidthRequest="625"
+                        HeightRequest="150"
+                        FontSize="30"/>
+            <Button Text="Cursus 3"
+                        WidthRequest="625"
+                        HeightRequest="150"
+                        FontSize="30"/>
+            <Button Text="Cursus 2"
+                        WidthRequest="625"
+                        HeightRequest="150"
+                        FontSize="30"/>
+            <Button Text="Cursus 1"
+                        WidthRequest="625"
+                        HeightRequest="150"
+                        FontSize="30"/>
 
-        <CollectionView 
-            Grid.Column="0"
-            ItemsSource="{Binding Courses}"
-            SelectionMode="Single">
+            <CollectionView ItemsSource="{Binding Courses}" 
+                                SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Label Text="{Binding Name}" 
+                                   FontSize="16" 
+                                   HorizontalOptions="Center"/>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </VerticalStackLayout>
 
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <Grid HorizontalOptions="Center" VerticalOptions="Center">
-                        <Button 
-                            Text="{Binding Name}"
-                            WidthRequest="100"
-                            CornerRadius="25"
-                            HeightRequest="50"
-                            BorderWidth="2" 
-                            HorizontalOptions="Center"
-                            VerticalOptions="Center"/>
-                    </Grid>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+        <BoxView Grid.Column="1" 
+                     WidthRequest="2" 
+                     Color="Black" 
+                     VerticalOptions="FillAndExpand"/>
 
-        <CollectionView 
-            Grid.Column="1"
-            ItemsSource="{Binding Lessons}"
-            SelectionMode="Single">
 
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <Button 
-                        Text="{Binding Name}"
-                        WidthRequest="100"
-                        CornerRadius="25"
-                        HeightRequest="50"
-                        BorderWidth="2" />
-                        
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+        <!-- Lessons kolom -->
+        <VerticalStackLayout 
+                Grid.Column="2"
+                HorizontalOptions="Center" 
+                VerticalOptions="Center"
+                Spacing="100">
+            <CollectionView ItemsSource="{Binding Lessons}" 
+                                SelectionMode="Single" 
+                                SelectedItem="{Binding SelectedLesson}">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" 
+                                           ItemSpacing="40" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <!-- Border moet voor SelectedLesson-->
+                        <Border WidthRequest="100" 
+                                    HeightRequest="60" Padding="0" 
+                                    HorizontalOptions="Center" 
+                                    StrokeShape="RoundRectangle 25">
+                                <Label Text="{Binding Name}" 
+                                       VerticalOptions="Center" 
+                                       HorizontalOptions="Center" WidthRequest="75" 
+                                       HorizontalTextAlignment="Center" 
+                                       FontSize="25"/>
+                                <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type CollectionView}}, 
+                                        Path=BindingContext.SelectLessonCommand}" 
+                                        CommandParameter="{Binding}" />
+                            </Border.GestureRecognizers>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+                <Label Text="Start"
+                HorizontalOptions="Center"
+                FontSize="40"
+                VerticalOptions="Start"/>
 
-        <CollectionView 
-            Grid.Column="2"
-            ItemsSource="{Binding Lessons}"
-            SelectionMode="Single">
 
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <Button 
-                        Text="{Binding Description}"
-                        WidthRequest="100"
-                        CornerRadius="25"
-                        HeightRequest="50"
-                        BorderWidth="2" />
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+            </VerticalStackLayout>
 
-    </Grid>
+        <BoxView Grid.Column="3" WidthRequest="2" Color="Black" VerticalOptions="FillAndExpand"/>
+
+        <!-- Description kolom -->
+        <VerticalStackLayout 
+                Grid.Column="4" 
+                HorizontalOptions="Center" 
+                VerticalOptions="Center" 
+                Spacing="20">
+            <Label Text="{Binding SelectedLesson.Name}" 
+                        FontSize="40" WidthRequest="500" 
+                        HorizontalTextAlignment="Center" 
+                        VerticalTextAlignment="Start" 
+                        LineBreakMode="WordWrap"/>
+            <Label Text="☆ ☆ ☆"
+                       HorizontalOptions="Center"
+                       FontSize="200"/>
+            <Label Text="Score 0" 
+                           HorizontalOptions="Center"/>
+            <Label Text="Beschrijving" 
+                       FontSize="26" 
+                       FontAttributes="Bold" 
+                       HorizontalOptions="Center"/>
+            <Label Text="{Binding SelectedLesson.Description}" 
+                       FontSize="18" WidthRequest="500" 
+                       HorizontalTextAlignment="Center" 
+                       VerticalTextAlignment="Center" 
+                       LineBreakMode="WordWrap"/>
+            <Label Text="▶"
+                       HorizontalOptions="Center"
+                       FontSize="140"/>
+        </VerticalStackLayout>
+        </Grid>
+    </ContentPage.Content>
 </ContentPage>
