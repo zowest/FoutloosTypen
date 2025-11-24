@@ -22,10 +22,10 @@ namespace FoutloosTypen.Core.Data.Repositories
             List<string> insertQueries = new()
         {
             @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 1', 'Dit is de allereerste les', False, False, 1)",
-            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 2', 'Dit is de allertweede les', False, False, 1)",
-            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 3', 'Dit is de allerdriede les', False, False, 1)",
-            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 4', 'Dit is de allervierde les', False, False, 1)",
-            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 5', 'Dit is de allervijfde les', False, False, 1)"
+            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 2', 'Dit is de tweede les', False, False, 1)",
+            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 3', 'Dit is de derde les', False, False, 1)",
+            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 4', 'Dit is de vierde les', False, False, 1)",
+            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 5', 'Dit is de vijfde les', False, False, 1)"
         };
 
             InsertMultipleWithTransaction(insertQueries);
