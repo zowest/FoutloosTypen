@@ -1,7 +1,4 @@
 ﻿using System;
-using FoutloosTypen.Core.Interfaces.Repositories;
-using FoutloosTypen.Core.Interfaces.Services;
-using FoutloosTypen.Core.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
