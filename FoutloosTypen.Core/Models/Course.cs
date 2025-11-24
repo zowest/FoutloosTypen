@@ -17,6 +17,13 @@ namespace FoutloosTypen.Core.Models
             Description = description;
             Difficulty = difficulty;
         }
-        public Lesson Lesson { get; set; } = new Lesson(0, "None");
+        public Course(int id, string name)
+            : base(id, name)
+        {
+        }
+
+        public Course() : base(0, "")
+        {
+        }
     }
 }

@@ -1,9 +1,6 @@
 ﻿using FoutloosTypen.Core.Interfaces.Repositories;
 using FoutloosTypen.Core.Models;
 using Microsoft.Data.Sqlite;
-using System.Data;
-using System.Diagnostics;
-using System.Security.Cryptography.X509Certificates;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
@@ -19,15 +16,16 @@ namespace FoutloosTypen.Core.Data.Repositories
                         [Description] NVARCHAR(250),
                         [IsTest] BOOL,
                         [IsDone] BOOL,
-                        [CourseId] INTEGER NOT NULL)");
+                        [CourseId] INTEGER NOT NULL
+                )");
 
             List<string> insertQueries = new()
         {
             @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 1', 'Dit is de allereerste les', False, False, 1)",
-            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 2', 'Dit is de allertweede les', False, False, 1)",
-            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 3', 'Dit is de allerdriede les', False, False, 1)",
-            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 4', 'Dit is de allervierde les', False, False, 1)",
-            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 5', 'Dit is de allervijfde les', False, False, 1)"
+            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 2', 'Dit is de tweede les', False, False, 1)",
+            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 3', 'Dit is de derde les', False, False, 1)",
+            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 4', 'Dit is de vierde les', False, False, 1)",
+            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 5', 'Dit is de vijfde les', False, False, 1)"
         };
 
             InsertMultipleWithTransaction(insertQueries);
@@ -55,7 +53,7 @@ namespace FoutloosTypen.Core.Data.Repositories
                     bool isDone = reader.GetBoolean(4);
                     int courseId = reader.GetInt32(5);
 
-                    lessons.Add(new Lesson(id, name, description, isTest, isDone, courseId));  
+                    lessons.Add(new Lesson(id, name, description, isTest, isDone, courseId));
                 }
             }
 

@@ -5,36 +5,68 @@
     x:Class="FoutloosTypen.Views.LessonView"
     Title="Lessen">
 
-    <VerticalStackLayout 
-        VerticalOptions="Center" 
-        HorizontalOptions="Center"
-        Spacing="20">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
         <CollectionView 
-            ItemsSource="{Binding Lessons}"
+            Grid.Column="0"
+            ItemsSource="{Binding Courses}"
             SelectionMode="Single">
 
-            <CollectionView.ItemsLayout>
-                <LinearItemsLayout Orientation="Vertical"/>
-            </CollectionView.ItemsLayout>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Grid HorizontalOptions="Center" VerticalOptions="Center">
+                        <Button 
+                            Text="{Binding Name}"
+                            WidthRequest="100"
+                            CornerRadius="25"
+                            HeightRequest="50"
+                            BorderWidth="2" 
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center"/>
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <CollectionView 
+            Grid.Column="1"
+            ItemsSource="{Binding Lessons}"
+            SelectionMode="Single">
 
             <CollectionView.ItemTemplate>
                 <DataTemplate>
                     <Button 
                         Text="{Binding Name}"
-                        WidthRequest="50"
-                        HeightRequest="50"
+                        WidthRequest="100"
                         CornerRadius="25"
+                        HeightRequest="50"
+                        BorderWidth="2" />
+                        
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <CollectionView 
+            Grid.Column="2"
+            ItemsSource="{Binding Lessons}"
+            SelectionMode="Single">
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Button 
+                        Text="{Binding Description}"
+                        WidthRequest="100"
+                        CornerRadius="25"
+                        HeightRequest="50"
                         BorderWidth="2" />
                 </DataTemplate>
             </CollectionView.ItemTemplate>
-
         </CollectionView>
 
-        <Button 
-            Text="Start"
-            WidthRequest="150"
-            HeightRequest="50"
-            HorizontalOptions="Center"/>
-    </VerticalStackLayout>
+    </Grid>
 </ContentPage>
