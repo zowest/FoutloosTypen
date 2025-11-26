@@ -5,16 +5,16 @@ on:
     branches:
       - main
       - develop
-      - feature/*
-      - hotfix/*
-      - release/*
+      - feat/**
+      - bugfix/**
+      - release/**
       - infra/runner-toevoegen
   pull_request:
     branches:
       - main
-      - feature/*
-      - hotfix/*
-      - release/*
+      - feat/**
+      - bugfix/**
+      - release/**
       - develop
 
 jobs:

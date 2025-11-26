@@ -2,6 +2,10 @@
 using FoutloosTypen.Core.Models;
 using FoutloosTypen.Core.Interfaces.Services;
 using System.ComponentModel;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Diagnostics;
+using CommunityToolkit.Mvvm.Input;
 
 namespace FoutloosTypen.ViewModels
 {
@@ -13,14 +17,28 @@ namespace FoutloosTypen.ViewModels
         public ObservableCollection<Lesson> Lessons { get; set; } = new();
         public ObservableCollection<Course> Courses { get; set; } = new();
 
-        private Lesson _selectedLesson;
+        private Lesson _selectedLesson = new();
         public Lesson SelectedLesson
         {
             get => _selectedLesson;
             set
             {
                 _selectedLesson = value;
-                OnPropertyChanged(nameof(SelectedLesson)); // Pass property name
+                OnPropertyChanged(nameof(SelectedLesson));
+                Debug.WriteLine($"Selected lesson: {value?.Name}");
+            }
+        }
+
+        private Course? _selectedCourse;
+        public Course? SelectedCourse
+        {
+            get => _selectedCourse;
+            set
+            {
+                _selectedCourse = value;
+                OnPropertyChanged(nameof(SelectedCourse));
+                Debug.WriteLine($"Selected course: {value?.Name}");
+                FilterLessonsByCourse();
             }
         }
 
@@ -28,22 +46,84 @@ namespace FoutloosTypen.ViewModels
         {
             _lessonService = lessonService;
             _courseService = courseService;
+            Debug.WriteLine("LessonViewModel created");
         }
 
         public async Task OnAppearingAsync()
         {
-            var lessonItems = _lessonService.GetAll();
-            Lessons.Clear();
-            foreach (var lesson in lessonItems.Reverse())
-                Lessons.Add(lesson);
-
+            Debug.WriteLine("OnAppearingAsync called");
+            
+            // Load all courses from database
             var courseItems = _courseService.GetAll();
+            Debug.WriteLine($"Courses retrieved: {courseItems?.Count ?? 0}");
+            
             Courses.Clear();
-            foreach (var course in courseItems)
-                Courses.Add(course);
+            if (courseItems != null)
+            {
+
+                foreach (var course in courseItems)
+                {
+                    Courses.Add(course);
+                    Debug.WriteLine($"Added course to collection: {course.Name}");
+                }
+            }
+
+            // Select first course by default
+            if (Courses.Any())
+            {
+                SelectedCourse = Courses.First();
+            }
+            else
+            {
+                Debug.WriteLine("WARNING: No courses found in database!");
+            }
         }
 
-        // If not already present in BaseViewModel, add this method:
+        private void FilterLessonsByCourse()
+        {
+            if (SelectedCourse is null)
+            {
+                Debug.WriteLine("No course selected, skipping filter");
+                return;
+            }
+
+            Debug.WriteLine($"Filtering lessons for course: {SelectedCourse.Name} (ID: {SelectedCourse.Id})");
+
+            // Get lessons from database for selected course
+            var allLessons = _lessonService.GetAll();
+            Debug.WriteLine($"Total lessons from service: {allLessons?.Count() ?? 0}");
+
+            var filteredLessons = allLessons
+                .Where(l => l.CourseId == SelectedCourse.Id)
+                .Take(5)
+                .OrderByDescending(l => l.Id)
+                .ToList();
+
+            Debug.WriteLine($"Filtered lessons count: {filteredLessons.Count}");
+
+            Lessons.Clear();
+            foreach (var lesson in filteredLessons)
+            {
+                Lessons.Add(lesson);
+                Debug.WriteLine($"Added lesson: {lesson.Name} (ID: {lesson.Id})");
+            }
+
+            if (Lessons.Any())
+                SelectedLesson = Lessons.First();
+        }
+
+        [RelayCommand]
+        private void SelectCourse(Course course)
+        {
+            SelectedCourse = course;
+        }
+
+        [RelayCommand]
+        private void SelectLesson(Lesson lesson)
+        {
+            SelectedLesson = lesson;
+        }
+
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -51,5 +131,4 @@ namespace FoutloosTypen.ViewModels
 
         public event PropertyChangedEventHandler PropertyChanged;
     }
-
 }
