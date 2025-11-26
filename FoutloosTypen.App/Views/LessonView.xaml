@@ -15,49 +15,41 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
         <!-- Cursus kolom -->
-        <VerticalStackLayout Grid.Column="0" 
-                                 HorizontalOptions="Center" 
-                                 VerticalOptions="Center" 
-                                 Spacing="20">
-            <Label Text="Cursussen" 
-                       FontSize="22" 
-                       FontAttributes="Bold" 
-                       HorizontalOptions="Center"
-                   TextColor="Black"/>
-                <Button Text="Cursus 5"
-                        WidthRequest="625"
-                        HeightRequest="150"
-                        FontSize="30"/>
-                <Button Text="Cursus 4"
-                        WidthRequest="625"
-                        HeightRequest="150"
-                        FontSize="30"/>
-            <Button Text="Cursus 3"
-                        WidthRequest="625"
-                        HeightRequest="150"
-                        FontSize="30"/>
-            <Button Text="Cursus 2"
-                        WidthRequest="625"
-                        HeightRequest="150"
-                        FontSize="30"/>
-            <Button Text="Cursus 1"
-                        WidthRequest="625"
-                        HeightRequest="150"
-                        FontSize="30"/>
+            <ScrollView Grid.Column="0">
+                <VerticalStackLayout 
+                    HorizontalOptions="Center" 
+                    VerticalOptions="Center" 
+                    Spacing="20">
+                    <Label Text="Cursussen" 
+                           FontSize="22" 
+                           FontAttributes="Bold" 
+                           HorizontalOptions="Center"
+                           TextColor="Black"/>
+                    
+                    <!-- Bind to Courses collection from database -->
+                    <CollectionView ItemsSource="{Binding Courses}" 
+                                    SelectionMode="Single"
+                                    SelectedItem="{Binding SelectedCourse}">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="20" />
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Button Text="{Binding Name}"
+                                        MinimumHeightRequest="100"
+                                        FontSize="30"
+                                        BackgroundColor="White"
+                                        BorderColor="Black"
+                                        BorderWidth="2"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectCourseCommand}"
+                                        CommandParameter="{Binding}"/>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </ScrollView>
 
-            <CollectionView ItemsSource="{Binding Courses}" 
-                                SelectionMode="None">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <Label Text="{Binding Name}" 
-                                   FontSize="16" 
-                                   HorizontalOptions="Center"/>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
-        </VerticalStackLayout>
-
-        <BoxView Grid.Column="1" 
+            <BoxView Grid.Column="1" 
                      WidthRequest="2" 
                      Color="Black" 
                      VerticalOptions="FillAndExpand"/>
@@ -90,59 +82,64 @@
                                        FontSize="25"
                                        TextColor="Black"/>
                                 <Border.GestureRecognizers>
-                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type CollectionView}}, 
-                                        Path=BindingContext.SelectLessonCommand}" 
-                                        CommandParameter="{Binding}" />
-                            </Border.GestureRecognizers>
-                        </Border>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type CollectionView}}, 
+                                            Path=BindingContext.SelectLessonCommand}" 
+                                            CommandParameter="{Binding}" />
+                                </Border.GestureRecognizers>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+                
                 <Label Text="Start"
-                HorizontalOptions="Center"
-                FontSize="40"
-                VerticalOptions="Start"
+                       HorizontalOptions="Center"
+                       FontSize="40"
+                       VerticalOptions="Start"
                        TextColor="Black"/>
-
-
             </VerticalStackLayout>
 
-        <BoxView Grid.Column="3" WidthRequest="2" Color="Black" VerticalOptions="FillAndExpand"/>
+            <BoxView Grid.Column="3" 
+                     WidthRequest="2" 
+                     Color="Black" 
+                     VerticalOptions="FillAndExpand"/>
 
-        <!-- Description kolom -->
-        <VerticalStackLayout 
+            <!-- Description kolom -->
+            <VerticalStackLayout 
                 Grid.Column="4" 
                 HorizontalOptions="Center" 
                 VerticalOptions="Center" 
                 Spacing="20">
                 <Label Text="{Binding SelectedLesson.Name}" 
-                        FontSize="40" WidthRequest="500" 
+                        FontSize="40" 
+                        WidthRequest="500" 
                         HorizontalTextAlignment="Center" 
                         VerticalTextAlignment="Start" 
                         LineBreakMode="WordWrap"
                         TextColor="Black"/>
                 <Label Text="☆ ☆ ☆"
                        HorizontalOptions="Center"
-                       FontSize="200"
+                       FontSize="160"
                        TextColor="Black"/>
-            <Label Text="Score 0" 
-                           HorizontalOptions="Center"/>
-            <Label Text="Beschrijving" 
+                <Label Text="Score: 0" 
+                       HorizontalOptions="Center"
+                       TextColor="Black"/>
+                <Label Text="Beschrijving" 
                        FontSize="26" 
                        FontAttributes="Bold" 
                        HorizontalOptions="Center"
-                   TextColor="Black"/>
-            <Label Text="{Binding SelectedLesson.Description}" 
-                       FontSize="18" WidthRequest="500" 
+                       TextColor="Black"/>
+                <Label Text="{Binding SelectedLesson.Description}" 
+                       FontSize="18" 
+                       WidthRequest="500" 
                        HorizontalTextAlignment="Center" 
                        VerticalTextAlignment="Center" 
                        LineBreakMode="WordWrap"
-                   TextColor="Black"/>
-            <Label Text="▶"
+                       TextColor="Black"/>
+                <Label Text="▶"
                        HorizontalOptions="Center"
-                       FontSize="140"
-                   TextColor="Black"/>
-        </VerticalStackLayout>
+                       FontSize="100"
+                       TextColor="Black"/>
+            </VerticalStackLayout>
         </Grid>
     </ContentPage.Content>
 </ContentPage>
