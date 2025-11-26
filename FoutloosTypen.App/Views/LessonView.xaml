@@ -90,7 +90,7 @@
                     </CollectionView.ItemTemplate>
                 </CollectionView>
                 <Label Text="Start"
-                       HorizontalOptions="End"
+                       HorizontalOptions="Center"
                        FontSize="40"
                        TextColor="Black"/>
             </VerticalStackLayout>
