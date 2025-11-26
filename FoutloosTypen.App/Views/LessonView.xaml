@@ -25,8 +25,6 @@
                            FontAttributes="Bold" 
                            HorizontalOptions="Center"
                            TextColor="Black"/>
-                    
-                    <!-- Bind to Courses collection from database -->
                     <CollectionView ItemsSource="{Binding Courses}" 
                                     SelectionMode="Single"
                                     SelectedItem="{Binding SelectedCourse}">
@@ -59,19 +57,20 @@
         <VerticalStackLayout 
                 Grid.Column="2"
                 HorizontalOptions="Center" 
-                VerticalOptions="Center"
-                Spacing="100">
-            <CollectionView ItemsSource="{Binding Lessons}" 
+                VerticalOptions="FillAndExpand"
+                Spacing="40">
+                <CollectionView ItemsSource="{Binding Lessons}" 
                                 SelectionMode="Single" 
-                                SelectedItem="{Binding SelectedLesson}">
+                                SelectedItem="{Binding SelectedLesson}"
+                                VerticalOptions="CenterAndExpand">
                 <CollectionView.ItemsLayout>
-                    <LinearItemsLayout Orientation="Vertical" 
+                        <LinearItemsLayout Orientation="Vertical" 
                                            ItemSpacing="40" />
-                </CollectionView.ItemsLayout>
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <!-- Border moet voor SelectedLesson-->
-                        <Border WidthRequest="100" 
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <!-- Border moet voor SelectedLesson-->
+                            <Border WidthRequest="100" 
                                     HeightRequest="60" Padding="0" 
                                     HorizontalOptions="Center" 
                                     StrokeShape="RoundRectangle 25">
@@ -90,11 +89,9 @@
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
                 </CollectionView>
-                
                 <Label Text="Start"
-                       HorizontalOptions="Center"
+                       HorizontalOptions="End"
                        FontSize="40"
-                       VerticalOptions="Start"
                        TextColor="Black"/>
             </VerticalStackLayout>
 
