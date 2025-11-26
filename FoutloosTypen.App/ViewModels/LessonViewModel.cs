@@ -4,6 +4,7 @@ using FoutloosTypen.Core.Interfaces.Services;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Diagnostics;
 using CommunityToolkit.Mvvm.Input;
 
 namespace FoutloosTypen.ViewModels
@@ -24,6 +25,7 @@ namespace FoutloosTypen.ViewModels
             {
                 _selectedLesson = value;
                 OnPropertyChanged(nameof(SelectedLesson));
+                Debug.WriteLine($"Selected lesson: {value?.Name}");
             }
         }
 
@@ -35,6 +37,7 @@ namespace FoutloosTypen.ViewModels
             {
                 _selectedCourse = value;
                 OnPropertyChanged(nameof(SelectedCourse));
+                Debug.WriteLine($"Selected course: {value?.Name}");
                 FilterLessonsByCourse();
             }
         }
@@ -43,40 +46,68 @@ namespace FoutloosTypen.ViewModels
         {
             _lessonService = lessonService;
             _courseService = courseService;
+            Debug.WriteLine("LessonViewModel created");
         }
 
         public async Task OnAppearingAsync()
         {
+            Debug.WriteLine("OnAppearingAsync called");
+            
             // Load all courses from database
             var courseItems = _courseService.GetAll();
+            Debug.WriteLine($"Courses retrieved: {courseItems?.Count ?? 0}");
+            
             Courses.Clear();
-            foreach (var course in courseItems)
-                Courses.Add(course);
+            if (courseItems != null)
+            {
+
+                foreach (var course in courseItems)
+                {
+                    Courses.Add(course);
+                    Debug.WriteLine($"Added course to collection: {course.Name}");
+                }
+            }
 
             // Select first course by default
             if (Courses.Any())
             {
                 SelectedCourse = Courses.First();
             }
+            else
+            {
+                Debug.WriteLine("WARNING: No courses found in database!");
+            }
         }
 
         private void FilterLessonsByCourse()
         {
             if (SelectedCourse is null)
+            {
+                Debug.WriteLine("No course selected, skipping filter");
                 return;
+            }
+
+            Debug.WriteLine($"Filtering lessons for course: {SelectedCourse.Name} (ID: {SelectedCourse.Id})");
 
             // Get lessons from database for selected course
             var allLessons = _lessonService.GetAll();
+            Debug.WriteLine($"Total lessons from service: {allLessons?.Count() ?? 0}");
+
             var filteredLessons = allLessons
                 .Where(l => l.CourseId == SelectedCourse.Id)
-                .Take(5) // Max 5 lessons
+                .Take(5)
+                .OrderByDescending(l => l.Id)
                 .ToList();
+
+            Debug.WriteLine($"Filtered lessons count: {filteredLessons.Count}");
 
             Lessons.Clear();
             foreach (var lesson in filteredLessons)
+            {
                 Lessons.Add(lesson);
+                Debug.WriteLine($"Added lesson: {lesson.Name} (ID: {lesson.Id})");
+            }
 
-            // Auto-select first lesson
             if (Lessons.Any())
                 SelectedLesson = Lessons.First();
         }
