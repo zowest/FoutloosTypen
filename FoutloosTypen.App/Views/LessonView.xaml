@@ -34,13 +34,20 @@
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
                                 <Button Text="{Binding Name}"
-                                        MinimumHeightRequest="100"
+                                        x:Name="HoverButton"
+                                    MinimumHeightRequest="100"
                                         FontSize="30"
                                         BackgroundColor="White"
                                         BorderColor="Black"
                                         BorderWidth="2"
                                         Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectCourseCommand}"
-                                        CommandParameter="{Binding}"/>
+                                        CommandParameter="{Binding}">
+                                    <Button.GestureRecognizers>
+                                        <PointerGestureRecognizer
+                                                    PointerEntered="OnHoverEnter"
+                                                    PointerExited="OnHoverExit"/>
+                                    </Button.GestureRecognizers>
+                                </Button>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
@@ -74,7 +81,8 @@
                                     HeightRequest="60" Padding="0" 
                                     HorizontalOptions="Center" 
                                     StrokeShape="RoundRectangle 25">
-                                <Label Text="{Binding Name}" 
+                                <Label x:Name="HoverButton" 
+                                    Text="{Binding Name}" 
                                        VerticalOptions="Center" 
                                        HorizontalOptions="Center" WidthRequest="75" 
                                        HorizontalTextAlignment="Center" 
@@ -83,7 +91,10 @@
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type CollectionView}}, 
                                             Path=BindingContext.SelectLessonCommand}" 
-                                            CommandParameter="{Binding}" />
+                                            CommandParameter="{Binding}"/>
+                                    <PointerGestureRecognizer
+                                        PointerEntered="OnHoverEnter"
+                                        PointerExited="OnHoverExit"></PointerGestureRecognizer>
                                 </Border.GestureRecognizers>
                             </Border>
                         </DataTemplate>
@@ -115,8 +126,8 @@
                         TextColor="Black"/>
                 <Label Text="☆ ☆ ☆"
                        HorizontalOptions="Center"
-                       FontSize="160"
-                       TextColor="Black"/>
+                       TextColor="Black"
+                       FontSize="160"/>
                 <Label Text="Score: 0" 
                        HorizontalOptions="Center"
                        TextColor="Black"/>
@@ -132,10 +143,16 @@
                        VerticalTextAlignment="Center" 
                        LineBreakMode="WordWrap"
                        TextColor="Black"/>
-                <Label Text="▶"
+                <Button Text="▶"
                        HorizontalOptions="Center"
                        FontSize="100"
-                       TextColor="Black"/>
+                       TextColor="Black">
+                    <Button.GestureRecognizers>
+                        <PointerGestureRecognizer
+                        PointerEntered="OnHoverEnter"
+                        PointerExited="OnHoverExit"/>
+                    </Button.GestureRecognizers>
+                </Button>
             </VerticalStackLayout>
         </Grid>
     </ContentPage.Content>
