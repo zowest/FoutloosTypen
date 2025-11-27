@@ -130,5 +130,7 @@ namespace FoutloosTypen.ViewModels
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
+
+
     }
 }
