@@ -1,17 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-namespace FoutloosTypen.Core.Models
+﻿namespace FoutloosTypen.Core.Models
 {
     public partial class Assignment : Model
     {
         public double TimeLimit { get; set; }
+        public int LessonId { get; set; }
 
-        public Assignment(int id, double timelimit) : base(id)
+        public Assignment(int id, double timelimit, int lessonId) : base(id)
         {
             TimeLimit = timelimit;
+            LessonId = LessonId;
         }
 
         public Assignment() : base(0)
