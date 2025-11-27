@@ -9,7 +9,7 @@
         public int CourseId { get; set; }
 
         public Lesson(int id, string name, string description, bool isTest, bool isDone, int courseId)
-            : base(id, name)
+            : base(id)
         {
             Name = name;
             Description = description;
@@ -19,11 +19,11 @@
         }
 
         public Lesson(int id, string name)
-            : base(id, name)
+            : base(id)
         {
         }
 
-        public Lesson() : base(0, "")
+        public Lesson() : base(0)
         {
         }
     }
