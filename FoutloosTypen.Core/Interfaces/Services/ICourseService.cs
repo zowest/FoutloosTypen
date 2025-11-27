@@ -7,12 +7,9 @@ using FoutloosTypen.Core.Models;
 
 namespace FoutloosTypen.Core.Interfaces.Services
 {
-    public interface IService<T> where T : Model
+    public interface ICourseService
     {
-        List<T> GetAll();
-        T? Get(int id);
-        T Add(T item);
-        T? Update(T item);
-        T? Delete(T item);
+        public List<Course> GetAll();
+        public Course? Get(int id);
     }
 }
