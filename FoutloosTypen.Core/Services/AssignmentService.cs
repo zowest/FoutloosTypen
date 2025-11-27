@@ -18,11 +18,11 @@ namespace FoutloosTypen.Core.Services
         {
             _assignmentRepository = assignmentRepository;
         }
-        public List<Course> GetAll()
+        public List<Assignment> GetAll()
         {
             return _assignmentRepository.GetAll();
         }
-        public Course? Get(int id)
+        public Assignment? Get(int id)
         {
             return _assignmentRepository.Get(id);
         }

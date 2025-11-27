@@ -10,7 +10,7 @@ namespace FoutloosTypen.Core.Interfaces.Repositories
 {
     public interface IAssignmentRepository
     {
-        public List<Course> GetAll();
-        public Course Get(int id);
+        public List<Assignment> GetAll();
+        public Assignment Get(int id);
     }
 }

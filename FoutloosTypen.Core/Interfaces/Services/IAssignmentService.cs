@@ -9,7 +9,7 @@ namespace FoutloosTypen.Core.Interfaces.Services
 {
     public interface IAssignmentService
     {
-        public List<Course> GetAll();
-        public Course? Get(int id);
+        public List<Assignment> GetAll();
+        public Assignment? Get(int id);
     }
 }
