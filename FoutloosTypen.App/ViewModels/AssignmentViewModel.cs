@@ -86,6 +86,7 @@ namespace FoutloosTypen.ViewModels
 
             var filteredAssignments = allAssignments
                 .Where(a => a.LessonId == SelectedLesson.Id)
+                .Take(10)
                 .OrderBy(a => a.Id)
                 .ToList();
 
