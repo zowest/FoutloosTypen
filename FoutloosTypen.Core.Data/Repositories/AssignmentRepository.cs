@@ -70,7 +70,6 @@ namespace FoutloosTypen.Core.Data.Repositories
         public List<Assignment> GetAll()
         {
             assignments.Clear();
-
             try
             {
                 string query = "SELECT Id, TimeLimit, LessonId FROM Assignments";
