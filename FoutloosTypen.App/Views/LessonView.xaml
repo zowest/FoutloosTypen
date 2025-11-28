@@ -76,7 +76,6 @@
                     </CollectionView.ItemsLayout>
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
-                            <!-- Border moet voor SelectedLesson-->
                             <Border WidthRequest="100" 
                                     HeightRequest="60" Padding="0" 
                                     HorizontalOptions="Center" 
@@ -146,7 +145,8 @@
                 <Button Text="▶"
                        HorizontalOptions="Center"
                        FontSize="100"
-                       TextColor="Black">
+                       TextColor="Black"
+                       Clicked="OnPlayClicked">
                     <Button.GestureRecognizers>
                         <PointerGestureRecognizer
                         PointerEntered="OnHoverEnter"
