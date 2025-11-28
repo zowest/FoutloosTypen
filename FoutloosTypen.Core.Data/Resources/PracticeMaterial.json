@@ -9,6 +9,11 @@
       "LessonId": 2,
       "TimeLimit": 60,
       "Sentence": "De kat zit op de stoel."
+    },
+    {
+      "LessonId": 3,
+      "TimeLimit": 60,
+      "Sentence": "De vogel vliegt naar de boom."
     }
   ]
 }
