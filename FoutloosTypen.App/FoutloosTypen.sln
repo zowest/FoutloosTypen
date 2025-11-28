@@ -16,8 +16,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FoutloosTypen.Core.Data", "
 		{9BC4A04D-2E2D-4C3F-A791-FF330B5298AD} = {9BC4A04D-2E2D-4C3F-A791-FF330B5298AD}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "..\UnitTests\UnitTests.csproj", "{316A529B-E1B3-4913-B6D2-6604B720A3FF}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,10 +35,6 @@ Global
 		{2454FC79-573D-468B-A1F8-97F8BF0A27DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2454FC79-573D-468B-A1F8-97F8BF0A27DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2454FC79-573D-468B-A1F8-97F8BF0A27DD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{316A529B-E1B3-4913-B6D2-6604B720A3FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{316A529B-E1B3-4913-B6D2-6604B720A3FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{316A529B-E1B3-4913-B6D2-6604B720A3FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{316A529B-E1B3-4913-B6D2-6604B720A3FF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

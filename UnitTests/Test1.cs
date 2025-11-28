@@ -1,15 +1,18 @@
-﻿using System.Linq;
-using Xunit;
+using System.Linq;
+using NUnit.Framework;
 using FoutloosTypen.Core.Models;
-using FoutloosTypen.Core.Interfaces.Repositories;
-using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Services;
 
-namespace FoutloosTypen.UnitTests.Services
+namespace FoutloosTypen.UnitTests
 {
     public class TypingComparisonServiceTests
     {
-        [Fact]
+        [SetUp]
+        public void Setup()
+        {
+        }
+
+        [Test]
         public void Compare_PracticeMaterial_WorksCorrectly()
         {
             // Arrange
@@ -21,15 +24,15 @@ namespace FoutloosTypen.UnitTests.Services
             var result = service.Compare(material.Sentences, typed);
 
             // Assert
-            Assert.Equal(material.Sentences.Length, result.Characters.Count);
+            Assert.That(result.Characters.Count, Is.EqualTo(material.Sentences.Length));
 
             // There should be exactly 1 wrong character
             var wrong = result.Characters.Where(c => !c.IsCorrect).ToList();
-            Assert.Single(wrong);
+            Assert.That(wrong.Count, Is.EqualTo(1));
 
             var error = wrong.First();
-            Assert.Equal('o', error.Expected);
-            Assert.Equal('i', error.Typed);
+            Assert.That(error.Expected, Is.EqualTo('o'));
+            Assert.That(error.Typed, Is.EqualTo('i'));
         }
     }
 }
