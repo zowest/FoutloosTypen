@@ -8,7 +8,7 @@
         public Assignment(int id, double timelimit, int lessonId) : base(id)
         {
             TimeLimit = timelimit;
-            LessonId = LessonId;
+            LessonId = lessonId;
         }
 
         public Assignment() : base(0)
