@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-namespace FoutloosTypen.Core.Models
+﻿namespace FoutloosTypen.Core.Models
 {
     public partial class Assignment : Model
     {
