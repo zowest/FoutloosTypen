@@ -47,10 +47,15 @@
                                  Padding="0"
                                  WidthRequest="48"
                                  HeightRequest="48"
-                                 Aspect="AspectFit" />
-
+                                 Aspect="AspectFit" >
+                        <ImageButton.GestureRecognizers>
+                            <PointerGestureRecognizer
+                                PointerEntered="OnHoverEnter"
+                                PointerExited="OnHoverExit"/>
+                        </ImageButton.GestureRecognizers>
+                    </ImageButton>
                     <ImageButton Source="home.png"
-                                 Command="{Binding BackCommand}"
+                                 Clicked="OnHomeClicked"
                                  BackgroundColor="Transparent"
                                  BorderColor="Transparent"
                                  BorderWidth="0"
@@ -58,8 +63,13 @@
                                  Padding="0"
                                  WidthRequest="48"
                                  HeightRequest="48"
-                                 Aspect="AspectFit" />
-
+                                 Aspect="AspectFit" >
+                        <ImageButton.GestureRecognizers>
+                            <PointerGestureRecognizer
+                                PointerEntered="OnHoverEnter"
+                                PointerExited="OnHoverExit"/>
+                        </ImageButton.GestureRecognizers>
+                    </ImageButton>
                 </HorizontalStackLayout>
             </Grid>
             <VerticalStackLayout 
@@ -88,7 +98,13 @@
                         FontSize="50"
                         WidthRequest="70"
                         HeightRequest="70"
-                        HorizontalOptions="Center" />
+                        HorizontalOptions="Center" >
+                    <Button.GestureRecognizers>
+                        <PointerGestureRecognizer
+                            PointerEntered="OnHoverEnter"
+                            PointerExited="OnHoverExit"/>
+                    </Button.GestureRecognizers>
+                </Button>
             </VerticalStackLayout>
             <HorizontalStackLayout Grid.Row="2" HorizontalOptions="Center" Spacing="30">
             </HorizontalStackLayout>

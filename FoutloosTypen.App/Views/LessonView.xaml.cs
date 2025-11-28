@@ -47,5 +47,17 @@ namespace FoutloosTypen.Views
             }
         }
 
+        private async void OnPlayClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                await Shell.Current.GoToAsync(nameof(AssignmentView));
+            }
+            catch
+            {
+                await Navigation.PushAsync(new AssignmentView());
+            }
+        }
+
     }
 }
