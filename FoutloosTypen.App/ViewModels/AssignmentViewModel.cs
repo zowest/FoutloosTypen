@@ -25,7 +25,6 @@ namespace FoutloosTypen.ViewModels
             {
                 _selectedLesson = value;
                 OnPropertyChanged(nameof(SelectedLesson));
-                Debug.WriteLine($"Selected lesson: {value?.Name}");
                 FilterAssignmentsByLesson();
             }
         }
@@ -47,13 +46,10 @@ namespace FoutloosTypen.ViewModels
         {
             _lessonService = lessonService;
             _assignmentService = assignmentService;
-            Debug.WriteLine("AssignmentViewModel created");
         }
 
         public async Task OnAppearingAsync()
         {
-            Debug.WriteLine("OnAppearingAsync called (Assignments)");
-
             var lessons = _lessonService.GetAll();
 
             Lessons.Clear();
@@ -63,7 +59,6 @@ namespace FoutloosTypen.ViewModels
                 foreach (var lesson in lessons)
                 {
                     Lessons.Add(lesson);
-                    Debug.WriteLine($"Added lesson: {lesson.Name}");
                 }
             }
 
@@ -75,22 +70,17 @@ namespace FoutloosTypen.ViewModels
         {
             if (SelectedLesson is null)
             {
-                Debug.WriteLine("No lesson selected, skipping assignment filter");
                 return;
             }
 
-            Debug.WriteLine($"Filtering assignments for lesson: {SelectedLesson.Name} (ID: {SelectedLesson.Id})");
 
             var allAssignments = _assignmentService.GetAll();
-            Debug.WriteLine($"Total assignments retrieved: {allAssignments?.Count() ?? 0}");
 
             var filteredAssignments = allAssignments
                 .Where(a => a.LessonId == SelectedLesson.Id)
                 .Take(10)
                 .OrderBy(a => a.Id)
                 .ToList();
-
-            Debug.WriteLine($"Filtered assignments count: {filteredAssignments.Count}");
 
             Assignments.Clear();
             foreach (var assignment in filteredAssignments)
