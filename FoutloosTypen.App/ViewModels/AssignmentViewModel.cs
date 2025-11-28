@@ -13,9 +13,24 @@ namespace FoutloosTypen.ViewModels
     {
         private readonly IAssignmentService _assignmentService;
         private readonly ILessonService _lessonService;
+        private readonly IPracticeMaterialService _practiceMaterialService;
 
         public ObservableCollection<Lesson> Lessons { get; set; } = new();
         public ObservableCollection<Assignment> Assignments { get; set; } = new();
+
+        private List<PracticeMaterial> _materials = new();
+        private int _materialIndex = 0;
+
+        private PracticeMaterial _currentMaterial;
+        public PracticeMaterial CurrentMaterial
+        {
+            get => _currentMaterial;
+            set
+            {
+                _currentMaterial = value;
+                OnPropertyChanged(nameof(CurrentMaterial));
+            }
+        }
 
         private Lesson? _selectedLesson;
         public Lesson? SelectedLesson
@@ -37,15 +52,19 @@ namespace FoutloosTypen.ViewModels
             {
                 _selectedAssignment = value;
                 OnPropertyChanged(nameof(SelectedAssignment));
+
+                LoadPracticeMaterials();
             }
         }
 
         public AssignmentViewModel(
             ILessonService lessonService,
-            IAssignmentService assignmentService)
+            IAssignmentService assignmentService,
+            IPracticeMaterialService practiceMaterialService)
         {
             _lessonService = lessonService;
             _assignmentService = assignmentService;
+            _practiceMaterialService = practiceMaterialService;
         }
 
         public async Task OnAppearingAsync()
@@ -69,16 +88,13 @@ namespace FoutloosTypen.ViewModels
         private void FilterAssignmentsByLesson()
         {
             if (SelectedLesson is null)
-            {
                 return;
-            }
-
 
             var allAssignments = _assignmentService.GetAll();
 
             var filteredAssignments = allAssignments
                 .Where(a => a.LessonId == SelectedLesson.Id)
-                .Take(10)
+                .Take(5)
                 .OrderBy(a => a.Id)
                 .ToList();
 
@@ -91,6 +107,24 @@ namespace FoutloosTypen.ViewModels
             if (Assignments.Any())
                 SelectedAssignment = Assignments.First();
         }
+
+        private void LoadPracticeMaterials()
+        {
+            if (SelectedAssignment == null)
+                return;
+
+            _materials = _practiceMaterialService
+                .GetByAssignmentId(SelectedAssignment.Id)
+                .ToList();
+
+            _materialIndex = 0;
+
+            if (_materials.Any())
+                CurrentMaterial = _materials[_materialIndex];
+            else
+                CurrentMaterial = new PracticeMaterial { Sentence = "Geen zinnen gevonden." };
+        }
+
 
         [RelayCommand]
         private void SelectLesson(Lesson lesson)
