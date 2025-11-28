@@ -11,7 +11,5 @@ namespace FoutloosTypen.Core.Interfaces.Repositories
     {
         public List<PracticeMaterial> GetAll();
         public PracticeMaterial Get(int id);
-
-        List<PracticeMaterial> GetByAssignmentId(int assignmentId);
     }
 }
