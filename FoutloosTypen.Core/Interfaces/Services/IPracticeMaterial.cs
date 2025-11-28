@@ -1,11 +1,10 @@
-﻿
-using FoutloosTypen.Core.Models;
+﻿using FoutloosTypen.Core.Models;
 
 namespace FoutloosTypen.Core.Interfaces.Services
 {
     public interface IPracticeMaterialService
     {
-        public List<PracticeMaterial> GetAll();
+        //public list<PracticeMaterial> GetAll();
         public PracticeMaterial? Get(int id);
     }
 }
