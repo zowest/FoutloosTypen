@@ -1,60 +1,95 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FoutloosTypen.Core.Models;
-using FoutloosTypen.Core.Interfaces.Repositories;
 using System.Diagnostics;
+using System.Text.Json;
 using Microsoft.Data.Sqlite;
-using System.Collections.Generic;
+using FoutloosTypen.Core.Models;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
     internal class AssignmentRepository : DatabaseConnection
     {
         private readonly List<Assignment> assignments = [];
+
         public AssignmentRepository()
         {
-            try 
+            try
             {
-                                CreateTable(@"
+                CreateTable(@"
                     CREATE TABLE IF NOT EXISTS Assignments (
                         Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                        TimeLimit DOUBLE NOT NULL,
-                        LessonId INTEGER NOT NULL
+                        Text NVARCHAR(300) NOT NULL,
+                        LessonId INTEGER NOT NULL,
+                        TimeLimit DOUBLE NOT NULL
                     );
                 ");
-                List<string> insertQueries = new()
-                {
-                    @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('1, 60.00')",
-                };
 
-            InsertMultipleWithTransaction(insertQueries);
-            Debug.WriteLine("AssignmentRepository initialized successfully");
+                Debug.WriteLine("Assignments table ready.");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"AssignmentRepository initialization error: {ex.Message}");
+                Debug.WriteLine($"AssignmentRepository init error: {ex.Message}");
                 throw;
             }
-        } 
+        }
+
+        // --------------------------------------------
+        // IMPORT JSON
+        // --------------------------------------------
+        public async Task ImportFromJsonAsync(string path)
+        {
+            var json = await File.ReadAllTextAsync(path);
+
+            var dtos = JsonSerializer.Deserialize<List<AssignmentDto>>(json)
+                       ?? new List<AssignmentDto>();
+
+            List<string> inserts = new();
+
+            foreach (var dto in dtos)
+            {
+                string sql = $@"
+                    INSERT INTO Assignments (Text, LessonId, TimeLimit)
+                    VALUES ('{Escape(dto.Text)}', {dto.LessonId}, {dto.TimeLimit});
+                ";
+
+                inserts.Add(sql);
+            }
+
+            InsertMultipleWithTransaction(inserts);
+        }
+
+        private string Escape(string value) =>
+            value.Replace("'", "''");
+
+        private class AssignmentDto
+        {
+            public string Text { get; set; }
+            public int LessonId { get; set; }
+            public double TimeLimit { get; set; }
+        }
+
+        // --------------------------------------------
+        // GET ALL
+        // --------------------------------------------
         public List<Assignment> GetAll()
         {
             assignments.Clear();
+
             try
             {
-                string selectQuery = "SELECT Id, TimeLimit FROM Assignments";
                 OpenConnection();
-                using (SqliteCommand command = new(selectQuery, Connection))
+
+                using var cmd = new SqliteCommand("SELECT Id, Text, LessonId, TimeLimit FROM Assignments", Connection);
+                using var reader = cmd.ExecuteReader();
+
+                while (reader.Read())
                 {
-                    SqliteDataReader reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        int id = reader.GetInt32(0);
-                        double timeLimit = reader.GetDouble(1);
-                        assignments.Add(new Assignment(id, timeLimit));
-                    }
+                    assignments.Add(new Assignment(
+                        reader.GetInt32(0),
+                        reader.GetString(1),
+                        reader.GetInt32(2),
+                        reader.GetDouble(3)
+                    ));
                 }
             }
             catch (Exception ex)
@@ -66,25 +101,36 @@ namespace FoutloosTypen.Core.Data.Repositories
             {
                 CloseConnection();
             }
+
             return assignments;
         }
+
+        // --------------------------------------------
+        // GET BY ID
+        // --------------------------------------------
         public Assignment? Get(int id)
         {
             Assignment? assignment = null;
+
             try
             {
-                string selectQuery = "SELECT Id, TimeLimit FROM Assignments WHERE Id = @Id";
                 OpenConnection();
-                using (SqliteCommand command = new(selectQuery, Connection))
+
+                using var cmd = new SqliteCommand(
+                    "SELECT Id, Text, LessonId, TimeLimit FROM Assignments WHERE Id = @Id", Connection);
+
+                cmd.Parameters.AddWithValue("@Id", id);
+
+                using var reader = cmd.ExecuteReader();
+
+                if (reader.Read())
                 {
-                    command.Parameters.AddWithValue("@Id", id);
-                    SqliteDataReader reader = command.ExecuteReader();
-                    if (reader.Read())
-                    {
-                        int assignmentId = reader.GetInt32(0);
-                        double timeLimit = reader.GetDouble(1);
-                        assignment = new Assignment(assignmentId, timeLimit);
-                    }
+                    assignment = new Assignment(
+                        reader.GetInt32(0),
+                        reader.GetString(1),
+                        reader.GetInt32(2),
+                        reader.GetDouble(3)
+                    );
                 }
             }
             catch (Exception ex)
@@ -96,6 +142,7 @@ namespace FoutloosTypen.Core.Data.Repositories
             {
                 CloseConnection();
             }
+
             return assignment;
         }
     }
