@@ -24,10 +24,12 @@ namespace FoutloosTypen
             // Repositories
             builder.Services.AddSingleton<ILessonRepository, LessonRepository>();
             builder.Services.AddSingleton<ICourseRepository, CourseRepository>();
+            //builder.Services.AddSingleton<IAssignmentRepository, AssignmentRepository>();
 
             // Services
             builder.Services.AddSingleton<ILessonService, LessonService>();
             builder.Services.AddSingleton<ICourseService, CourseService>();
+            builder.Services.AddSingleton<IAssignmentService, AssignmentService>();
 
             // ViewModels
             builder.Services.AddTransient<LessonViewModel>();

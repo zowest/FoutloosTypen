@@ -1,12 +1,97 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="FoutloosTypen.Views.AssignmentView"
-             Title="AssignmentView">
-    <VerticalStackLayout>
-        <Label 
-            Text="Welcome to .NET MAUI!"
-            VerticalOptions="Center" 
-            HorizontalOptions="Center" />
-    </VerticalStackLayout>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="FoutloosTypen.Views.AssignmentView"
+    Title="Opdracht"
+    BackgroundColor="White">
+    <ContentPage.Content>
+        <Grid RowDefinitions="Auto,*,Auto" Padding="12">
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <HorizontalStackLayout
+                    Grid.Column="0"
+                    Spacing="24"
+                    VerticalOptions="Center"
+                    HorizontalOptions="StartAndExpand">
+                    <Button Text="BolType"
+                            BackgroundColor="Transparent"
+                            BorderWidth="0"
+                            WidthRequest="140"
+                            HeightRequest="80"
+                            FontSize="34"
+                            FontAttributes="Bold"
+                            FontFamily="OpenSansSemibold"
+                            CornerRadius="0"
+                            Padding="2" />
+                </HorizontalStackLayout>
+
+                <HorizontalStackLayout 
+                    Grid.Column="1" 
+                    Spacing="12"
+                    VerticalOptions="Center" 
+                    HorizontalOptions="End" 
+                    Margin="0,0,16,0"
+                    BackgroundColor="Transparent">
+
+                    <ImageButton Source="person.png"
+                                 Command="{Binding ProfileCommand}"
+                                 BackgroundColor="Transparent"
+                                 BorderColor="Transparent"
+                                 BorderWidth="0"
+                                 CornerRadius="0"
+                                 Padding="0"
+                                 WidthRequest="48"
+                                 HeightRequest="48"
+                                 Aspect="AspectFit" />
+
+                    <ImageButton Source="home.png"
+                                 Command="{Binding BackCommand}"
+                                 BackgroundColor="Transparent"
+                                 BorderColor="Transparent"
+                                 BorderWidth="0"
+                                 CornerRadius="0"
+                                 Padding="0"
+                                 WidthRequest="48"
+                                 HeightRequest="48"
+                                 Aspect="AspectFit" />
+
+                </HorizontalStackLayout>
+            </Grid>
+            <VerticalStackLayout 
+                Grid.Row="1" 
+                Spacing="12" 
+                HorizontalOptions="FillAndExpand" 
+                VerticalOptions="CenterAndExpand">
+                <ScrollView 
+                    HorizontalOptions="FillAndExpand"
+                    VerticalOptions="CenterAndExpand">
+                    <Frame 
+                        BackgroundColor="Transparent"
+                        Padding="24"
+                        HorizontalOptions="FillAndExpand"
+                        VerticalOptions="CenterAndExpand">
+                        <Label Text="{Binding PracticeMaterial.Sentence}"
+                            FontSize="28"
+                            HorizontalTextAlignment="Center"
+                            LineBreakMode="WordWrap"
+                            TextColor="Gray" />
+                    </Frame>
+                </ScrollView>
+
+                <Button Text="↻" Command="{Binding RefreshCommand}"
+                        BackgroundColor="Transparent"
+                        FontSize="50"
+                        WidthRequest="70"
+                        HeightRequest="70"
+                        HorizontalOptions="Center" />
+            </VerticalStackLayout>
+            <HorizontalStackLayout Grid.Row="2" HorizontalOptions="Center" Spacing="30">
+            </HorizontalStackLayout>
+        </Grid>
+    </ContentPage.Content>
 </ContentPage>
