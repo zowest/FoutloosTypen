@@ -17,12 +17,15 @@ namespace FoutloosTypen.Core.Data.Repositories
         public AssignmentRepository()
         {
             try 
-            { 
-            CreateTable(@"CREATE TABLE IF NOT EXISTS Assignments (
-                        [Id] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                        [TimeLimit] DOUBLE NOT NULL
-                )");
-            List<string> insertQueries = new()
+            {
+                                CreateTable(@"
+                    CREATE TABLE IF NOT EXISTS Assignments (
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        TimeLimit DOUBLE NOT NULL,
+                        LessonId INTEGER NOT NULL
+                    );
+                ");
+                List<string> insertQueries = new()
                 {
                     @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('1, 60.00')",
                 };

@@ -1,5 +1,14 @@
 ﻿{
-  "ConnectionStrings": {
-    "FoutloosTypenDb": "foutloostypen.db"
-  }
+  "PracticeMaterial": [
+    {
+      "LessonId": 1,
+      "TimeLimit": 60,
+      "Sentence": "De hond loopt naar het huis."
+    },
+    {
+      "LessonId": 2,
+      "TimeLimit": 60,
+      "Sentence": "De kat zit op de stoel."
+    }
+  ]
 }
