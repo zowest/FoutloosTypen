@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-android</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="NUnit" Version="4.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FoutloosTypen.App\FoutloosTypen.App.csproj" />
+    <ProjectReference Include="..\FoutloosTypen.Core.Data\FoutloosTypen.Core.Data.csproj" />
+    <ProjectReference Include="..\FoutloosTypen.Core\FoutloosTypen.Core.csproj" />
+  </ItemGroup>
+
+</Project>
