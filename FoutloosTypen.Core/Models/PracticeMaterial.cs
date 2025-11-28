@@ -4,12 +4,12 @@
     {
         public string Sentences { get; set; }
 
-        public int AssigmentId { get; set; }
+        public int AssignmentId { get; set; }
 
-        public PracticeMaterial(int id, string sentences, int assigmentId) : base(id)
+        public PracticeMaterial(int id, string sentences, int assignmentId) : base(id)
         {
             Sentences = sentences;
-            AssigmentId = assigmentId;
+            AssignmentId = assignmentId;
         }
 
         public PracticeMaterial() : base(0)
