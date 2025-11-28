@@ -75,7 +75,7 @@
                         Padding="24"
                         HorizontalOptions="FillAndExpand"
                         VerticalOptions="CenterAndExpand">
-                        <Label Text="{Binding PracticeMaterial.Sentence}"
+                        <Label Text="{Binding CurrentMaterial.Sentence}"
                             FontSize="28"
                             HorizontalTextAlignment="Center"
                             LineBreakMode="WordWrap"
