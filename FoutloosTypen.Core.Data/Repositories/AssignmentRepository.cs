@@ -1,9 +1,10 @@
-﻿using System;
+﻿using FoutloosTypen.Core.Interfaces.Repositories;
+using FoutloosTypen.Core.Models;
+using Microsoft.Data.Sqlite;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.Json;
-using Microsoft.Data.Sqlite;
-using FoutloosTypen.Core.Models;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
@@ -18,78 +19,73 @@ namespace FoutloosTypen.Core.Data.Repositories
                 CreateTable(@"
                     CREATE TABLE IF NOT EXISTS Assignments (
                         Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                        Text NVARCHAR(300) NOT NULL,
-                        LessonId INTEGER NOT NULL,
-                        TimeLimit DOUBLE NOT NULL
+                        TimeLimit DOUBLE NOT NULL,
+                        LessonId INTEGER NOT NULL
                     );
                 ");
-
-                Debug.WriteLine("Assignments table ready.");
+                LoadAssignmentsFromJsonAsync().Wait();
+                Debug.WriteLine("AssignmentRepository initialized successfully");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"AssignmentRepository init error: {ex.Message}");
+                Debug.WriteLine($"AssignmentRepository initialization error: {ex.Message}");
+                throw;
+            }
+        }
+        private async Task LoadAssignmentsFromJsonAsync()
+        {
+            try
+            {
+                using var stream = await FileSystem.OpenAppPackageFileAsync("Assignments.json");
+                using var reader = new StreamReader(stream);
+                var json = await reader.ReadToEndAsync();
+
+                var jsonDoc = JsonDocument.Parse(json);
+                var root = jsonDoc.RootElement;
+
+                var items = root.GetProperty("Items");
+                List<string> insertQueries = new();
+
+                foreach (var item in items.EnumerateArray())
+                {
+                    int id = item.GetProperty("Id").GetInt32();
+                    double timeLimit = item.GetProperty("TimeLimit").GetDouble();
+                    int lessonId = item.GetProperty("LessonId").GetInt32();
+
+                    insertQueries.Add($@"INSERT OR IGNORE INTO Assignments(Id, TimeLimit, LessonId) 
+                                VALUES({id}, {timeLimit}, {lessonId})");
+                }
+
+                InsertMultipleWithTransaction(insertQueries);
+                Debug.WriteLine($"Loaded {insertQueries.Count} assignments from JSON");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error loading assignments from JSON: {ex.Message}");
                 throw;
             }
         }
 
-        // --------------------------------------------
-        // IMPORT JSON
-        // --------------------------------------------
-        public async Task ImportFromJsonAsync(string path)
-        {
-            var json = await File.ReadAllTextAsync(path);
 
-            var dtos = JsonSerializer.Deserialize<List<AssignmentDto>>(json)
-                       ?? new List<AssignmentDto>();
-
-            List<string> inserts = new();
-
-            foreach (var dto in dtos)
-            {
-                string sql = $@"
-                    INSERT INTO Assignments (Text, LessonId, TimeLimit)
-                    VALUES ('{Escape(dto.Text)}', {dto.LessonId}, {dto.TimeLimit});
-                ";
-
-                inserts.Add(sql);
-            }
-
-            InsertMultipleWithTransaction(inserts);
-        }
-
-        private string Escape(string value) =>
-            value.Replace("'", "''");
-
-        private class AssignmentDto
-        {
-            public string Text { get; set; }
-            public int LessonId { get; set; }
-            public double TimeLimit { get; set; }
-        }
-
-        // --------------------------------------------
-        // GET ALL
-        // --------------------------------------------
         public List<Assignment> GetAll()
         {
             assignments.Clear();
-
             try
             {
+                string query = "SELECT Id, TimeLimit, LessonId FROM Assignments";
+
                 OpenConnection();
-
-                using var cmd = new SqliteCommand("SELECT Id, Text, LessonId, TimeLimit FROM Assignments", Connection);
-                using var reader = cmd.ExecuteReader();
-
-                while (reader.Read())
+                using (SqliteCommand command = new(query, Connection))
                 {
-                    assignments.Add(new Assignment(
-                        reader.GetInt32(0),
-                        reader.GetString(1),
-                        reader.GetInt32(2),
-                        reader.GetDouble(3)
-                    ));
+                    SqliteDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        int id = reader.GetInt32(0);
+                        double timeLimit = reader.GetDouble(1);
+                        int lessonId = reader.GetInt32(2);
+
+                        assignments.Add(new Assignment(id, timeLimit, lessonId));
+                    }
                 }
             }
             catch (Exception ex)
@@ -105,32 +101,28 @@ namespace FoutloosTypen.Core.Data.Repositories
             return assignments;
         }
 
-        // --------------------------------------------
-        // GET BY ID
-        // --------------------------------------------
         public Assignment? Get(int id)
         {
             Assignment? assignment = null;
 
             try
             {
+                string query = "SELECT Id, TimeLimit, LessonId FROM Assignments WHERE Id = @Id";
+
                 OpenConnection();
-
-                using var cmd = new SqliteCommand(
-                    "SELECT Id, Text, LessonId, TimeLimit FROM Assignments WHERE Id = @Id", Connection);
-
-                cmd.Parameters.AddWithValue("@Id", id);
-
-                using var reader = cmd.ExecuteReader();
-
-                if (reader.Read())
+                using (SqliteCommand command = new(query, Connection))
                 {
-                    assignment = new Assignment(
-                        reader.GetInt32(0),
-                        reader.GetString(1),
-                        reader.GetInt32(2),
-                        reader.GetDouble(3)
-                    );
+                    command.Parameters.AddWithValue("@Id", id);
+                    SqliteDataReader reader = command.ExecuteReader();
+
+                    if (reader.Read())
+                    {
+                        int assignmentId = reader.GetInt32(0);
+                        double timeLimit = reader.GetDouble(1);
+                        int lessonId = reader.GetInt32(2);
+
+                        assignment = new Assignment(assignmentId, timeLimit, lessonId);
+                    }
                 }
             }
             catch (Exception ex)
@@ -144,6 +136,7 @@ namespace FoutloosTypen.Core.Data.Repositories
             }
 
             return assignment;
+
         }
     }
 }
