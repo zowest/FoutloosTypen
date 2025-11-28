@@ -7,5 +7,7 @@ namespace FoutloosTypen.Core.Interfaces.Services
     {
         List<PracticeMaterial> GetAll();
         PracticeMaterial? Get(int id);
+
+        List<PracticeMaterial> GetByAssignmentId(int assignmentId);
     }
 }

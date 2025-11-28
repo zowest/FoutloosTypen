@@ -23,5 +23,10 @@ namespace FoutloosTypen.Core.Services
         {
             return _practiceMaterialRepository.Get(id);
         }
+        public List<PracticeMaterial> GetByAssignmentId(int assignmentId)
+        {
+            return _practiceMaterialRepository.GetByAssignmentId(assignmentId);
+        }
+
     }
 }
