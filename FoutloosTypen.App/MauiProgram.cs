@@ -4,7 +4,8 @@ using FoutloosTypen.Views;
 using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Services;
 using FoutloosTypen.Core.Interfaces.Repositories; 
-using FoutloosTypen.Core.Data.Repositories;      
+using FoutloosTypen.Core.Data.Repositories;
+using System.Diagnostics;
 
 namespace FoutloosTypen
 {
@@ -31,6 +32,7 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<ILessonService, LessonService>();
             builder.Services.AddSingleton<ICourseService, CourseService>();
             builder.Services.AddSingleton<IAssignmentService, AssignmentService>();
+            builder.Services.AddSingleton<IPracticeMaterialService, PracticeMaterialService>();
 
             // ViewModels
             builder.Services.AddTransient<LessonViewModel>();
@@ -41,6 +43,7 @@ namespace FoutloosTypen
 #if DEBUG
             builder.Logging.AddDebug();
 #endif
+
             return builder.Build();
         }
     }

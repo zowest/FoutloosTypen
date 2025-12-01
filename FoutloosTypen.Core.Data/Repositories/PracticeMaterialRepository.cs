@@ -15,99 +15,91 @@ namespace FoutloosTypen.Core.Data.Repositories
     {
         public PracticeMaterialRepository()
         {
-            CreateTable(@"
-                CREATE TABLE IF NOT EXISTS PracticeMaterial (
-                    Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                    Sentence NVARCHAR(300) NOT NULL,
-                    AssignmentId INTEGER NOT NULL
-                );
-                CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_practice 
-                ON PracticeMaterials(Sentence, AssignmentId);
-            ");
+            try
+            {
+                CreateTable(@"
+                    CREATE TABLE IF NOT EXISTS PracticeMaterials (
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        Sentence NVARCHAR(300) NOT NULL,
+                        AssignmentId INTEGER NOT NULL
+                    );
+                ");
 
-            LoadPracticeMaterialsFromJsonAsync().Wait();
+                CreateTable(@"
+                    CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_practice 
+                    ON PracticeMaterials(Sentence, AssignmentId);
+                ");
+
+                // Try to load from JSON, but don't crash if it fails
+                try
+                {
+                    LoadPracticeMaterialsFromJsonAsync().Wait();
+                }
+                catch (Exception jsonEx)
+                {
+                    Debug.WriteLine($"Could not load practice materials from JSON (file may not exist yet): {jsonEx.Message}");
+                    // Insert some default data instead
+                    InsertDefaultPracticeMaterials();
+                }
+
+                Debug.WriteLine("PracticeMaterialRepository initialized successfully");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"PracticeMaterialRepository initialization error: {ex.Message}");
+                throw;
+            }
+        }
+
+        private void InsertDefaultPracticeMaterials()
+        {
+            try
+            {
+                List<string> insertQueries = new()
+                {
+                    @"INSERT OR IGNORE INTO PracticeMaterials(Sentence, AssignmentId) VALUES('De hond loopt naar het huis.', 1)",
+                    @"INSERT OR IGNORE INTO PracticeMaterials(Sentence, AssignmentId) VALUES('De kat zit op de stoel.', 2)",
+                    @"INSERT OR IGNORE INTO PracticeMaterials(Sentence, AssignmentId) VALUES('De vogel vliegt naar de boom.', 3)",
+                    @"INSERT OR IGNORE INTO PracticeMaterials(Sentence, AssignmentId) VALUES('Het weer is vandaag prachtig.', 4)",
+                    @"INSERT OR IGNORE INTO PracticeMaterials(Sentence, AssignmentId) VALUES('Ik hou van programmeren.', 5)"
+                };
+
+                InsertMultipleWithTransaction(insertQueries);
+                Debug.WriteLine("Inserted default practice materials");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error inserting default practice materials: {ex.Message}");
+            }
         }
 
         private async Task LoadPracticeMaterialsFromJsonAsync()
         {
-            try
+            using var stream = await FileSystem.OpenAppPackageFileAsync("Raw/PracticeMaterial.json");
+            using var reader = new StreamReader(stream);
+            var json = await reader.ReadToEndAsync();
+
+            var jsonDoc = JsonDocument.Parse(json);
+            var root = jsonDoc.RootElement;
+            var items = root.GetProperty("PracticeMaterial");
+
+            List<string> insertQueries = new();
+
+            foreach (var item in items.EnumerateArray())
             {
-                using var stream = await FileSystem.OpenAppPackageFileAsync("PracticeMaterial.json");
-                using var reader = new StreamReader(stream);
-                var json = await reader.ReadToEndAsync();
+                int id = item.GetProperty("Id").GetInt32();
+                int assignmentId = item.GetProperty("AssignmentId").GetInt32();
+                string sentence = item.GetProperty("Sentence").GetString() ?? "";
 
-                var jsonDoc = JsonDocument.Parse(json);
-                var root = jsonDoc.RootElement;
-                var items = root.GetProperty("PracticeMaterial");
+                // Escape single quotes for SQL
+                sentence = sentence.Replace("'", "''");
 
-                OpenConnection();
-
-                foreach (var item in items.EnumerateArray())
-                {
-                    int assignmentId = item.GetProperty("assignmentId").GetInt32();
-                    double timeLimit = item.GetProperty("TimeLimit").GetDouble();
-                    string sentence = item.GetProperty("Sentence").GetString() ?? "";
-
-
-                    // Zoek bestaande assignment of voeg toe
-                    using (var checkCmd = Connection.CreateCommand())
-                    {
-                        checkCmd.CommandText = @"
-                            SELECT Id FROM Assignments 
-                            WHERE assignmentId = @assignmentId AND TimeLimit = @TimeLimit LIMIT 1;";
-                        checkCmd.Parameters.AddWithValue("@assignmentId", assignmentId);
-                        checkCmd.Parameters.AddWithValue("@TimeLimit", timeLimit);
-                        var result = checkCmd.ExecuteScalar();
-
-                        if (result != null)
-                        {
-                            assignmentId = Convert.ToInt32(result);
-                        }
-                        else
-                        {
-                            using var insertCmd = Connection.CreateCommand();
-                            insertCmd.CommandText = @"
-                                INSERT INTO Assignments(TimeLimit, assignmentId) 
-                                VALUES(@TimeLimit, @assignmentId);
-                                SELECT last_insert_rowid();";
-                            insertCmd.Parameters.AddWithValue("@TimeLimit", timeLimit);
-                            insertCmd.Parameters.AddWithValue("@assignmentId", assignmentId);
-                            assignmentId = Convert.ToInt32(insertCmd.ExecuteScalar());
-                        }
-                    }
-
-                    // Check of de combinatie al bestaat
-                    using (var checkPractice = Connection.CreateCommand())
-                    {
-                        checkPractice.CommandText = @"
-                            SELECT COUNT(*) FROM PracticeMaterial
-                            WHERE Sentence = @Sentence AND AssignmentId = @AssignmentId";
-                        checkPractice.Parameters.AddWithValue("@Sentence", sentence);
-                        checkPractice.Parameters.AddWithValue("@AssignmentId", assignmentId);
-
-                        long count = (long)checkPractice.ExecuteScalar();
-                        if (count > 0)
-                            continue; // skip duplicaat
-                    }
-
-                    // Voeg nieuwe regel toe
-                    using var insertPractice = Connection.CreateCommand();
-                    insertPractice.CommandText = @"
-                        INSERT INTO PracticeMaterial(Sentence, AssignmentId) 
-                        VALUES(@Sentence, @AssignmentId)";
-                    insertPractice.Parameters.AddWithValue("@Sentence", sentence);
-                    insertPractice.Parameters.AddWithValue("@AssignmentId", assignmentId);
-                    insertPractice.ExecuteNonQuery();
-                }
+                insertQueries.Add($@"INSERT OR IGNORE INTO PracticeMaterials(Id, Sentence, AssignmentId) 
+                            VALUES({id}, '{sentence}', {assignmentId})");
             }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Fout bij het importeren van PracticeMaterials.", ex);
-            }
-            finally
-            {
-                CloseConnection();
-            }
+
+            InsertMultipleWithTransaction(insertQueries);
+            Debug.WriteLine($"Loaded {insertQueries.Count} practice materials from JSON");
         }
 
         public List<PracticeMaterial> GetAll()
@@ -130,10 +122,13 @@ namespace FoutloosTypen.Core.Data.Repositories
 
                     practiceMaterials.Add(new PracticeMaterial(id, sentence, assignmentId));
                 }
+
+                Debug.WriteLine($"Retrieved {practiceMaterials.Count} practice materials");
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException("Fout bij ophalen van PracticeMaterials.", ex);
+                Debug.WriteLine($"Error retrieving practice materials: {ex.Message}");
+                throw;
             }
             finally
             {
@@ -143,7 +138,7 @@ namespace FoutloosTypen.Core.Data.Repositories
             return practiceMaterials;
         }
 
-             public PracticeMaterial? Get(int id)
+        public PracticeMaterial? Get(int id)
         {
             PracticeMaterial? practiceMaterial = null;
 
@@ -168,7 +163,7 @@ namespace FoutloosTypen.Core.Data.Repositories
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error retrieving assignment with Id {id}: {ex.Message}");
+                Debug.WriteLine($"Error retrieving practice material with Id {id}: {ex.Message}");
                 throw;
             }
             finally
@@ -177,8 +172,6 @@ namespace FoutloosTypen.Core.Data.Repositories
             }
 
             return practiceMaterial;
-
         }
     }
-    
 }
