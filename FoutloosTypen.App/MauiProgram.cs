@@ -25,6 +25,7 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<ILessonRepository, LessonRepository>();
             builder.Services.AddSingleton<ICourseRepository, CourseRepository>();
             builder.Services.AddSingleton<IAssignmentRepository, AssignmentRepository>();
+            builder.Services.AddSingleton<IPracticeMaterialRepository, PracticeMaterialRepository>();
 
             // Services
             builder.Services.AddSingleton<ILessonService, LessonService>();

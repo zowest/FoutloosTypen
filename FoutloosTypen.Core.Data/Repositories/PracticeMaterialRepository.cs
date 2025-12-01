@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Microsoft.Maui.Storage;
 using FoutloosTypen.Core.Models;
+using FoutloosTypen.Core.Interfaces.Repositories;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
-    internal class PracticeMaterialRepository : DatabaseConnection
+    public class PracticeMaterialRepository : DatabaseConnection, IPracticeMaterialRepository
     {
         public PracticeMaterialRepository()
         {

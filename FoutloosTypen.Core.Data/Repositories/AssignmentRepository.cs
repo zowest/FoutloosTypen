@@ -8,7 +8,7 @@ using System.Text.Json;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
-    public class AssignmentRepository : DatabaseConnection
+    public class AssignmentRepository : DatabaseConnection, IAssignmentRepository
     {
         private readonly List<Assignment> assignments = [];
 
@@ -28,9 +28,10 @@ namespace FoutloosTypen.Core.Data.Repositories
             }
             catch (Exception ex)
             {
-            {
-                Debug.WriteLine($"AssignmentRepository initialization error: {ex.Message}");
-                throw;
+                {
+                    Debug.WriteLine($"AssignmentRepository initialization error: {ex.Message}");
+                    throw;
+                }
             }
         }
         private async Task LoadAssignmentsFromJsonAsync()

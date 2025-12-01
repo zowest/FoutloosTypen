@@ -23,8 +23,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <MauiAsset Include="Resources\PracticeMaterial.json" />
-	  <MauiAsset Include="Resources\Assignment.json" />
+	  <MauiAsset Include="Resources\Raw\PracticeMaterial.json" />
+	  <MauiAsset Include="Resources\Raw\Assignment.json" />
 	</ItemGroup>
 
 	<ItemGroup>
