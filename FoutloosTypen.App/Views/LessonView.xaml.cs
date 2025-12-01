@@ -7,17 +7,14 @@ namespace FoutloosTypen.Views
 {
     public partial class LessonView : ContentPage
     {
-        private readonly LessonViewModel? _vm;
+        private readonly LearnpathViewModel _vm;
 
-        private Button? HoverButton;
-
-        // Parameterless ctor required by XAML tooling / generated partial class
         public LessonView()
         {
             InitializeComponent();
         }
 
-        public LessonView(LessonViewModel vm) : this()
+        public LessonView(LearnpathViewModel vm) : this()
         {
             BindingContext = _vm = vm;
         }
@@ -25,7 +22,8 @@ namespace FoutloosTypen.Views
         protected override async void OnAppearing()
         {
             base.OnAppearing();
-            if (_vm is not null)
+
+            if (_vm != null)
                 await _vm.OnAppearingAsync();
         }
         
@@ -36,17 +34,37 @@ namespace FoutloosTypen.Views
         
         private void OnHoverEnter(object sender, PointerEventArgs e)
         {
-            if (sender is Button button)
+            switch (sender)
             {
-                button.BackgroundColor = Colors.LightGrey;
+                case Button btn:
+                    btn.BackgroundColor = Colors.LightGray;
+                    break;
+
+                case Border border:
+                    border.Background = new SolidColorBrush(Colors.LightGray);
+                    break;
+
+                case Label lbl:
+                    lbl.BackgroundColor = Colors.LightGray;
+                    break;
             }
         }
 
         private void OnHoverExit(object sender, PointerEventArgs e)
         {
-            if (sender is Button button)
+            switch (sender)
             {
-                button.BackgroundColor = Colors.White;
+                case Button btn:
+                    btn.BackgroundColor = Colors.White;
+                    break;
+
+                case Border border:
+                    border.Background = new SolidColorBrush(Colors.White);
+                    break;
+
+                case Label lbl:
+                    lbl.BackgroundColor = Colors.White;
+                    break;
             }
         }
 
