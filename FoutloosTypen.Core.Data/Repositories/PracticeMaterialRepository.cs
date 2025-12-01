@@ -15,7 +15,7 @@ namespace FoutloosTypen.Core.Data.Repositories
         public PracticeMaterialRepository()
         {
             CreateTable(@"
-                CREATE TABLE IF NOT EXISTS PracticeMaterials (
+                CREATE TABLE IF NOT EXISTS PracticeMaterial (
                     Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                     Sentence NVARCHAR(300) NOT NULL,
                     AssignmentId INTEGER NOT NULL
@@ -31,7 +31,7 @@ namespace FoutloosTypen.Core.Data.Repositories
         {
             try
             {
-                using var stream = await FileSystem.OpenAppPackageFileAsync("PracticeMaterials.json");
+                using var stream = await FileSystem.OpenAppPackageFileAsync("PracticeMaterial.json");
                 using var reader = new StreamReader(stream);
                 var json = await reader.ReadToEndAsync();
 
@@ -79,7 +79,7 @@ namespace FoutloosTypen.Core.Data.Repositories
                     using (var checkPractice = Connection.CreateCommand())
                     {
                         checkPractice.CommandText = @"
-                            SELECT COUNT(*) FROM PracticeMaterials 
+                            SELECT COUNT(*) FROM PracticeMaterial
                             WHERE Sentence = @Sentence AND AssignmentId = @AssignmentId";
                         checkPractice.Parameters.AddWithValue("@Sentence", sentence);
                         checkPractice.Parameters.AddWithValue("@AssignmentId", assignmentId);
@@ -92,7 +92,7 @@ namespace FoutloosTypen.Core.Data.Repositories
                     // Voeg nieuwe regel toe
                     using var insertPractice = Connection.CreateCommand();
                     insertPractice.CommandText = @"
-                        INSERT INTO PracticeMaterials(Sentence, AssignmentId) 
+                        INSERT INTO PracticeMaterial(Sentence, AssignmentId) 
                         VALUES(@Sentence, @AssignmentId)";
                     insertPractice.Parameters.AddWithValue("@Sentence", sentence);
                     insertPractice.Parameters.AddWithValue("@AssignmentId", assignmentId);
