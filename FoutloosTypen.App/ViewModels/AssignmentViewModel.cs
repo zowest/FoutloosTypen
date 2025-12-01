@@ -94,7 +94,6 @@ namespace FoutloosTypen.ViewModels
 
             var filteredAssignments = allAssignments
                 .Where(a => a.LessonId == SelectedLesson.Id)
-                .Take(5)
                 .OrderBy(a => a.Id)
                 .ToList();
 
@@ -110,6 +109,8 @@ namespace FoutloosTypen.ViewModels
 
         private void LoadPracticeMaterials()
         {
+            Debug.WriteLine("LoadPracticeMaterials aangeroepen");
+
             if (SelectedAssignment == null)
                 return;
 
@@ -137,7 +138,7 @@ namespace FoutloosTypen.ViewModels
         {
             SelectedAssignment = assignment;
         }
-
+         
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

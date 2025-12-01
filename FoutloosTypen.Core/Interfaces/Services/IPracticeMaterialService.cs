@@ -5,7 +5,7 @@ namespace FoutloosTypen.Core.Interfaces.Services
 {
     public interface IPracticeMaterialService
     {
-        List<PracticeMaterial> GetAll();
-        PracticeMaterial? Get(int id);
+        public List<PracticeMaterial> GetAll();
+        public PracticeMaterial? Get(int id);
     }
 }
