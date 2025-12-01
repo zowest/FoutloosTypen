@@ -24,7 +24,7 @@ namespace FoutloosTypen
             // Repositories
             builder.Services.AddSingleton<ILessonRepository, LessonRepository>();
             builder.Services.AddSingleton<ICourseRepository, CourseRepository>();
-            //builder.Services.AddSingleton<IAssignmentRepository, AssignmentRepository>();
+            builder.Services.AddSingleton<IAssignmentRepository, AssignmentRepository>();
 
             // Services
             builder.Services.AddSingleton<ILessonService, LessonService>();
@@ -34,6 +34,9 @@ namespace FoutloosTypen
             // ViewModels
             builder.Services.AddTransient<LessonViewModel>();
             builder.Services.AddTransient<LessonView>();
+            builder.Services.AddTransient<AssignmentViewModel>();
+            builder.Services.AddTransient<AssignmentView>();
+
 #if DEBUG
             builder.Logging.AddDebug();
 #endif

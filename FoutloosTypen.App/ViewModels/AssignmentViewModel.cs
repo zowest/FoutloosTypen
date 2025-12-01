@@ -110,6 +110,8 @@ namespace FoutloosTypen.ViewModels
 
         private void LoadPracticeMaterials()
         {
+            Debug.WriteLine("LoadPracticeMaterials aangeroepen");
+
             if (SelectedAssignment == null)
                 return;
 
@@ -122,7 +124,7 @@ namespace FoutloosTypen.ViewModels
             if (_materials.Any())
                 CurrentMaterial = _materials[_materialIndex];
             else
-                CurrentMaterial = new PracticeMaterial { Sentences = "Geen zinnen gevonden." };
+                CurrentMaterial = new PracticeMaterial { Sentence = "Geen zinnen gevonden." };
         }
 
 
@@ -137,7 +139,7 @@ namespace FoutloosTypen.ViewModels
         {
             SelectedAssignment = assignment;
         }
-
+         
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

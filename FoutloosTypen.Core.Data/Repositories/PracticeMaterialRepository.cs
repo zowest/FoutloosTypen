@@ -16,11 +16,11 @@ namespace FoutloosTypen.Core.Data.Repositories
             CreateTable(@"
                 CREATE TABLE IF NOT EXISTS PracticeMaterials (
                     Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                    Sentences NVARCHAR(300) NOT NULL,
+                    Sentence NVARCHAR(300) NOT NULL,
                     AssignmentId INTEGER NOT NULL
                 );
                 CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_practice 
-                ON PracticeMaterials(Sentences, AssignmentId);
+                ON PracticeMaterials(Sentence, AssignmentId);
             ");
 
             LoadPracticeMaterialsFromJsonAsync().Wait();
@@ -42,19 +42,18 @@ namespace FoutloosTypen.Core.Data.Repositories
 
                 foreach (var item in items.EnumerateArray())
                 {
-                    int lessonId = item.GetProperty("LessonId").GetInt32();
+                    int assignmentId = item.GetProperty("assignmentId").GetInt32();
                     double timeLimit = item.GetProperty("TimeLimit").GetDouble();
                     string sentence = item.GetProperty("Sentence").GetString() ?? "";
 
-                    int assignmentId;
 
                     // Zoek bestaande assignment of voeg toe
                     using (var checkCmd = Connection.CreateCommand())
                     {
                         checkCmd.CommandText = @"
                             SELECT Id FROM Assignments 
-                            WHERE LessonId = @LessonId AND TimeLimit = @TimeLimit LIMIT 1;";
-                        checkCmd.Parameters.AddWithValue("@LessonId", lessonId);
+                            WHERE assignmentId = @assignmentId AND TimeLimit = @TimeLimit LIMIT 1;";
+                        checkCmd.Parameters.AddWithValue("@assignmentId", assignmentId);
                         checkCmd.Parameters.AddWithValue("@TimeLimit", timeLimit);
                         var result = checkCmd.ExecuteScalar();
 
@@ -66,11 +65,11 @@ namespace FoutloosTypen.Core.Data.Repositories
                         {
                             using var insertCmd = Connection.CreateCommand();
                             insertCmd.CommandText = @"
-                                INSERT INTO Assignments(TimeLimit, LessonId) 
-                                VALUES(@TimeLimit, @LessonId);
+                                INSERT INTO Assignments(TimeLimit, assignmentId) 
+                                VALUES(@TimeLimit, @assignmentId);
                                 SELECT last_insert_rowid();";
                             insertCmd.Parameters.AddWithValue("@TimeLimit", timeLimit);
-                            insertCmd.Parameters.AddWithValue("@LessonId", lessonId);
+                            insertCmd.Parameters.AddWithValue("@assignmentId", assignmentId);
                             assignmentId = Convert.ToInt32(insertCmd.ExecuteScalar());
                         }
                     }
@@ -80,7 +79,7 @@ namespace FoutloosTypen.Core.Data.Repositories
                     {
                         checkPractice.CommandText = @"
                             SELECT COUNT(*) FROM PracticeMaterials 
-                            WHERE Sentences = @Sentence AND AssignmentId = @AssignmentId";
+                            WHERE Sentence = @Sentence AND AssignmentId = @AssignmentId";
                         checkPractice.Parameters.AddWithValue("@Sentence", sentence);
                         checkPractice.Parameters.AddWithValue("@AssignmentId", assignmentId);
 
@@ -92,7 +91,7 @@ namespace FoutloosTypen.Core.Data.Repositories
                     // Voeg nieuwe regel toe
                     using var insertPractice = Connection.CreateCommand();
                     insertPractice.CommandText = @"
-                        INSERT INTO PracticeMaterials(Sentences, AssignmentId) 
+                        INSERT INTO PracticeMaterials(Sentence, AssignmentId) 
                         VALUES(@Sentence, @AssignmentId)";
                     insertPractice.Parameters.AddWithValue("@Sentence", sentence);
                     insertPractice.Parameters.AddWithValue("@AssignmentId", assignmentId);
@@ -118,7 +117,7 @@ namespace FoutloosTypen.Core.Data.Repositories
                 OpenConnection();
 
                 using var command = Connection.CreateCommand();
-                command.CommandText = "SELECT Id, Sentences, AssignmentId FROM PracticeMaterials";
+                command.CommandText = "SELECT Id, Sentence, AssignmentId FROM PracticeMaterials";
 
                 using var reader = command.ExecuteReader();
                 while (reader.Read())

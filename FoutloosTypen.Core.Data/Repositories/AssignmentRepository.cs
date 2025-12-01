@@ -8,7 +8,7 @@ using System.Text.Json;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
-    internal class AssignmentRepository : DatabaseConnection
+    public class AssignmentRepository : DatabaseConnection
     {
         private readonly List<Assignment> assignments = [];
 
@@ -27,6 +27,7 @@ namespace FoutloosTypen.Core.Data.Repositories
                 Debug.WriteLine("AssignmentRepository initialized successfully");
             }
             catch (Exception ex)
+            {
             {
                 Debug.WriteLine($"AssignmentRepository initialization error: {ex.Message}");
                 throw;
