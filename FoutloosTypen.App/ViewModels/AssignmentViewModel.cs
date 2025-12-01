@@ -114,7 +114,7 @@ namespace FoutloosTypen.ViewModels
                 return;
 
             _materials = _practiceMaterialService
-                .GetByAssignmentId(SelectedAssignment.Id)
+                .GetAll()
                 .ToList();
 
             _materialIndex = 0;
@@ -122,7 +122,7 @@ namespace FoutloosTypen.ViewModels
             if (_materials.Any())
                 CurrentMaterial = _materials[_materialIndex];
             else
-                CurrentMaterial = new PracticeMaterial { Sentence = "Geen zinnen gevonden." };
+                CurrentMaterial = new PracticeMaterial { Sentences = "Geen zinnen gevonden." };
         }
 
 
