@@ -7,6 +7,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.Maui.Storage;
 using FoutloosTypen.Core.Models;
 using FoutloosTypen.Core.Interfaces.Repositories;
+using System.Diagnostics;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
@@ -141,5 +142,43 @@ namespace FoutloosTypen.Core.Data.Repositories
 
             return practiceMaterials;
         }
+
+             public PracticeMaterial? Get(int id)
+        {
+            PracticeMaterial? practiceMaterial = null;
+
+            try
+            {
+                string query = "SELECT Id, Sentence, AssignmentId FROM PracticeMaterials WHERE Id = @Id";
+
+                OpenConnection();
+                using (SqliteCommand command = new(query, Connection))
+                {
+                    command.Parameters.AddWithValue("@Id", id);
+                    SqliteDataReader reader = command.ExecuteReader();
+
+                    if (reader.Read())
+                    {
+                        string sentence = reader.GetString(1);
+                        int assignmentId = reader.GetInt32(2);
+
+                        practiceMaterial = new PracticeMaterial(id, sentence, assignmentId);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error retrieving assignment with Id {id}: {ex.Message}");
+                throw;
+            }
+            finally
+            {
+                CloseConnection();
+            }
+
+            return practiceMaterial;
+
+        }
     }
+    
 }

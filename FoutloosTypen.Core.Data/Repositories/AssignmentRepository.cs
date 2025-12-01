@@ -27,11 +27,10 @@ namespace FoutloosTypen.Core.Data.Repositories
                 Debug.WriteLine("AssignmentRepository initialized successfully");
             }
             catch (Exception ex)
+            
             {
-                {
-                    Debug.WriteLine($"AssignmentRepository initialization error: {ex.Message}");
-                    throw;
-                }
+                Debug.WriteLine($"AssignmentRepository initialization error: {ex.Message}");
+                throw;
             }
         }
         private async Task LoadAssignmentsFromJsonAsync()

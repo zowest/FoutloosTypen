@@ -1,19 +1,19 @@
 ﻿{
   "PracticeMaterial": [
     {
-      "AssignmentId": 1,
-      "TimeLimit": 60,
-      "Sentence": "De hond loopt naar het huis."
+      "Id": 1,
+      "Sentence": "De hond loopt naar het huis.",
+      "AssignmentId": 1
     },
     {
-      "AssignmentId": 2,
-      "TimeLimit": 60,
-      "Sentence": "De kat zit op de stoel."
+      "Id": 2,
+      "Sentence": "De kat zit op de stoel.",
+      "AssignmentId": 2
     },
     {
-      "AssignmentId": 3,
-      "TimeLimit": 60,
-      "Sentence": "De vogel vliegt naar de boom."
+      "Id": 3,
+      "Sentence": "De vogel vliegt naar de boom.",
+      "AssignmentId": 3
     }
   ]
 }
