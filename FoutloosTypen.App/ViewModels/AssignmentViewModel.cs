@@ -114,7 +114,7 @@ namespace FoutloosTypen.ViewModels
                 return;
 
             _materials = _practiceMaterialService
-                .GetByAssignmentId(SelectedAssignment.Id)
+                .GetAll()
                 .ToList();
 
             _materialIndex = 0;
