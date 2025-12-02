@@ -38,8 +38,6 @@ namespace FoutloosTypen.Core.Data.Repositories
                 catch (Exception jsonEx)
                 {
                     Debug.WriteLine($"Could not load practice materials from JSON (file may not exist yet): {jsonEx.Message}");
-                    // Insert some default data instead
-                    InsertDefaultPracticeMaterials();
                 }
 
                 Debug.WriteLine("PracticeMaterialRepository initialized successfully");
@@ -48,28 +46,6 @@ namespace FoutloosTypen.Core.Data.Repositories
             {
                 Debug.WriteLine($"PracticeMaterialRepository initialization error: {ex.Message}");
                 throw;
-            }
-        }
-
-        private void InsertDefaultPracticeMaterials()
-        {
-            try
-            {
-                List<string> insertQueries = new()
-                {
-                    @"INSERT OR IGNORE INTO PracticeMaterials(Sentence, AssignmentId) VALUES('De hond loopt naar het huis.', 1)",
-                    @"INSERT OR IGNORE INTO PracticeMaterials(Sentence, AssignmentId) VALUES('De kat zit op de stoel.', 2)",
-                    @"INSERT OR IGNORE INTO PracticeMaterials(Sentence, AssignmentId) VALUES('De vogel vliegt naar de boom.', 3)",
-                    @"INSERT OR IGNORE INTO PracticeMaterials(Sentence, AssignmentId) VALUES('Het weer is vandaag prachtig.', 4)",
-                    @"INSERT OR IGNORE INTO PracticeMaterials(Sentence, AssignmentId) VALUES('Ik hou van programmeren.', 5)"
-                };
-
-                InsertMultipleWithTransaction(insertQueries);
-                Debug.WriteLine("Inserted default practice materials");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error inserting default practice materials: {ex.Message}");
             }
         }
 
