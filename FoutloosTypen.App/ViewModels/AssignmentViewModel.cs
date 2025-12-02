@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Maui.Controls;
 
 namespace FoutloosTypen.ViewModels
 {
@@ -29,6 +30,7 @@ namespace FoutloosTypen.ViewModels
             {
                 _currentMaterial = value;
                 OnPropertyChanged(nameof(CurrentMaterial));
+                ResetTyping();
             }
         }
 
@@ -52,8 +54,29 @@ namespace FoutloosTypen.ViewModels
             {
                 _selectedAssignment = value;
                 OnPropertyChanged(nameof(SelectedAssignment));
-
                 LoadPracticeMaterials();
+            }
+        }
+
+        private string _userInput = string.Empty;
+        public string UserInput
+        {
+            get => _userInput;
+            set
+            {
+                _userInput = value;
+                OnPropertyChanged(nameof(UserInput));
+            }
+        }
+
+        private FormattedString _formattedText;
+        public FormattedString FormattedText
+        {
+            get => _formattedText;
+            set
+            {
+                _formattedText = value;
+                OnPropertyChanged(nameof(FormattedText));
             }
         }
 
@@ -65,6 +88,8 @@ namespace FoutloosTypen.ViewModels
             _lessonService = lessonService;
             _assignmentService = assignmentService;
             _practiceMaterialService = practiceMaterialService;
+
+            FormattedText = new FormattedString();
         }
 
         public async Task OnAppearingAsync()
@@ -116,6 +141,7 @@ namespace FoutloosTypen.ViewModels
 
             _materials = _practiceMaterialService
                 .GetAll()
+                .Where(pm => pm.AssignmentId == SelectedAssignment.Id)
                 .ToList();
 
             _materialIndex = 0;
@@ -126,6 +152,95 @@ namespace FoutloosTypen.ViewModels
                 CurrentMaterial = new PracticeMaterial { Sentence = "Geen zinnen gevonden." };
         }
 
+        private void ResetTyping()
+        {
+            UserInput = string.Empty;
+            UpdateFormattedText();
+        }
+
+        public void UpdateTypedText(string typedText)
+        {
+            if (CurrentMaterial == null || string.IsNullOrEmpty(CurrentMaterial.Sentence))
+                return;
+
+            UserInput = typedText;
+            UpdateFormattedText();
+
+            // Check if completed
+            if (typedText.Length == CurrentMaterial.Sentence.Length)
+            {
+                bool allCorrect = true;
+                for (int i = 0; i < typedText.Length; i++)
+                {
+                    if (typedText[i] != CurrentMaterial.Sentence[i])
+                    {
+                        allCorrect = false;
+                        break;
+                    }
+                }
+
+                if (allCorrect)
+                {
+                    Debug.WriteLine("Sentence completed correctly!");
+                    // Move to next sentence or show completion
+                }
+            }
+        }
+
+        private void UpdateFormattedText()
+        {
+            var formatted = new FormattedString();
+            string targetText = CurrentMaterial?.Sentence ?? string.Empty;
+            string typedText = UserInput ?? string.Empty;
+
+            for (int i = 0; i < targetText.Length; i++)
+            {
+                var span = new Span
+                {
+                    Text = targetText[i].ToString(),
+                    FontSize = 32,
+                };
+
+                if (i < typedText.Length)
+                {
+                    // Character has been typed
+                    if (typedText[i] == targetText[i])
+                    {
+                        // Correct character - show in black
+                        span.TextColor = Colors.Black;
+                        span.BackgroundColor = Colors.Transparent;
+                    }
+                    else
+                    {
+                        // Incorrect character - show in red with light red background
+                        span.TextColor = Colors.White;
+                        span.BackgroundColor = Colors.Red;
+                    }
+                }
+                else if (i == typedText.Length)
+                {
+                    // Current character cursor position
+                    span.TextColor = Colors.Gray;
+                    span.BackgroundColor = Colors.LightGray;
+                }
+                else
+                {
+                    // Not yet typed - show in light gray
+                    span.TextColor = Colors.LightGray;
+                    span.BackgroundColor = Colors.Transparent;
+                }
+
+                formatted.Spans.Add(span);
+            }
+
+            FormattedText = formatted;
+        }
+
+        [RelayCommand]
+        private void Refresh()
+        {
+            ResetTyping();
+        }
 
         [RelayCommand]
         private void SelectLesson(Lesson lesson)
@@ -138,7 +253,7 @@ namespace FoutloosTypen.ViewModels
         {
             SelectedAssignment = assignment;
         }
-         
+
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
