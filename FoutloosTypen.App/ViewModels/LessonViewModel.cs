@@ -48,7 +48,7 @@ namespace FoutloosTypen.ViewModels
             }
 
             if (Lessons.Any())
-                SelectedLesson = Lessons.First();
+                SelectedLesson = Lessons.Last();
         }
 
         [RelayCommand]
