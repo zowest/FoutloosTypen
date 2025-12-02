@@ -25,11 +25,6 @@ namespace FoutloosTypen.Core.Data.Repositories
                     );
                 ");
 
-                CreateTable(@"
-                    CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_practice 
-                    ON PracticeMaterials(Sentence, AssignmentId);
-                ");
-
                 // Try to load from JSON, but don't crash if it fails
                 try
                 {
