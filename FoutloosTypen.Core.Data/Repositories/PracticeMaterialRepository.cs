@@ -33,7 +33,7 @@ namespace FoutloosTypen.Core.Data.Repositories
                 // Try to load from JSON, but don't crash if it fails
                 try
                 {
-                    LoadPracticeMaterialsFromJsonAsync().Wait();
+                    LoadPracticeMaterialsFromJsonAsync().GetAwaiter().GetResult();
                 }
                 catch (Exception jsonEx)
                 {
@@ -75,9 +75,9 @@ namespace FoutloosTypen.Core.Data.Repositories
 
         private async Task LoadPracticeMaterialsFromJsonAsync()
         {
-            using var stream = await FileSystem.OpenAppPackageFileAsync("Raw/PracticeMaterial.json");
+            using var stream = await FileSystem.OpenAppPackageFileAsync("PracticeMaterial.json").ConfigureAwait(false);
             using var reader = new StreamReader(stream);
-            var json = await reader.ReadToEndAsync();
+            var json = await reader.ReadToEndAsync().ConfigureAwait(false);
 
             var jsonDoc = JsonDocument.Parse(json);
             var root = jsonDoc.RootElement;
