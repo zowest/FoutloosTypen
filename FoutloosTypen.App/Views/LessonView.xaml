@@ -35,12 +35,12 @@
                             <DataTemplate>
                                 <Button Text="{Binding Name}"
                                     MinimumHeightRequest="100"
-                                    FontSize="30"
-                                    BackgroundColor="White"
-                                    BorderColor="Black"
-                                    BorderWidth="2"
-                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, 
-                                      Path=BindingContext.CoursesVM.SelectCourseCommand}"
+                                        FontSize="30"
+                                        BackgroundColor="White"
+                                        BorderColor="Black"
+                                        TextColor="Black"
+                                        BorderWidth="2"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectCourseCommand}"
                                         CommandParameter="{Binding}">
                                     <Button.GestureRecognizers>
                                         <PointerGestureRecognizer PointerEntered="OnHoverEnter"

@@ -95,6 +95,7 @@
 
                 <Button Text="↻" Command="{Binding RefreshCommand}"
                         BackgroundColor="Transparent"
+                        TextColor="Black"
                         FontSize="50"
                         WidthRequest="70"
                         HeightRequest="70"

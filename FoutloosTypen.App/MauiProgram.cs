@@ -6,6 +6,7 @@ using FoutloosTypen.Core.Services;
 using FoutloosTypen.Core.Interfaces.Repositories; 
 using FoutloosTypen.Core.Data.Repositories;
 using System.Diagnostics;
+using FoutloosTypen.Core.Data.Helpers;
 
 namespace FoutloosTypen
 {
@@ -13,6 +14,11 @@ namespace FoutloosTypen
     {
         public static MauiApp CreateMauiApp()
         {
+           
+#if DEBUG
+            DebugDatabaseReset.Reset();
+#endif
+
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()

@@ -5,6 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Threading.Tasks;
+using Microsoft.Maui.Storage;
+using System.IO;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
@@ -27,12 +30,12 @@ namespace FoutloosTypen.Core.Data.Repositories
                 // Try to load from JSON, but don't crash if it fails
                 try
                 {
-                    LoadAssignmentsFromJsonAsync().Wait();
+               
+                    LoadAssignmentsFromJsonAsync().GetAwaiter().GetResult();
                 }
                 catch (Exception jsonEx)
                 {
                     Debug.WriteLine($"Could not load assignments from JSON (file may not exist yet): {jsonEx.Message}");
-                    // Insert some default data instead
                     InsertDefaultAssignments();
                 }
 
@@ -56,7 +59,7 @@ namespace FoutloosTypen.Core.Data.Repositories
                     @"INSERT OR IGNORE INTO Assignments(TimeLimit, LessonId) VALUES(60, 3)",
                     @"INSERT OR IGNORE INTO Assignments(TimeLimit, LessonId) VALUES(60, 4)",
                     @"INSERT OR IGNORE INTO Assignments(TimeLimit, LessonId) VALUES(60, 5)"
-                };
+                }; 
 
                 InsertMultipleWithTransaction(insertQueries);
                 Debug.WriteLine("Inserted default assignments");
@@ -69,9 +72,9 @@ namespace FoutloosTypen.Core.Data.Repositories
 
         private async Task LoadAssignmentsFromJsonAsync()
         {
-            using var stream = await FileSystem.OpenAppPackageFileAsync("Raw/Assignment.json");
+            using var stream = await FileSystem.OpenAppPackageFileAsync("Assignment.json").ConfigureAwait(false);
             using var reader = new StreamReader(stream);
-            var json = await reader.ReadToEndAsync();
+            var json = await reader.ReadToEndAsync().ConfigureAwait(false);
 
             var jsonDoc = JsonDocument.Parse(json);
             var root = jsonDoc.RootElement;
