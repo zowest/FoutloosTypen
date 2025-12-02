@@ -42,6 +42,8 @@ namespace FoutloosTypen
 
             // ViewModels
             builder.Services.AddTransient<LessonViewModel>();
+            builder.Services.AddTransient<CoursesViewModel>();
+            builder.Services.AddTransient<LearnpathViewModel>();
             builder.Services.AddTransient<LessonView>();
             builder.Services.AddTransient<AssignmentViewModel>();
             builder.Services.AddTransient<AssignmentView>();
