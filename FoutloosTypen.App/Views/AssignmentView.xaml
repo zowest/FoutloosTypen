@@ -72,6 +72,7 @@
                     </ImageButton>
                 </HorizontalStackLayout>
             </Grid>
+
             <VerticalStackLayout 
                 Grid.Row="1" 
                 Spacing="12" 
@@ -83,13 +84,39 @@
                     <Frame 
                         BackgroundColor="Transparent"
                         Padding="24"
-                        HorizontalOptions="FillAndExpand"
-                        VerticalOptions="CenterAndExpand">
-                        <Label Text="{Binding CurrentMaterial.Sentence}"
-                            FontSize="28"
-                            HorizontalTextAlignment="Center"
-                            LineBreakMode="WordWrap"
-                            TextColor="Gray" />
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center">
+
+                        <!-- Character-by-character display -->
+                        <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                            <!-- Formatted text with colored characters -->
+                            <Label FormattedText="{Binding FormattedText}"
+                                   FontSize="32"
+                                   HorizontalTextAlignment="Center"
+                                   VerticalTextAlignment="Center"
+                                   LineBreakMode="WordWrap"
+                                   MaximumWidthRequest="800" />
+
+                            <!-- Hidden Entry to capture keyboard input -->
+                            <Entry x:Name="HiddenEntry"
+                                   Text="{Binding UserInput, Mode=TwoWay}"
+                                   TextChanged="OnTextChanged"
+                                   Focused="OnEntryFocused"
+                                   Unfocused="OnEntryUnfocused"
+                                   Opacity="0"
+                                   HeightRequest="0"
+                                   IsEnabled="True" />
+
+                            <!-- Tap area to focus the hidden entry -->
+                            <BoxView HeightRequest="100"
+                                     WidthRequest="800"
+                                     Color="Transparent"
+                                     HorizontalOptions="Center">
+                                <BoxView.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTapToFocus" />
+                                </BoxView.GestureRecognizers>
+                            </BoxView>
+                        </VerticalStackLayout>
                     </Frame>
                 </ScrollView>
 
@@ -107,6 +134,7 @@
                     </Button.GestureRecognizers>
                 </Button>
             </VerticalStackLayout>
+
             <HorizontalStackLayout Grid.Row="2" HorizontalOptions="Center" Spacing="30">
             </HorizontalStackLayout>
         </Grid>

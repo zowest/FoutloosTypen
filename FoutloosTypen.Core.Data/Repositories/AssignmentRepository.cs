@@ -30,12 +30,14 @@ namespace FoutloosTypen.Core.Data.Repositories
                 // Try to load from JSON, but don't crash if it fails
                 try
                 {
-               
+                    Debug.WriteLine("Attempting to load assignments from JSON...");
                     LoadAssignmentsFromJsonAsync().GetAwaiter().GetResult();
+                    Debug.WriteLine("Successfully loaded assignments from JSON");
                 }
                 catch (Exception jsonEx)
                 {
                     Debug.WriteLine($"Could not load assignments from JSON (file may not exist yet): {jsonEx.Message}");
+                    Debug.WriteLine("Falling back to default assignments...");
                     InsertDefaultAssignments();
                 }
 
@@ -62,7 +64,7 @@ namespace FoutloosTypen.Core.Data.Repositories
                 }; 
 
                 InsertMultipleWithTransaction(insertQueries);
-                Debug.WriteLine("Inserted default assignments");
+                Debug.WriteLine($"Inserted {insertQueries.Count} default assignments");
             }
             catch (Exception ex)
             {
@@ -114,8 +116,11 @@ namespace FoutloosTypen.Core.Data.Repositories
                         int lessonId = reader.GetInt32(2);
 
                         assignments.Add(new Assignment(id, timeLimit, lessonId));
+                        Debug.WriteLine($"Retrieved assignment: Id={id}, LessonId={lessonId}, TimeLimit={timeLimit}");
                     }
                 }
+                
+                Debug.WriteLine($"Total assignments retrieved: {assignments.Count}");
             }
             catch (Exception ex)
             {

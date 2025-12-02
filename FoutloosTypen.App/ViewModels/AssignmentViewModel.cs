@@ -6,9 +6,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Maui.Controls;
 
 namespace FoutloosTypen.ViewModels
 {
+    [QueryProperty(nameof(LessonId), "lessonId")]
     public partial class AssignmentViewModel : BaseViewModel, INotifyPropertyChanged
     {
         private readonly IAssignmentService _assignmentService;
@@ -21,6 +23,18 @@ namespace FoutloosTypen.ViewModels
         private List<PracticeMaterial> _materials = new();
         private int _materialIndex = 0;
 
+        private int _lessonId;
+        public int LessonId 
+        { 
+            get => _lessonId; 
+            set 
+            { 
+                _lessonId = value; 
+                OnPropertyChanged(nameof(LessonId));
+                Debug.WriteLine($"LessonId set to: {value}");
+            } 
+        }
+
         private PracticeMaterial _currentMaterial;
         public PracticeMaterial CurrentMaterial
         {
@@ -29,6 +43,7 @@ namespace FoutloosTypen.ViewModels
             {
                 _currentMaterial = value;
                 OnPropertyChanged(nameof(CurrentMaterial));
+                ResetTyping();
             }
         }
 
@@ -52,8 +67,29 @@ namespace FoutloosTypen.ViewModels
             {
                 _selectedAssignment = value;
                 OnPropertyChanged(nameof(SelectedAssignment));
-
                 LoadPracticeMaterials();
+            }
+        }
+
+        private string _userInput = string.Empty;
+        public string UserInput
+        {
+            get => _userInput;
+            set
+            {
+                _userInput = value;
+                OnPropertyChanged(nameof(UserInput));
+            }
+        }
+
+        private FormattedString _formattedText;
+        public FormattedString FormattedText
+        {
+            get => _formattedText;
+            set
+            {
+                _formattedText = value;
+                OnPropertyChanged(nameof(FormattedText));
             }
         }
 
@@ -65,6 +101,8 @@ namespace FoutloosTypen.ViewModels
             _lessonService = lessonService;
             _assignmentService = assignmentService;
             _practiceMaterialService = practiceMaterialService;
+
+            FormattedText = new FormattedString();
         }
 
         public async Task OnAppearingAsync()
@@ -81,6 +119,19 @@ namespace FoutloosTypen.ViewModels
                 }
             }
 
+            // If a specific lesson ID was passed, select that lesson
+            if (LessonId > 0)
+            {
+                var targetLesson = Lessons.FirstOrDefault(l => l.Id == LessonId);
+                if (targetLesson != null)
+                {
+                    SelectedLesson = targetLesson;
+                    Debug.WriteLine($"Selected lesson: {targetLesson.Name} (ID: {targetLesson.Id})");
+                    return;
+                }
+            }
+
+            // Fallback: select the first lesson
             if (Lessons.Any())
                 SelectedLesson = Lessons.First();
         }
@@ -90,6 +141,8 @@ namespace FoutloosTypen.ViewModels
             if (SelectedLesson is null)
                 return;
 
+            Debug.WriteLine($"Filtering assignments for lesson ID: {SelectedLesson.Id}");
+
             var allAssignments = _assignmentService.GetAll();
 
             var filteredAssignments = allAssignments
@@ -97,10 +150,13 @@ namespace FoutloosTypen.ViewModels
                 .OrderBy(a => a.Id)
                 .ToList();
 
+            Debug.WriteLine($"Found {filteredAssignments.Count} assignments for lesson {SelectedLesson.Id}");
+
             Assignments.Clear();
             foreach (var assignment in filteredAssignments)
             {
                 Assignments.Add(assignment);
+                Debug.WriteLine($"Added assignment: Id={assignment.Id}, LessonId={assignment.LessonId}");
             }
 
             if (Assignments.Any())
@@ -116,6 +172,7 @@ namespace FoutloosTypen.ViewModels
 
             _materials = _practiceMaterialService
                 .GetAll()
+                .Where(pm => pm.AssignmentId == SelectedAssignment.Id)
                 .ToList();
 
             _materialIndex = 0;
@@ -126,6 +183,95 @@ namespace FoutloosTypen.ViewModels
                 CurrentMaterial = new PracticeMaterial { Sentence = "Geen zinnen gevonden." };
         }
 
+        private void ResetTyping()
+        {
+            UserInput = string.Empty;
+            UpdateFormattedText();
+        }
+
+        public void UpdateTypedText(string typedText)
+        {
+            if (CurrentMaterial == null || string.IsNullOrEmpty(CurrentMaterial.Sentence))
+                return;
+
+            UserInput = typedText;
+            UpdateFormattedText();
+
+            // Check if completed
+            if (typedText.Length == CurrentMaterial.Sentence.Length)
+            {
+                bool allCorrect = true;
+                for (int i = 0; i < typedText.Length; i++)
+                {
+                    if (typedText[i] != CurrentMaterial.Sentence[i])
+                    {
+                        allCorrect = false;
+                        break;
+                    }
+                }
+
+                if (allCorrect)
+                {
+                    Debug.WriteLine("Sentence completed correctly!");
+                    // Move to next sentence or show completion
+                }
+            }
+        }
+
+        private void UpdateFormattedText()
+        {
+            var formatted = new FormattedString();
+            string targetText = CurrentMaterial?.Sentence ?? string.Empty;
+            string typedText = UserInput ?? string.Empty;
+
+            for (int i = 0; i < targetText.Length; i++)
+            {
+                var span = new Span
+                {
+                    Text = targetText[i].ToString(),
+                    FontSize = 32,
+                };
+
+                if (i < typedText.Length)
+                {
+                    // Character has been typed
+                    if (typedText[i] == targetText[i])
+                    {
+                        // Correct character - show in black
+                        span.TextColor = Colors.Black;
+                        span.BackgroundColor = Colors.Transparent;
+                    }
+                    else
+                    {
+                        // Incorrect character - show in red with light red background
+                        span.TextColor = Colors.White;
+                        span.BackgroundColor = Colors.Red;
+                    }
+                }
+                else if (i == typedText.Length)
+                {
+                    // Current character cursor position
+                    span.TextColor = Colors.Gray;
+                    span.BackgroundColor = Colors.LightGray;
+                }
+                else
+                {
+                    // Not yet typed - show in light gray
+                    span.TextColor = Colors.LightGray;
+                    span.BackgroundColor = Colors.Transparent;
+                }
+
+                formatted.Spans.Add(span);
+            }
+
+            FormattedText = formatted;
+        }
+
+        [RelayCommand]
+        private void Refresh()
+        {
+            ResetTyping();
+        }
 
         [RelayCommand]
         private void SelectLesson(Lesson lesson)
@@ -138,7 +284,7 @@ namespace FoutloosTypen.ViewModels
         {
             SelectedAssignment = assignment;
         }
-         
+
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
