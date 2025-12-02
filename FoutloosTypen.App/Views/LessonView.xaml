@@ -40,7 +40,7 @@
                                         BorderColor="Black"
                                         TextColor="Black"
                                         BorderWidth="2"
-                                        Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectCourseCommand}"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.CoursesVM.SelectCourseCommand}"
                                         CommandParameter="{Binding}">
                                     <Button.GestureRecognizers>
                                         <PointerGestureRecognizer PointerEntered="OnHoverEnter"
@@ -88,7 +88,7 @@
                                        TextColor="Black"/>
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type CollectionView}}, 
-                                            Path=BindingContext.SelectLessonCommand}" 
+                                            Path=BindingContext.LessonsVM.SelectLessonCommand}" 
                                             CommandParameter="{Binding}"/>
                                     <PointerGestureRecognizer
                                         PointerEntered="OnHoverEnter"
