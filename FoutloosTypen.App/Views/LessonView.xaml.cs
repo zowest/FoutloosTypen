@@ -8,6 +8,8 @@ namespace FoutloosTypen.Views
     public partial class LessonView : ContentPage
     {
         private readonly LearnpathViewModel _vm;
+        private Button? HoverButton;
+
 
         public LessonView()
         {

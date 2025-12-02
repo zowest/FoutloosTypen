@@ -37,7 +37,7 @@ namespace FoutloosTypen.ViewModels
             var allLessons = _lessonService.GetAll();
 
             var filteredLessons = allLessons
-                .Where(l => l.CourseId == SelectedCourse.Id)
+                .Where(l => l.CourseId == courseId)
                 .OrderByDescending(l => l.Id)
                 .ToList();
 
