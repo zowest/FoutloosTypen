@@ -1,6 +1,6 @@
 using FoutloosTypen.Core.Data.Helpers;
 using FoutloosTypen.Core.Data.Repositories;
-using FoutloosTypen.Core.Interfaces.Repositories; 
+using FoutloosTypen.Core.Interfaces.Repositories;
 using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Services;
 using FoutloosTypen.ViewModels;
@@ -9,13 +9,17 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Maui.LifecycleEvents;
 using System.Diagnostics;
 
+#if WINDOWS
+using Windows.System;
+#endif
+
 namespace FoutloosTypen
 {
     public static class MauiProgram
     {
         public static MauiApp CreateMauiApp()
         {
-           
+
 #if DEBUG
             DebugDatabaseReset.Reset();
 #endif
@@ -67,6 +71,27 @@ namespace FoutloosTypen
                                 overlappedPresenter.Maximize();
                                 break;
                         }
+
+                        // Handle Escape key to close app with confirmation
+                        window.Content.KeyDown += async (sender, args) =>
+                        {
+                            if (args.Key == VirtualKey.Escape)
+                            {
+                                if (Application.Current?.MainPage != null)
+                                {
+                                    var result = await Application.Current.MainPage.DisplayAlert(
+                                        "Close BolType",
+                                        "Are you sure you want to close BolType?",
+                                        "Yes",
+                                        "No");
+
+                                    if (result)
+                                    {
+                                        Application.Current?.Quit();
+                                    }
+                                }
+                            }
+                        };
                     });
                 });
             });
