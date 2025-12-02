@@ -10,6 +10,7 @@ using Microsoft.Maui.Controls;
 
 namespace FoutloosTypen.ViewModels
 {
+    [QueryProperty(nameof(LessonId), "lessonId")]
     public partial class AssignmentViewModel : BaseViewModel, INotifyPropertyChanged
     {
         private readonly IAssignmentService _assignmentService;
@@ -21,6 +22,18 @@ namespace FoutloosTypen.ViewModels
 
         private List<PracticeMaterial> _materials = new();
         private int _materialIndex = 0;
+
+        private int _lessonId;
+        public int LessonId 
+        { 
+            get => _lessonId; 
+            set 
+            { 
+                _lessonId = value; 
+                OnPropertyChanged(nameof(LessonId));
+                Debug.WriteLine($"LessonId set to: {value}");
+            } 
+        }
 
         private PracticeMaterial _currentMaterial;
         public PracticeMaterial CurrentMaterial
@@ -106,6 +119,19 @@ namespace FoutloosTypen.ViewModels
                 }
             }
 
+            // If a specific lesson ID was passed, select that lesson
+            if (LessonId > 0)
+            {
+                var targetLesson = Lessons.FirstOrDefault(l => l.Id == LessonId);
+                if (targetLesson != null)
+                {
+                    SelectedLesson = targetLesson;
+                    Debug.WriteLine($"Selected lesson: {targetLesson.Name} (ID: {targetLesson.Id})");
+                    return;
+                }
+            }
+
+            // Fallback: select the first lesson
             if (Lessons.Any())
                 SelectedLesson = Lessons.First();
         }
@@ -115,6 +141,8 @@ namespace FoutloosTypen.ViewModels
             if (SelectedLesson is null)
                 return;
 
+            Debug.WriteLine($"Filtering assignments for lesson ID: {SelectedLesson.Id}");
+
             var allAssignments = _assignmentService.GetAll();
 
             var filteredAssignments = allAssignments
@@ -122,10 +150,13 @@ namespace FoutloosTypen.ViewModels
                 .OrderBy(a => a.Id)
                 .ToList();
 
+            Debug.WriteLine($"Found {filteredAssignments.Count} assignments for lesson {SelectedLesson.Id}");
+
             Assignments.Clear();
             foreach (var assignment in filteredAssignments)
             {
                 Assignments.Add(assignment);
+                Debug.WriteLine($"Added assignment: Id={assignment.Id}, LessonId={assignment.LessonId}");
             }
 
             if (Assignments.Any())

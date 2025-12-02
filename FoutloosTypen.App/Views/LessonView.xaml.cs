@@ -74,8 +74,18 @@ namespace FoutloosTypen.Views
         {
             try
             {
-                Debug.WriteLine("Navigating to AssignmentView...");
-                await Shell.Current.GoToAsync(nameof(AssignmentView));
+                // Get the selected lesson from the ViewModel
+                var selectedLesson = _vm?.LessonsVM?.SelectedLesson;
+                if (selectedLesson != null)
+                {
+                    Debug.WriteLine($"Navigating to AssignmentView with lesson ID: {selectedLesson.Id}");
+                    await Shell.Current.GoToAsync($"{nameof(AssignmentView)}?lessonId={selectedLesson.Id}");
+                }
+                else
+                {
+                    Debug.WriteLine("No lesson selected, navigating without parameter");
+                    await Shell.Current.GoToAsync(nameof(AssignmentView));
+                }
                 Debug.WriteLine("Navigation successful!");
             }
             catch (Exception ex)

@@ -1,12 +1,13 @@
-using Microsoft.Extensions.Logging;
-using FoutloosTypen.ViewModels;
-using FoutloosTypen.Views;
+using FoutloosTypen.Core.Data.Helpers;
+using FoutloosTypen.Core.Data.Repositories;
+using FoutloosTypen.Core.Interfaces.Repositories; 
 using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Services;
-using FoutloosTypen.Core.Interfaces.Repositories; 
-using FoutloosTypen.Core.Data.Repositories;
+using FoutloosTypen.ViewModels;
+using FoutloosTypen.Views;
+using Microsoft.Extensions.Logging;
+using Microsoft.Maui.LifecycleEvents;
 using System.Diagnostics;
-using FoutloosTypen.Core.Data.Helpers;
 
 namespace FoutloosTypen
 {
@@ -47,8 +48,31 @@ namespace FoutloosTypen
             builder.Services.AddTransient<LessonView>();
             builder.Services.AddTransient<AssignmentViewModel>();
             builder.Services.AddTransient<AssignmentView>();
-
+#if WINDOWS
+            builder.ConfigureLifecycleEvents(events =>
+            {
+                // Make sure to add "using Microsoft.Maui.LifecycleEvents;" in the top of the file 
+                events.AddWindows(windowsLifecycleBuilder =>
+                {
+                    windowsLifecycleBuilder.OnWindowCreated(window =>
+                    {
+                        window.ExtendsContentIntoTitleBar = false;
+                        var handle = WinRT.Interop.WindowNative.GetWindowHandle(window);
+                        var id = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(handle);
+                        var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(id);
+                        switch (appWindow.Presenter)
+                        {
+                            case Microsoft.UI.Windowing.OverlappedPresenter overlappedPresenter:
+                                overlappedPresenter.SetBorderAndTitleBar(false, false);
+                                overlappedPresenter.Maximize();
+                                break;
+                        }
+                    });
+                });
+            });
+#endif
 #if DEBUG
+
             builder.Logging.AddDebug();
 #endif
 
