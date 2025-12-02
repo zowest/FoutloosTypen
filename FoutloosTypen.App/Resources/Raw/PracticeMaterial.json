@@ -1,0 +1,19 @@
+﻿{
+  "PracticeMaterial": [
+    {
+      "Id": 1,
+      "Sentence": "De hond loopt naar het huis.",
+      "AssignmentId": 1
+    },
+    {
+      "Id": 2,
+      "Sentence": "De kat zit op de stoel.",
+      "AssignmentId": 2
+    },
+    {
+      "Id": 3,
+      "Sentence": "De vogel vliegt naar de boom.",
+      "AssignmentId": 3
+    }
+  ]
+}

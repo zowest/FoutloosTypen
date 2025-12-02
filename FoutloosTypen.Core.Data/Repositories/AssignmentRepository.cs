@@ -5,10 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Threading.Tasks;
+using Microsoft.Maui.Storage;
+using System.IO;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
-    internal class AssignmentRepository : DatabaseConnection
+    public class AssignmentRepository : DatabaseConnection, IAssignmentRepository
     {
         private readonly List<Assignment> assignments = [];
 
@@ -23,7 +26,19 @@ namespace FoutloosTypen.Core.Data.Repositories
                         LessonId INTEGER NOT NULL
                     );
                 ");
-                LoadAssignmentsFromJsonAsync().Wait();
+
+                // Try to load from JSON, but don't crash if it fails
+                try
+                {
+               
+                    LoadAssignmentsFromJsonAsync().GetAwaiter().GetResult();
+                }
+                catch (Exception jsonEx)
+                {
+                    Debug.WriteLine($"Could not load assignments from JSON (file may not exist yet): {jsonEx.Message}");
+                    InsertDefaultAssignments();
+                }
+
                 Debug.WriteLine("AssignmentRepository initialized successfully");
             }
             catch (Exception ex)
@@ -32,40 +47,54 @@ namespace FoutloosTypen.Core.Data.Repositories
                 throw;
             }
         }
-        private async Task LoadAssignmentsFromJsonAsync()
+
+        private void InsertDefaultAssignments()
         {
             try
             {
-                using var stream = await FileSystem.OpenAppPackageFileAsync("Assignments.json");
-                using var reader = new StreamReader(stream);
-                var json = await reader.ReadToEndAsync();
-
-                var jsonDoc = JsonDocument.Parse(json);
-                var root = jsonDoc.RootElement;
-
-                var items = root.GetProperty("Items");
-                List<string> insertQueries = new();
-
-                foreach (var item in items.EnumerateArray())
+                List<string> insertQueries = new()
                 {
-                    int id = item.GetProperty("Id").GetInt32();
-                    double timeLimit = item.GetProperty("TimeLimit").GetDouble();
-                    int lessonId = item.GetProperty("LessonId").GetInt32();
-
-                    insertQueries.Add($@"INSERT OR IGNORE INTO Assignments(Id, TimeLimit, LessonId) 
-                                VALUES({id}, {timeLimit}, {lessonId})");
-                }
+                    @"INSERT OR IGNORE INTO Assignments(TimeLimit, LessonId) VALUES(60, 1)",
+                    @"INSERT OR IGNORE INTO Assignments(TimeLimit, LessonId) VALUES(60, 2)",
+                    @"INSERT OR IGNORE INTO Assignments(TimeLimit, LessonId) VALUES(60, 3)",
+                    @"INSERT OR IGNORE INTO Assignments(TimeLimit, LessonId) VALUES(60, 4)",
+                    @"INSERT OR IGNORE INTO Assignments(TimeLimit, LessonId) VALUES(60, 5)"
+                }; 
 
                 InsertMultipleWithTransaction(insertQueries);
-                Debug.WriteLine($"Loaded {insertQueries.Count} assignments from JSON");
+                Debug.WriteLine("Inserted default assignments");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error loading assignments from JSON: {ex.Message}");
-                throw;
+                Debug.WriteLine($"Error inserting default assignments: {ex.Message}");
             }
         }
 
+        private async Task LoadAssignmentsFromJsonAsync()
+        {
+            using var stream = await FileSystem.OpenAppPackageFileAsync("Assignment.json").ConfigureAwait(false);
+            using var reader = new StreamReader(stream);
+            var json = await reader.ReadToEndAsync().ConfigureAwait(false);
+
+            var jsonDoc = JsonDocument.Parse(json);
+            var root = jsonDoc.RootElement;
+
+            var items = root.GetProperty("Assignment");
+            List<string> insertQueries = new();
+
+            foreach (var item in items.EnumerateArray())
+            {
+                int id = item.GetProperty("Id").GetInt32();
+                double timeLimit = item.GetProperty("TimeLimit").GetDouble();
+                int lessonId = item.GetProperty("LessonId").GetInt32();
+
+                insertQueries.Add($@"INSERT OR IGNORE INTO Assignments(Id, TimeLimit, LessonId) 
+                            VALUES({id}, {timeLimit}, {lessonId})");
+            }
+
+            InsertMultipleWithTransaction(insertQueries);
+            Debug.WriteLine($"Loaded {insertQueries.Count} assignments from JSON");
+        }
 
         public List<Assignment> GetAll()
         {
@@ -136,7 +165,6 @@ namespace FoutloosTypen.Core.Data.Repositories
             }
 
             return assignment;
-
         }
     }
 }

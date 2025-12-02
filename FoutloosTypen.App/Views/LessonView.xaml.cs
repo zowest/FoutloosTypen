@@ -1,6 +1,7 @@
 ﻿using FoutloosTypen.ViewModels;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Controls.Xaml;
+using System.Diagnostics;
 
 namespace FoutloosTypen.Views
 {
@@ -27,10 +28,12 @@ namespace FoutloosTypen.Views
             if (_vm is not null)
                 await _vm.OnAppearingAsync();
         }
+        
         public void SetHoverButton(Button button)
         {
             HoverButton = button;
         }
+        
         private void OnHoverEnter(object sender, PointerEventArgs e)
         {
             if (sender is Button button)
@@ -51,13 +54,19 @@ namespace FoutloosTypen.Views
         {
             try
             {
+                Debug.WriteLine("Navigating to AssignmentView...");
                 await Shell.Current.GoToAsync(nameof(AssignmentView));
+                Debug.WriteLine("Navigation successful!");
             }
-            catch
+            catch (Exception ex)
             {
-                await Navigation.PushAsync(new AssignmentView());
+                Debug.WriteLine($"Navigation failed: {ex.Message}");
+                Debug.WriteLine($"Exception type: {ex.GetType().Name}");
+                Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                
+                // Show error to user
+                await DisplayAlert("Navigation Error", $"Could not navigate to assignment: {ex.Message}", "OK");
             }
         }
-
     }
 }

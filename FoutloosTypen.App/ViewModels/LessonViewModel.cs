@@ -95,7 +95,6 @@ namespace FoutloosTypen.ViewModels
 
             var filteredLessons = allLessons
                 .Where(l => l.CourseId == SelectedCourse.Id)
-                .Take(5)
                 .OrderByDescending(l => l.Id)
                 .ToList();
 

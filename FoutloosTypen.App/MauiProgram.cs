@@ -4,7 +4,9 @@ using FoutloosTypen.Views;
 using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Services;
 using FoutloosTypen.Core.Interfaces.Repositories; 
-using FoutloosTypen.Core.Data.Repositories;      
+using FoutloosTypen.Core.Data.Repositories;
+using System.Diagnostics;
+using FoutloosTypen.Core.Data.Helpers;
 
 namespace FoutloosTypen
 {
@@ -12,6 +14,11 @@ namespace FoutloosTypen
     {
         public static MauiApp CreateMauiApp()
         {
+           
+#if DEBUG
+            DebugDatabaseReset.Reset();
+#endif
+
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
@@ -24,19 +31,25 @@ namespace FoutloosTypen
             // Repositories
             builder.Services.AddSingleton<ILessonRepository, LessonRepository>();
             builder.Services.AddSingleton<ICourseRepository, CourseRepository>();
-            //builder.Services.AddSingleton<IAssignmentRepository, AssignmentRepository>();
+            builder.Services.AddSingleton<IAssignmentRepository, AssignmentRepository>();
+            builder.Services.AddSingleton<IPracticeMaterialRepository, PracticeMaterialRepository>();
 
             // Services
             builder.Services.AddSingleton<ILessonService, LessonService>();
             builder.Services.AddSingleton<ICourseService, CourseService>();
             builder.Services.AddSingleton<IAssignmentService, AssignmentService>();
+            builder.Services.AddSingleton<IPracticeMaterialService, PracticeMaterialService>();
 
             // ViewModels
             builder.Services.AddTransient<LessonViewModel>();
             builder.Services.AddTransient<LessonView>();
+            builder.Services.AddTransient<AssignmentViewModel>();
+            builder.Services.AddTransient<AssignmentView>();
+
 #if DEBUG
             builder.Logging.AddDebug();
 #endif
+
             return builder.Build();
         }
     }

@@ -39,6 +39,7 @@
                                         FontSize="30"
                                         BackgroundColor="White"
                                         BorderColor="Black"
+                                        TextColor="Black"
                                         BorderWidth="2"
                                         Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectCourseCommand}"
                                         CommandParameter="{Binding}">

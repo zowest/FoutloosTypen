@@ -2,13 +2,13 @@
 {
     public partial class PracticeMaterial : Model
     {
-        public string Sentences { get; set; }
+        public string Sentence { get; set; }
 
         public int AssignmentId { get; set; }
 
-        public PracticeMaterial(int id, string sentences, int assignmentId) : base(id)
+        public PracticeMaterial(int id, string sentence, int assignmentId) : base(id)
         {
-            Sentences = sentences;
+            Sentence = sentence;
             AssignmentId = assignmentId;
         }
 
