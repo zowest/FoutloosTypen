@@ -55,7 +55,6 @@ namespace FoutloosTypen
 #if WINDOWS
             builder.ConfigureLifecycleEvents(events =>
             {
-                // Make sure to add "using Microsoft.Maui.LifecycleEvents;" in the top of the file 
                 events.AddWindows(windowsLifecycleBuilder =>
                 {
                     windowsLifecycleBuilder.OnWindowCreated(window =>
@@ -72,7 +71,6 @@ namespace FoutloosTypen
                                 break;
                         }
 
-                        // Handle Escape key to close app with confirmation
                         window.Content.KeyDown += async (sender, args) =>
                         {
                             if (args.Key == VirtualKey.Escape)
