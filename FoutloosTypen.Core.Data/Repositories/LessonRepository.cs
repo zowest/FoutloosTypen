@@ -53,8 +53,9 @@ namespace FoutloosTypen.Core.Data.Repositories
                     bool isTest = reader.GetBoolean(3);
                     bool isDone = reader.GetBoolean(4);
                     int courseId = reader.GetInt32(5);
+                    double totalTime = 0;
 
-                    lessons.Add(new Lesson(id, name, description, isTest, isDone, courseId));
+                    lessons.Add(new Lesson(id, name, description, isTest, isDone, courseId, totalTime));
                 }
             }
 
@@ -82,8 +83,9 @@ namespace FoutloosTypen.Core.Data.Repositories
                     bool isTest = reader.GetBoolean(3);
                     bool isDone = reader.GetBoolean(4);
                     int courseId = reader.GetInt32(5);
+                    double totalTime = 0;
 
-                    tmpLesson = new Lesson(Id, name, description, isTest, isDone, courseId);
+                    tmpLesson = new Lesson(Id, name, description, isTest, isDone, courseId, totalTime);
                 }
             }
 

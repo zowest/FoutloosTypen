@@ -76,6 +76,7 @@ public partial class AssignmentView : ContentPage
     {
         try
         {
+            _vm?.Stop(); //StopTimer
             await Shell.Current.GoToAsync("..");
         }
         catch

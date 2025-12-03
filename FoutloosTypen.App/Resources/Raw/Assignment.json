@@ -8,12 +8,28 @@
     {
       "Id": 2,
       "TimeLimit": 60,
-      "LessonId": 2
+      "LessonId": 1
     },
     {
       "Id": 3,
       "TimeLimit": 60,
+      "LessonId": 2
+    },
+    {
+      "Id": 4,
+      "TimeLimit": 60,
       "LessonId": 3
+    },
+    {
+      "Id": 5,
+      "TimeLimit": 90,
+      "LessonId": 4
+    },
+    {
+      "Id": 6,
+      "TimeLimit": 5,
+      "LessonId": 5
+
     }
   ]
 }
