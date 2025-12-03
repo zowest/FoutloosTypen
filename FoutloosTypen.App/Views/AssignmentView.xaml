@@ -107,7 +107,6 @@
                                    HeightRequest="0"
                                    IsEnabled="True" />
 
-                            <!-- Tap area to focus the hidden entry -->
                             <BoxView HeightRequest="100"
                                      WidthRequest="800"
                                      Color="Transparent"
@@ -133,6 +132,29 @@
                             PointerExited="OnHoverExit"/>
                     </Button.GestureRecognizers>
                 </Button>
+
+                <VerticalStackLayout Spacing="0" Margin="20,12,20,12">
+                    <BoxView HeightRequest="5" Color="Black"/>
+                    <ProgressBar Progress="{Binding Progress}" 
+                                 ProgressColor="LightGreen"/>
+                    <ProgressBar Progress="{Binding Progress}" 
+                                 ProgressColor="LightGreen"/>
+                    <ProgressBar Progress="{Binding Progress}" 
+                                 ProgressColor="LightGreen"/>
+                    <ProgressBar Progress="{Binding Progress}" 
+                                 ProgressColor="LightGreen"/>
+                    <ProgressBar Progress="{Binding Progress}" 
+                                 ProgressColor="LightGreen"/>
+                    <BoxView HeightRequest="5" Color="Black"/>
+                    
+                    <Label 
+                        Text="{Binding ProgressText}"
+                        HorizontalOptions="Center"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        TextColor="Black"
+                        Margin="0,8,0,0"/>
+                </VerticalStackLayout>
             </VerticalStackLayout>
 
             <HorizontalStackLayout Grid.Row="2" HorizontalOptions="Center" Spacing="30">

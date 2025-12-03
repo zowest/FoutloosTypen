@@ -43,6 +43,7 @@ namespace FoutloosTypen.ViewModels
             {
                 _currentMaterial = value;
                 OnPropertyChanged(nameof(CurrentMaterial));
+                UpdateTotalCharactersCount();
                 ResetTyping();
             }
         }
@@ -79,6 +80,7 @@ namespace FoutloosTypen.ViewModels
             {
                 _userInput = value;
                 OnPropertyChanged(nameof(UserInput));
+                UpdateTypedCharactersCount();
             }
         }
 
@@ -91,6 +93,48 @@ namespace FoutloosTypen.ViewModels
                 _formattedText = value;
                 OnPropertyChanged(nameof(FormattedText));
             }
+        }
+
+        // AANGEPASTE PROPERTIES VOOR PROGRESSIEBAR (PER KARAKTER)
+        private int _typedCharactersCount;
+        public int TypedCharactersCount
+        {
+            get => _typedCharactersCount;
+            set
+            {
+                _typedCharactersCount = value;
+                OnPropertyChanged(nameof(TypedCharactersCount));
+                OnPropertyChanged(nameof(Progress));
+                OnPropertyChanged(nameof(ProgressText));
+            }
+        }
+
+        private int _totalCharactersCount;
+        public int TotalCharactersCount
+        {
+            get => _totalCharactersCount;
+            set
+            {
+                _totalCharactersCount = value;
+                OnPropertyChanged(nameof(TotalCharactersCount));
+                OnPropertyChanged(nameof(Progress));
+                OnPropertyChanged(nameof(ProgressText));
+            }
+        }
+
+        public double Progress
+        {
+            get
+            {
+                if (TotalCharactersCount == 0)
+                    return 0;
+                return (double)TypedCharactersCount / TotalCharactersCount;
+            }
+        }
+
+        public string ProgressText
+        {
+            get => $"{Math.Round(Progress * 100)}%";
         }
 
         public AssignmentViewModel(
@@ -181,11 +225,47 @@ namespace FoutloosTypen.ViewModels
                 CurrentMaterial = _materials[_materialIndex];
             else
                 CurrentMaterial = new PracticeMaterial { Sentence = "Geen zinnen gevonden." };
+
+        }
+
+        private void UpdateTotalCharactersCount()
+        {
+            if (CurrentMaterial == null || string.IsNullOrWhiteSpace(CurrentMaterial.Sentence))
+            {
+                TotalCharactersCount = 0;
+                return;
+            }
+
+            TotalCharactersCount = CurrentMaterial.Sentence.Length;
+            
+        }
+
+        private void UpdateTypedCharactersCount()
+        {
+            if (string.IsNullOrEmpty(UserInput) || CurrentMaterial == null)
+            {
+                TypedCharactersCount = 0;
+                return;
+            }
+
+            string targetText = CurrentMaterial.Sentence ?? string.Empty;
+            int correctChars = 0;
+
+            for (int i = 0; i < UserInput.Length && i < targetText.Length; i++)
+            {
+                if (UserInput[i] == targetText[i])
+                {
+                    correctChars++;
+                }
+            }
+
+            TypedCharactersCount = correctChars;
         }
 
         private void ResetTyping()
         {
             UserInput = string.Empty;
+            TypedCharactersCount = 0;
             UpdateFormattedText();
         }
 
@@ -197,7 +277,6 @@ namespace FoutloosTypen.ViewModels
             UserInput = typedText;
             UpdateFormattedText();
 
-            // Check if completed
             if (typedText.Length == CurrentMaterial.Sentence.Length)
             {
                 bool allCorrect = true;
@@ -213,7 +292,6 @@ namespace FoutloosTypen.ViewModels
                 if (allCorrect)
                 {
                     Debug.WriteLine("Sentence completed correctly!");
-                    // Move to next sentence or show completion
                 }
             }
         }
