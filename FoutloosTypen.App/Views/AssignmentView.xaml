@@ -73,11 +73,18 @@
                 </HorizontalStackLayout>
             </Grid>
 
+
+
             <VerticalStackLayout 
                 Grid.Row="1" 
                 Spacing="12" 
                 HorizontalOptions="FillAndExpand" 
                 VerticalOptions="CenterAndExpand">
+                <Label Text="{Binding TimeRemainingFormatted}"
+                   FontSize="26"
+                   VerticalOptions="End"
+                       TextColor="MediumPurple"
+            HorizontalOptions="Center"/>
                 <ScrollView 
                     HorizontalOptions="FillAndExpand"
                     VerticalOptions="CenterAndExpand">

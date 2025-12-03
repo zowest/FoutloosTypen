@@ -2,11 +2,8 @@
 using FoutloosTypen.Core.Models;
 using FoutloosTypen.Core.Interfaces.Services;
 using System.ComponentModel;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Maui.Controls;
 
 namespace FoutloosTypen.ViewModels
 {
@@ -16,6 +13,9 @@ namespace FoutloosTypen.ViewModels
         private readonly IAssignmentService _assignmentService;
         private readonly ILessonService _lessonService;
         private readonly IPracticeMaterialService _practiceMaterialService;
+
+        private System.Timers.Timer? _timer;
+        private double _initialTime;
 
         public ObservableCollection<Lesson> Lessons { get; set; } = new();
         public ObservableCollection<Assignment> Assignments { get; set; } = new();
@@ -33,6 +33,27 @@ namespace FoutloosTypen.ViewModels
                 OnPropertyChanged(nameof(LessonId));
                 Debug.WriteLine($"LessonId set to: {value}");
             } 
+        }
+
+        private double _timeRemaining;
+        public double TimeRemaining
+        {
+            get => _timeRemaining;
+            set
+            {
+                _timeRemaining = value;
+                OnPropertyChanged(nameof(TimeRemaining));
+                OnPropertyChanged(nameof(TimeRemainingFormatted));
+            }
+        }
+
+        public string TimeRemainingFormatted
+        {
+            get
+            {
+                var timeSpan = TimeSpan.FromSeconds(_timeRemaining);
+                return $"Tijd over: {timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
+            }
         }
 
         private PracticeMaterial _currentMaterial;
@@ -57,6 +78,12 @@ namespace FoutloosTypen.ViewModels
                 _selectedLesson = value;
                 OnPropertyChanged(nameof(SelectedLesson));
                 FilterAssignmentsByLesson();
+                
+                if (value != null)
+                {
+                    _initialTime = value.TotalTime;
+                    RestartTimer();
+                }
             }
         }
 
@@ -163,7 +190,6 @@ namespace FoutloosTypen.ViewModels
                 }
             }
 
-            // If a specific lesson ID was passed, select that lesson
             if (LessonId > 0)
             {
                 var targetLesson = Lessons.FirstOrDefault(l => l.Id == LessonId);
@@ -175,9 +201,70 @@ namespace FoutloosTypen.ViewModels
                 }
             }
 
-            // Fallback: select the first lesson
             if (Lessons.Any())
                 SelectedLesson = Lessons.First();
+        }
+
+        private void StartTimer()
+        {
+            if (_timer != null)
+                return;
+
+            _timer = new System.Timers.Timer(1000);
+            _timer.Elapsed += OnTimerTick;
+            _timer.Start();
+            Debug.WriteLine("Timer started");
+        }
+
+        private void StopTimer()
+        {
+            if (_timer != null)
+            {
+                _timer.Stop();
+                _timer.Elapsed -= OnTimerTick;
+                _timer.Dispose();
+                _timer = null;
+                Debug.WriteLine("Timer stopped");
+            }
+        }
+
+        private void RestartTimer()
+        {
+            StopTimer();
+            TimeRemaining = _initialTime;
+            StartTimer();
+            Debug.WriteLine("Timer restarted");
+        }
+
+        private void OnTimerTick(object? sender, System.Timers.ElapsedEventArgs e)
+        {
+            Application.Current?.Dispatcher.Dispatch(() =>
+            {
+                TimeRemaining--;
+
+                if (TimeRemaining <= 0)
+                {
+                    TimeRemaining = 0;
+                    StopTimer();
+                    _ = OnTimerExpiredAsync();
+                }
+            });
+        }
+
+        private async Task OnTimerExpiredAsync()
+        {
+            Debug.WriteLine("Timer expired!");
+
+            if (Application.Current?.MainPage != null)
+            {
+                await Application.Current.MainPage.DisplayAlert(
+                    "Tijd Voorbij!",
+                    "De tijd voor deze les is afgelopen.",
+                    "OK");
+
+                await Shell.Current.GoToAsync("..");
+                StopTimer();
+            }
         }
 
         private void FilterAssignmentsByLesson()
@@ -312,29 +399,24 @@ namespace FoutloosTypen.ViewModels
 
                 if (i < typedText.Length)
                 {
-                    // Character has been typed
                     if (typedText[i] == targetText[i])
                     {
-                        // Correct character - show in black
                         span.TextColor = Colors.Black;
                         span.BackgroundColor = Colors.Transparent;
                     }
                     else
                     {
-                        // Incorrect character - show in red with light red background
                         span.TextColor = Colors.White;
                         span.BackgroundColor = Colors.Red;
                     }
                 }
                 else if (i == typedText.Length)
                 {
-                    // Current character cursor position
                     span.TextColor = Colors.Gray;
                     span.BackgroundColor = Colors.LightGray;
                 }
                 else
                 {
-                    // Not yet typed - show in light gray
                     span.TextColor = Colors.LightGray;
                     span.BackgroundColor = Colors.Transparent;
                 }
@@ -349,6 +431,7 @@ namespace FoutloosTypen.ViewModels
         private void Refresh()
         {
             ResetTyping();
+            RestartTimer();
         }
 
         [RelayCommand]
@@ -363,11 +446,22 @@ namespace FoutloosTypen.ViewModels
             SelectedAssignment = assignment;
         }
 
+        [RelayCommand]
+        public void Stop()
+        {
+            StopTimer();
+        }
+
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
+
+        ~AssignmentViewModel()
+        {
+            StopTimer();
+        }
     }
 }

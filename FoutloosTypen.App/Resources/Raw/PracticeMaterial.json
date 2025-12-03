@@ -7,13 +7,26 @@
     },
     {
       "Id": 2,
-      "Sentence": "De kat zit op de stoel.",
+      "Sentence": "Het kind speelt in de tuin.",
       "AssignmentId": 2
+    },
+    {
+      "Id": 2,
+      "Sentence": "De kat zit op de stoel.",
+      "AssignmentId": 3
     },
     {
       "Id": 3,
       "Sentence": "De vogel vliegt naar de boom.",
-      "AssignmentId": 3
-    }
+      "AssignmentId": 4
+    },
+    { "Id": 4,
+      "Sentence": "De vis zwemt in de vijver.",
+      "AssignmentId": 5
+    },
+    {
+      "Id": 5,
+      "Sentence": "Het paard rent in de wei.",
+      "AssignmentId": 6}
   ]
 }

@@ -7,8 +7,9 @@
         public bool IsTest { get; set; }
         public bool IsDone { get; set; }
         public int CourseId { get; set; }
+        public double TotalTime { get; set; }
 
-        public Lesson(int id, string name, string description, bool isTest, bool isDone, int courseId)
+        public Lesson(int id, string name, string description, bool isTest, bool isDone, int courseId, double totalTime)
             : base(id)
         {
             Name = name;
@@ -16,6 +17,7 @@
             IsTest = isTest;
             IsDone = isDone;
             CourseId = courseId;
+            TotalTime = totalTime;
         }
 
         public Lesson(int id, string name)
