@@ -5,6 +5,7 @@ using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Services;
 using FoutloosTypen.ViewModels;
 using FoutloosTypen.Views;
+using Grocery.Core.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.LifecycleEvents;
 using System.Diagnostics;
@@ -38,12 +39,16 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<ICourseRepository, CourseRepository>();
             builder.Services.AddSingleton<IAssignmentRepository, AssignmentRepository>();
             builder.Services.AddSingleton<IPracticeMaterialRepository, PracticeMaterialRepository>();
+            builder.Services.AddSingleton<IStudentRepository, StudentRepository>();
+
 
             // Services
             builder.Services.AddSingleton<ILessonService, LessonService>();
             builder.Services.AddSingleton<ICourseService, CourseService>();
             builder.Services.AddSingleton<IAssignmentService, AssignmentService>();
             builder.Services.AddSingleton<IPracticeMaterialService, PracticeMaterialService>();
+            builder.Services.AddSingleton<IAuthService, AuthService>();
+            builder.Services.AddSingleton<IStudentService, StudentService>();
 
             // ViewModels
             builder.Services.AddTransient<LessonViewModel>();
@@ -52,6 +57,8 @@ namespace FoutloosTypen
             builder.Services.AddTransient<LessonView>();
             builder.Services.AddTransient<AssignmentViewModel>();
             builder.Services.AddTransient<AssignmentView>();
+            builder.Services.AddSingleton<GlobalViewModel>();
+            builder.Services.AddTransient<LoginView>().AddTransient<LoginViewModel>();
 #if WINDOWS
             builder.ConfigureLifecycleEvents(events =>
             {

@@ -3,10 +3,16 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="FoutloosTypen.Views.LoginView"
              Title="LoginView">
-    <VerticalStackLayout>
-        <Label 
-            Text="Welcome to .NET MAUI!"
-            VerticalOptions="Center" 
-            HorizontalOptions="Center" />
-    </VerticalStackLayout>
+    <StackLayout Padding="20" VerticalOptions="Center">
+        <Label Text="Login" FontSize="24" HorizontalOptions="Center" />
+        <Entry Placeholder="Username" Text="{Binding Username}" />
+        <Entry Placeholder="Password" Text="{Binding Password}" IsPassword="True" Margin="0,0,0,20" />
+
+        <HorizontalStackLayout Spacing="10" HorizontalOptions="Center">
+            <Button Text="Login" Command="{Binding LoginCommand}" WidthRequest="240" />
+        </HorizontalStackLayout>
+
+        <Label Text="{Binding LoginMessage}" TextColor="Red" />
+    </StackLayout>
+
 </ContentPage>
