@@ -56,5 +56,24 @@ namespace TestCore
             Assert.That(result[2].Sentence, Is.EqualTo("Derde zin"));
         }
 
+        // ------------------------------------------
+        // UNHAPPY PATH — Corrupt JSON throws exception
+        // ------------------------------------------
+        [Test]
+        public void Deserialize_CorruptJson_ThrowsJsonException()
+        {
+            // Arrange - Missing closing quote causes invalid JSON
+            string invalidJson = """
+            [
+                { "Sentence": "Dit is fout, "AssignmentId": 3 }
+            ]
+            """;
+
+            // Act & Assert
+            Assert.Throws<JsonException>(() =>
+            {
+                JsonSerializer.Deserialize<List<PracticeMaterial>>(invalidJson);
+            });
+        }
     }
 }
