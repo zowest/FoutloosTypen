@@ -2,7 +2,9 @@
 
 	<PropertyGroup>
 		<TargetFrameworks>net9.0-android</TargetFrameworks>
-		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net8.0-windows10.0.19041.0</TargetFrameworks>
+		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">
+    $(TargetFrameworks);net9.0-windows10.0.19041.0
+  </TargetFrameworks>
 		<OutputType>Exe</OutputType>
 		<RootNamespace>FoutloosTypen</RootNamespace>
 		<UseMaui>true</UseMaui>

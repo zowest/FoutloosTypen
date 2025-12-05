@@ -19,6 +19,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\FoutloosTypen.Core\FoutloosTypen.Core.csproj" />
+		<ProjectReference Include="..\FoutloosTypen.Core.Data\FoutloosTypen.Core.Data.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
