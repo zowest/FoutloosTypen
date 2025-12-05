@@ -1,0 +1,22 @@
+{
+  "Courses": [
+    {
+      "Id": 1,
+      "Name": "Course 1",
+      "Description": "Leer de basics van typen",
+      "Difficulty": 1
+    },
+    {
+      "Id": 2,
+      "Name": "Course 2",
+      "Description": "Voor snelle typers",
+      "Difficulty": 2
+    },
+    {
+      "Id": 3,
+      "Name": "Course 3",
+      "Description": "Voor de echte pro's",
+      "Difficulty": 3
+    }
+  ]
+}

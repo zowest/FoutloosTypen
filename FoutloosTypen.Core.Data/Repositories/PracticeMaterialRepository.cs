@@ -18,6 +18,8 @@ namespace FoutloosTypen.Core.Data.Repositories
         {
             try
             {
+                Debug.WriteLine("PracticeMaterialRepository: Starting initialization...");
+                
                 CreateTable(@"
                     CREATE TABLE IF NOT EXISTS PracticeMaterials (
                         Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -26,67 +28,68 @@ namespace FoutloosTypen.Core.Data.Repositories
                     );
                 ");
 
-                // Probeer data uit JSON te laden
-                try
-                {
-                    LoadPracticeMaterialsFromJsonAsync().Wait();
-                    Debug.WriteLine("PracticeMaterialRepository: Loaded from JSON");
-                }
-                catch (Exception jsonEx)
-                {
-                    Debug.WriteLine($"Could not load from JSON: {jsonEx.Message}");
-                    Debug.WriteLine("Using fallback hardcoded data");
-                    InsertFallbackData();
-                }
+                Debug.WriteLine("PracticeMaterialRepository: Table created");
+
+                // SYNC laden van JSON in plaats van async .Wait()
+                LoadPracticeMaterialsFromJsonSync();
 
                 Debug.WriteLine("PracticeMaterialRepository initialized successfully");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"PracticeMaterialRepository initialization error: {ex.Message}");
+                Debug.WriteLine($"Stack trace: {ex.StackTrace}");
                 throw;
             }
         }
 
-        private async Task LoadPracticeMaterialsFromJsonAsync()
+        private void LoadPracticeMaterialsFromJsonSync()
         {
             var stopwatch = Stopwatch.StartNew();
             List<string> insertQueries = new();
 
             try
             {
-                // Probeer het JSON bestand te laden
-                using var stream = await FileSystem.OpenAppPackageFileAsync("PracticeMaterial.json");
-                using var reader = new StreamReader(stream);
-                var json = await reader.ReadToEndAsync();
-
-                Debug.WriteLine($"JSON file loaded in {stopwatch.ElapsedMilliseconds}ms");
-
-                // Parse JSON
-                var jsonDoc = JsonDocument.Parse(json);
-                var root = jsonDoc.RootElement;
+                Debug.WriteLine("Loading PracticeMaterial.json...");
                 
-                // Check of de property "PracticeMaterials" bestaat
-                if (!root.TryGetProperty("PracticeMaterials", out var materials))
+                // Gebruik Task.Run om async te vermijden in constructor
+                Task.Run(async () =>
                 {
-                    Debug.WriteLine("ERROR: JSON property 'PracticeMaterials' not found");
-                    throw new Exception("Invalid JSON structure: 'PracticeMaterials' property missing");
-                }
+                    try
+                    {
+                        using var stream = await FileSystem.OpenAppPackageFileAsync("PracticeMaterial.json");
+                        using var reader = new StreamReader(stream);
+                        var json = await reader.ReadToEndAsync();
 
-                // Loop door alle materials
-                foreach (var item in materials.EnumerateArray())
-                {
-                    int assignmentId = item.GetProperty("AssignmentId").GetInt32();
-                    string sentence = item.GetProperty("Sentence").GetString() ?? "";
-                    
-                    // Escape single quotes voor SQL
-                    sentence = sentence.Replace("'", "''");
+                        Debug.WriteLine($"JSON file loaded ({json.Length} chars)");
 
-                    insertQueries.Add($@"INSERT OR IGNORE INTO PracticeMaterials(Sentence, AssignmentId) 
-                                VALUES('{sentence}', {assignmentId})");
-                }
+                        var jsonDoc = JsonDocument.Parse(json);
+                        var root = jsonDoc.RootElement;
 
-                Debug.WriteLine($"Parsed {insertQueries.Count} materials in {stopwatch.ElapsedMilliseconds}ms");
+                        if (!root.TryGetProperty("PracticeMaterials", out var materials))
+                        {
+                            throw new Exception("Invalid JSON structure: 'PracticeMaterials' property missing");
+                        }
+
+                        foreach (var item in materials.EnumerateArray())
+                        {
+                            int assignmentId = item.GetProperty("AssignmentId").GetInt32();
+                            string sentence = item.GetProperty("Sentence").GetString() ?? "";
+                            
+                            sentence = sentence.Replace("'", "''");
+
+                            insertQueries.Add($@"INSERT OR IGNORE INTO PracticeMaterials(Sentence, AssignmentId) 
+                                        VALUES('{sentence}', {assignmentId})");
+                        }
+
+                        Debug.WriteLine($"Parsed {insertQueries.Count} materials in {stopwatch.ElapsedMilliseconds}ms");
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"ERROR in async load: {ex.Message}");
+                        throw;
+                    }
+                }).GetAwaiter().GetResult(); // GetAwaiter().GetResult() is veiliger dan .Wait()
 
                 if (insertQueries.Any())
                 {
@@ -96,21 +99,20 @@ namespace FoutloosTypen.Core.Data.Repositories
                 }
                 else
                 {
-                    Debug.WriteLine("WARNING: No materials found in JSON");
-                    throw new Exception("JSON file contains no materials");
+                    Debug.WriteLine("WARNING: No materials found in JSON, using fallback");
+                    InsertFallbackData();
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"ERROR loading PracticeMaterial.json: {ex.Message}");
-                Debug.WriteLine($"Stack trace: {ex.StackTrace}");
-                throw;
+                Debug.WriteLine("Using fallback data");
+                InsertFallbackData();
             }
         }
 
         private void InsertFallbackData()
         {
-            // Fallback: alleen de eerste 10 zinnen als voorbeeld
             Debug.WriteLine("Inserting fallback practice materials...");
             
             List<string> insertQueries = new()
@@ -189,8 +191,6 @@ namespace FoutloosTypen.Core.Data.Repositories
                         practiceMaterial = new PracticeMaterial(id, sentence, assignmentId);
                     }
                 }
-                
-                Debug.WriteLine($"Retrieved practice material with Id {id}: {(practiceMaterial != null ? "Found" : "Not found")}");
             }
             catch (Exception ex)
             {
