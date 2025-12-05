@@ -6,21 +6,19 @@ namespace TestCore
     [TestFixture]
     public class TypingComparisonTests
     {
-        private TypingComparisonService typingComparisonService;
+        private TypingComparisonService TypingComparisonService;
 
         [SetUp]
         public void SetUp()
         {
-            typingComparisonService = new TypingComparisonService();
+            TypingComparisonService = new TypingComparisonService();
         }
 
         [Test]
-        public void Compare_sameText_noErrors()
+        public void Compare_SameText_NoErrors()
         {
-            // Arrange & Act
-            var result = typingComparisonService.Compare("hallo", "hallo");
+            var result = TypingComparisonService.Compare("hallo", "hallo");
 
-            // Assert
             Assert.That(result.HasErrors, Is.False);
             Assert.That(result.Characters.Count, Is.EqualTo(5));
 
@@ -31,12 +29,10 @@ namespace TestCore
         }
 
         [Test]
-        public void Compare_typo_detectedAsError()
+        public void Compare_Typo_DetectedAsError()
         {
-            // Arrange & Act
-            var result = typingComparisonService.Compare("hallo", "hxllo");
+            var result = TypingComparisonService.Compare("hallo", "hxllo");
 
-            // Assert
             Assert.That(result.HasErrors, Is.True);
             Assert.That(result.Characters[1].IsCorrect, Is.False);
             Assert.That(result.Characters[1].Expected, Is.EqualTo('a'));
@@ -44,12 +40,10 @@ namespace TestCore
         }
 
         [Test]
-        public void Compare_typedShorterThanExpected_detectsMissingCharacters()
+        public void Compare_TypedShorterThanExpected_DetectsMissingCharacters()
         {
-            // Arrange & Act
-            var result = typingComparisonService.Compare("hallo", "hal");
+            var result = TypingComparisonService.Compare("hallo", "hal");
 
-            // Assert
             Assert.That(result.HasErrors, Is.True);
             Assert.That(result.Characters.Count, Is.EqualTo(5));
             Assert.That(result.Characters[3].Typed, Is.Null);
@@ -57,12 +51,10 @@ namespace TestCore
         }
 
         [Test]
-        public void Compare_typedLongerThanExpected_detectsExtraCharacters()
+        public void Compare_TypedLongerThanExpected_DetectsExtraCharacters()
         {
-            // Arrange & Act
-            var result = typingComparisonService.Compare("hal", "hallo");
+            var result = TypingComparisonService.Compare("hal", "hallo");
 
-            // Assert
             Assert.That(result.HasErrors, Is.True);
             Assert.That(result.Characters.Count, Is.EqualTo(5));
             Assert.That(result.Characters[3].Expected, Is.Null);
