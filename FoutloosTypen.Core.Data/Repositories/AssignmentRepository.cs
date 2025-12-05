@@ -27,19 +27,8 @@ namespace FoutloosTypen.Core.Data.Repositories
                     );
                 ");
 
-                // Try to load from JSON, but don't crash if it fails
-                try
-                {
-                    Debug.WriteLine("Attempting to load assignments from JSON...");
-                    LoadAssignmentsFromJsonAsync().GetAwaiter().GetResult();
-                    Debug.WriteLine("Successfully loaded assignments from JSON");
-                }
-                catch (Exception jsonEx)
-                {
-                    Debug.WriteLine($"Could not load assignments from JSON (file may not exist yet): {jsonEx.Message}");
-                    Debug.WriteLine("Falling back to default assignments...");
-                    InsertDefaultAssignments();
-                }
+                // Insert 30 assignments (one per lesson) each with 60 seconds
+                InsertDefaultAssignments();
 
                 Debug.WriteLine("AssignmentRepository initialized successfully");
             }
@@ -54,48 +43,21 @@ namespace FoutloosTypen.Core.Data.Repositories
         {
             try
             {
-                List<string> insertQueries = new()
+                List<string> insertQueries = new();
+                
+                // Create 30 assignments (1 for each lesson) each with 60 seconds
+                for (int lessonId = 1; lessonId <= 30; lessonId++)
                 {
-                    @"INSERT OR IGNORE INTO Assignments(TimeLimit, LessonId) VALUES(60, 1)",
-                    @"INSERT OR IGNORE INTO Assignments(TimeLimit, LessonId) VALUES(60, 2)",
-                    @"INSERT OR IGNORE INTO Assignments(TimeLimit, LessonId) VALUES(60, 3)",
-                    @"INSERT OR IGNORE INTO Assignments(TimeLimit, LessonId) VALUES(60, 4)",
-                    @"INSERT OR IGNORE INTO Assignments(TimeLimit, LessonId) VALUES(60, 5)"
-                }; 
+                    insertQueries.Add($@"INSERT OR IGNORE INTO Assignments(TimeLimit, LessonId) VALUES(60, {lessonId})");
+                }
 
                 InsertMultipleWithTransaction(insertQueries);
-                Debug.WriteLine($"Inserted {insertQueries.Count} default assignments");
+                Debug.WriteLine($"Inserted {insertQueries.Count} assignments");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error inserting default assignments: {ex.Message}");
             }
-        }
-
-        private async Task LoadAssignmentsFromJsonAsync()
-        {
-            using var stream = await FileSystem.OpenAppPackageFileAsync("Assignment.json").ConfigureAwait(false);
-            using var reader = new StreamReader(stream);
-            var json = await reader.ReadToEndAsync().ConfigureAwait(false);
-
-            var jsonDoc = JsonDocument.Parse(json);
-            var root = jsonDoc.RootElement;
-
-            var items = root.GetProperty("Assignment");
-            List<string> insertQueries = new();
-
-            foreach (var item in items.EnumerateArray())
-            {
-                int id = item.GetProperty("Id").GetInt32();
-                double timeLimit = item.GetProperty("TimeLimit").GetDouble();
-                int lessonId = item.GetProperty("LessonId").GetInt32();
-
-                insertQueries.Add($@"INSERT OR IGNORE INTO Assignments(Id, TimeLimit, LessonId) 
-                            VALUES({id}, {timeLimit}, {lessonId})");
-            }
-
-            InsertMultipleWithTransaction(insertQueries);
-            Debug.WriteLine($"Loaded {insertQueries.Count} assignments from JSON");
         }
 
         public List<Assignment> GetAll()
