@@ -1,4 +1,4 @@
-﻿using FoutloosTypen.Core.Interfaces.Repositories;
+using FoutloosTypen.Core.Interfaces.Repositories;
 using FoutloosTypen.Core.Models;
 using Microsoft.Data.Sqlite;
 
@@ -84,6 +84,91 @@ namespace FoutloosTypen.Core.Data.Repositories
                     bool isDone = reader.GetBoolean(4);
                     int courseId = reader.GetInt32(5);
                     double totalTime = 0;
+
+                    tmpLesson = new Lesson(Id, name, description, isTest, isDone, courseId, totalTime);
+                }
+            }
+
+            CloseConnection();
+            return tmpLesson;
+        }
+    }
+}        public Lesson Get(int id)
+        {
+            string selectQuery = $"SELECT Id, Name, Description, IsTest, IsDone, CourseId FROM Lessons WHERE Id = {id}";
+            Lesson tmpLesson = null;
+
+            OpenConnection();
+
+            using (SqliteCommand command = new(selectQuery, Connection))
+            {
+                SqliteDataReader reader = command.ExecuteReader();
+
+                if (reader.Read())
+                {
+                    int Id = reader.GetInt32(0);
+                    string name = reader.GetString(1);
+                    string description = reader.GetString(2);
+                    bool isTest = reader.GetBoolean(3);
+                    bool isDone = reader.GetBoolean(4);
+                    int courseId = reader.GetInt32(5);
+                    double totalTime = 60; // Elke les is 60 seconden
+
+                    tmpLesson = new Lesson(Id, name, description, isTest, isDone, courseId, totalTime);
+                }
+            }
+
+            CloseConnection();
+            return tmpLesson;
+        }
+    }
+}        {
+            string selectQuery = $"SELECT Id, Name, Description, IsTest, IsDone, CourseId FROM Lessons WHERE Id = {id}";
+            Lesson tmpLesson = null;
+
+            OpenConnection();
+
+            using (SqliteCommand command = new(selectQuery, Connection))
+            {
+                SqliteDataReader reader = command.ExecuteReader();
+
+                if (reader.Read())
+                {
+                    int Id = reader.GetInt32(0);
+                    string name = reader.GetString(1);
+                    string description = reader.GetString(2);
+                    bool isTest = reader.GetBoolean(3);
+                    bool isDone = reader.GetBoolean(4);
+                    int courseId = reader.GetInt32(5);
+                    double totalTime = 60; // Elke les is 60 seconden
+
+                    tmpLesson = new Lesson(Id, name, description, isTest, isDone, courseId, totalTime);
+                }
+            }
+
+            CloseConnection();
+            return tmpLesson;
+        }
+    }
+}        {
+            string selectQuery = $"SELECT Id, Name, Description, IsTest, IsDone, CourseId FROM Lessons WHERE Id = {id}";
+            Lesson tmpLesson = null;
+
+            OpenConnection();
+
+            using (SqliteCommand command = new(selectQuery, Connection))
+            {
+                SqliteDataReader reader = command.ExecuteReader();
+
+                if (reader.Read())
+                {
+                    int Id = reader.GetInt32(0);
+                    string name = reader.GetString(1);
+                    string description = reader.GetString(2);
+                    bool isTest = reader.GetBoolean(3);
+                    bool isDone = reader.GetBoolean(4);
+                    int courseId = reader.GetInt32(5);
+                    double totalTime = 60; // Elke les is 60 seconden
 
                     tmpLesson = new Lesson(Id, name, description, isTest, isDone, courseId, totalTime);
                 }
