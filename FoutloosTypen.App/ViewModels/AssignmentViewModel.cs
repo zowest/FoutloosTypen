@@ -13,9 +13,7 @@ namespace FoutloosTypen.ViewModels
         private readonly IAssignmentService _assignmentService;
         private readonly ILessonService _lessonService;
         private readonly IPracticeMaterialService _practiceMaterialService;
-
-        private System.Timers.Timer? _timer;
-        private double _initialTime;
+        private readonly ITimerService _timerService;
 
         public ObservableCollection<Lesson> Lessons { get; set; } = new();
         public ObservableCollection<Assignment> Assignments { get; set; } = new();
@@ -33,27 +31,6 @@ namespace FoutloosTypen.ViewModels
                 OnPropertyChanged(nameof(LessonId));
                 Debug.WriteLine($"LessonId set to: {value}");
             } 
-        }
-
-        private double _timeRemaining;
-        public double TimeRemaining
-        {
-            get => _timeRemaining;
-            set
-            {
-                _timeRemaining = value;
-                OnPropertyChanged(nameof(TimeRemaining));
-                OnPropertyChanged(nameof(TimeRemainingFormatted));
-            }
-        }
-
-        public string TimeRemainingFormatted
-        {
-            get
-            {
-                var timeSpan = TimeSpan.FromSeconds(_timeRemaining);
-                return $"Tijd over: {timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
-            }
         }
 
         private PracticeMaterial _currentMaterial;
@@ -79,10 +56,12 @@ namespace FoutloosTypen.ViewModels
                 OnPropertyChanged(nameof(SelectedLesson));
                 FilterAssignmentsByLesson();
                 
-                if (value != null)
+                // Initialize timer with lesson's total time
+                if (value != null && value.TotalTime > 0)
                 {
-                    _initialTime = value.TotalTime;
-                    RestartTimer();
+                    Debug.WriteLine($"Initializing timer with {value.TotalTime} seconds from lesson");
+                    _timerService.Initialize(value.TotalTime);
+                    _timerService.Start();
                 }
             }
         }
@@ -164,20 +143,25 @@ namespace FoutloosTypen.ViewModels
             get => $"{Math.Round(Progress * 100)}%";
         }
 
+        public ITimerService Timer => _timerService;
+
         public AssignmentViewModel(
             ILessonService lessonService,
             IAssignmentService assignmentService,
-            IPracticeMaterialService practiceMaterialService)
+            IPracticeMaterialService practiceMaterialService,
+            ITimerService timerService)
         {
             _lessonService = lessonService;
             _assignmentService = assignmentService;
             _practiceMaterialService = practiceMaterialService;
+            _timerService = timerService;
 
             FormattedText = new FormattedString();
         }
 
         public async Task OnAppearingAsync()
         {
+            // Get all lessons with TotalTime calculated
             var lessons = _lessonService.GetAll();
 
             Lessons.Clear();
@@ -187,83 +171,26 @@ namespace FoutloosTypen.ViewModels
                 foreach (var lesson in lessons)
                 {
                     Lessons.Add(lesson);
+                    Debug.WriteLine($"Loaded lesson: {lesson.Name} with TotalTime: {lesson.TotalTime} seconds");
                 }
             }
 
+            // If LessonId was passed via navigation, select that lesson
             if (LessonId > 0)
             {
                 var targetLesson = Lessons.FirstOrDefault(l => l.Id == LessonId);
                 if (targetLesson != null)
                 {
                     SelectedLesson = targetLesson;
-                    Debug.WriteLine($"Selected lesson: {targetLesson.Name} (ID: {targetLesson.Id})");
+                    Debug.WriteLine($"Selected lesson: {targetLesson.Name} (ID: {targetLesson.Id}) with TotalTime: {targetLesson.TotalTime}");
                     return;
                 }
             }
 
+            // Otherwise select first lesson
             if (Lessons.Any())
+            {
                 SelectedLesson = Lessons.First();
-        }
-
-        private void StartTimer()
-        {
-            if (_timer != null)
-                return;
-
-            _timer = new System.Timers.Timer(1000);
-            _timer.Elapsed += OnTimerTick;
-            _timer.Start();
-            Debug.WriteLine("Timer started");
-        }
-
-        private void StopTimer()
-        {
-            if (_timer != null)
-            {
-                _timer.Stop();
-                _timer.Elapsed -= OnTimerTick;
-                _timer.Dispose();
-                _timer = null;
-                Debug.WriteLine("Timer stopped");
-            }
-        }
-
-        private void RestartTimer()
-        {
-            StopTimer();
-            TimeRemaining = _initialTime;
-            StartTimer();
-            Debug.WriteLine("Timer restarted");
-        }
-
-        private void OnTimerTick(object? sender, System.Timers.ElapsedEventArgs e)
-        {
-            Application.Current?.Dispatcher.Dispatch(() =>
-            {
-                TimeRemaining--;
-
-                if (TimeRemaining <= 0)
-                {
-                    TimeRemaining = 0;
-                    StopTimer();
-                    _ = OnTimerExpiredAsync();
-                }
-            });
-        }
-
-        private async Task OnTimerExpiredAsync()
-        {
-            Debug.WriteLine("Timer expired!");
-
-            if (Application.Current?.MainPage != null)
-            {
-                await Application.Current.MainPage.DisplayAlert(
-                    "Tijd Voorbij!",
-                    "De tijd voor deze les is afgelopen.",
-                    "OK");
-
-                await Shell.Current.GoToAsync("..");
-                StopTimer();
             }
         }
 
@@ -312,7 +239,6 @@ namespace FoutloosTypen.ViewModels
                 CurrentMaterial = _materials[_materialIndex];
             else
                 CurrentMaterial = new PracticeMaterial { Sentence = "Geen zinnen gevonden." };
-
         }
 
         private void UpdateTotalCharactersCount()
@@ -324,7 +250,6 @@ namespace FoutloosTypen.ViewModels
             }
 
             TotalCharactersCount = CurrentMaterial.Sentence.Length;
-            
         }
 
         private void UpdateTypedCharactersCount()
@@ -428,13 +353,6 @@ namespace FoutloosTypen.ViewModels
         }
 
         [RelayCommand]
-        private void Refresh()
-        {
-            ResetTyping();
-            RestartTimer();
-        }
-
-        [RelayCommand]
         private void SelectLesson(Lesson lesson)
         {
             SelectedLesson = lesson;
@@ -447,9 +365,21 @@ namespace FoutloosTypen.ViewModels
         }
 
         [RelayCommand]
-        public void Stop()
+        private void StartTimer()
         {
-            StopTimer();
+            _timerService.Start();
+        }
+
+        [RelayCommand]
+        private void StopTimer()
+        {
+            _timerService.Stop();
+        }
+
+        [RelayCommand]
+        private void RestartTimer()
+        {
+            _timerService.Restart();
         }
 
         protected void OnPropertyChanged(string propertyName)
