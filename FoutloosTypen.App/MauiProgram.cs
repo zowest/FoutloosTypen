@@ -49,6 +49,7 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IPracticeMaterialService, PracticeMaterialService>();
             builder.Services.AddSingleton<IAuthService, AuthService>();
             builder.Services.AddSingleton<IStudentService, StudentService>();
+            builder.Services.AddSingleton<ITimerService, TimerService>();
 
             // ViewModels
             builder.Services.AddTransient<LessonViewModel>();

@@ -17,7 +17,7 @@ namespace FoutloosTypen.Core.Data.Repositories
             studentList = [
                 new Student(1, "co2mott", "Matthijs", "bHbXpFGYmI/YjrZvIVvu0Q==.kf5UUcO9kF5t9hSplOjbDUX2u2vle52Y4FHj4cFgE+s=", 1),
                 new Student(2, "meesvz123", "Mees", "bHbXpFGYmI/YjrZvIVvu0Q==.kf5UUcO9kF5t9hSplOjbDUX2u2vle52Y4FHj4cFgE+s=", 1),
-                new Student(3, "danial8910848", "Danial", "bHbXpFGYmI/YjrZvIVvu0Q==.kf5UUcO9kF5t9hSplOjbDUX2u2vle52Y4FHj4cFgE+s=", 1),
+                new Student(3, "danial", "Danial", "bHbXpFGYmI/YjrZvIVvu0Q==.kf5UUcO9kF5t9hSplOjbDUX2u2vle52Y4FHj4cFgE+s=", 1),
                 new Student(4, "sowiaelys", "Zoe", "bHbXpFGYmI/YjrZvIVvu0Q==.kf5UUcO9kF5t9hSplOjbDUX2u2vle52Y4FHj4cFgE+s=", 1),
                 new Student(5, "ikweetgeennaam", "Anne Dirk", "bHbXpFGYmI/YjrZvIVvu0Q==.kf5UUcO9kF5t9hSplOjbDUX2u2vle52Y4FHj4cFgE+s=", 1)
                 ];
