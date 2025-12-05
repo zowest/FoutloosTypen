@@ -18,11 +18,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Grocery.Core\Grocery.Core.csproj" />
+		<ProjectReference Include="..\FoutloosTypen.Core\FoutloosTypen.Core.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<Using Include="NUnit.Framework" />
+		<Using Include="FoutloosTypen.Core.Models" />
+		<Using Include="FoutloosTypen.Core.Data" />
 	</ItemGroup>
 
 </Project>
