@@ -87,4 +87,8 @@
 	  </MauiXaml>
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="FoutloosTypen.Core\Services\" />
+	</ItemGroup>
+
 </Project>

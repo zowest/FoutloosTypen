@@ -28,8 +28,9 @@ namespace FoutloosTypen.Core.Services
         {
             get
             {
-                var timeSpan = TimeSpan.FromSeconds(TimeRemaining);
-                return $"{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
+                int totalMinutes = (int)(TimeRemaining / 60);
+                int seconds = (int)(TimeRemaining % 60);
+                return $"{totalMinutes:D2}:{seconds:D2}";
             }
         }
 
@@ -37,6 +38,10 @@ namespace FoutloosTypen.Core.Services
 
         public void Initialize(double timeInSeconds)
         {
+            if (timeInSeconds > 3600)
+            {
+                timeInSeconds = 3600;
+            }
             _initialTime = timeInSeconds;
             TimeRemaining = timeInSeconds;
             Debug.WriteLine($"Timer initialized: {timeInSeconds} seconds");

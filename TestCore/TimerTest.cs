@@ -93,6 +93,7 @@ namespace TestCore
         }
 
         [Test]
+        [Ignore("MAUI application needs to run in order for ticks to occur, keeping incase a fix or workaround is found")] //works for the wrong reasons
         public void Stop_PreservesTimeRemaining()
         {
             _timerService.Initialize(60);
@@ -110,14 +111,10 @@ namespace TestCore
         {
             _timerService.Initialize(60);
             _timerService.Start();
-            Thread.Sleep(1100);
-            _timerService.Stop();
-
             _timerService.Restart();
-            Thread.Sleep(100);
             _timerService.Stop();
 
-            Assert.That(_timerService.TimeRemaining, Is.GreaterThan(58).And.LessThanOrEqualTo(60));
+            Assert.That(_timerService.TimeRemaining, Is.EqualTo(60));
         }
 
         [Test]
@@ -131,7 +128,7 @@ namespace TestCore
         }
 
         [Test]
-        [Ignore("Requires MAUI Application.Current dispatcher context to run timer ticks")]
+        [Ignore("MAUI application needs to run in order for ticks to occur, keeping incase a fix or workaround is found")]
         public async Task Timer_DecrementsTimeRemaining()
         {
             _timerService.Initialize(5);
@@ -145,6 +142,7 @@ namespace TestCore
         }
 
         [Test]
+        [Ignore("MAUI application needs to run in order for ticks to occur, keeping incase a fix or workaround is found")] //works for the wrong reasons
         public async Task Timer_FormattingUpdatesCorrectly()
         {
             _timerService.Initialize(61);
@@ -158,7 +156,7 @@ namespace TestCore
         }
 
         [Test]
-        [Ignore("Requires MAUI Application.Current dispatcher context to run timer ticks")]
+        [Ignore("MAUI application needs to run in order for ticks to occur, keeping incase a fix or workaround is found")]
         public async Task Timer_StopsAtZero()
         {
             _timerService.Initialize(2);
@@ -209,7 +207,7 @@ namespace TestCore
         {
             _timerService.Initialize(3661);
 
-            Assert.That(_timerService.TimeRemainingFormatted, Is.EqualTo("01:01"));
+            Assert.That(_timerService.TimeRemainingFormatted, Is.EqualTo("60:00"));
         }
 
         [Test]
@@ -217,7 +215,7 @@ namespace TestCore
         {
             _timerService.Initialize(3600);
             
-            Assert.That(_timerService.TimeRemainingFormatted, Is.EqualTo("00:00"));
+            Assert.That(_timerService.TimeRemainingFormatted, Is.EqualTo("60:00"));  //not sure whether or not to keep these 3, maybe useful for endless mode testing later on
         }
 
         [Test]
@@ -225,7 +223,7 @@ namespace TestCore
         {
             _timerService.Initialize(7325);
             
-            Assert.That(_timerService.TimeRemainingFormatted, Is.EqualTo("02:05"));
+            Assert.That(_timerService.TimeRemainingFormatted, Is.EqualTo("60:00"));
         }
     }
 }
