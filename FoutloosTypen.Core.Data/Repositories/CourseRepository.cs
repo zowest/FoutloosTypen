@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
-    internal class CourseRepository : ICourseRepository
+    public class CourseRepository : ICourseRepository
     {
         // Simple in-memory data so the UI can show courses.
         // Replace with real data source as needed.
