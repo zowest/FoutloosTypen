@@ -1,7 +1,7 @@
 ﻿using FoutloosTypen.Core.Data.Helpers;
 using Microsoft.Data.Sqlite;
+using System.Data;
 using System.Diagnostics;
-using Microsoft.Maui.Storage;
 
 namespace FoutloosTypen.Core.Data
 {
@@ -10,22 +10,51 @@ namespace FoutloosTypen.Core.Data
         protected SqliteConnection Connection { get; }
         string databaseName;
 
-        public DatabaseConnection()
+        public DatabaseConnection() : this(null)
+        {
+        }
+
+        /// <summary>
+        /// Constructor met optionele database path voor testdoeleinden
+        /// </summary>
+        protected DatabaseConnection(string? customDatabasePath)
         {
             databaseName = ConnectionHelper.ConnectionStringValue("FoutloosTypenDb");
 
-            string dbDirectory = FileSystem.AppDataDirectory;
-            string dbpath = Path.Combine(dbDirectory, databaseName);
-
-            // Log the database path for debugging
-            Debug.WriteLine($"Database path: {dbpath}");
+            string dbpath;
+            
+            if (!string.IsNullOrEmpty(customDatabasePath))
+            {
+                // Gebruik custom path voor tests
+                dbpath = customDatabasePath;
+                Debug.WriteLine($"Using custom database path: {dbpath}");
+            }
+            else
+            {
+                // Gebruik normale MAUI path voor productie
+                try
+                {
+                    string dbDirectory = FileSystem.AppDataDirectory;
+                    dbpath = Path.Combine(dbDirectory, databaseName);
+                    Debug.WriteLine($"Using MAUI AppDataDirectory: {dbpath}");
+                }
+                catch (Exception ex)
+                {
+                    // Fallback voor test omgeving
+                    Debug.WriteLine($"FileSystem.AppDataDirectory not available: {ex.Message}");
+                    string tempDir = Path.Combine(Path.GetTempPath(), "FoutloosTypenTests");
+                    Directory.CreateDirectory(tempDir);
+                    dbpath = Path.Combine(tempDir, databaseName);
+                    Debug.WriteLine($"Using fallback test directory: {dbpath}");
+                }
+            }
 
             Connection = new SqliteConnection($"Data Source={dbpath}");
         }
 
         protected void OpenConnection()
         {
-            if (Connection.State != System.Data.ConnectionState.Open) 
+            if (Connection.State != ConnectionState.Open) 
             {
                 Connection.Open();
                 Debug.WriteLine("Database connection opened");
@@ -34,7 +63,7 @@ namespace FoutloosTypen.Core.Data
 
         protected void CloseConnection()
         {
-            if (Connection.State != System.Data.ConnectionState.Closed) 
+            if (Connection.State != ConnectionState.Closed) 
             {
                 Connection.Close();
                 Debug.WriteLine("Database connection closed");
@@ -50,7 +79,7 @@ namespace FoutloosTypen.Core.Data
                 {
                     command.CommandText = commandText;
                     command.ExecuteNonQuery();
-                    Debug.WriteLine($"Table created: {commandText}");
+                    Debug.WriteLine($"Table created successfully");
                 }
             }
             catch (Exception ex)
@@ -67,13 +96,14 @@ namespace FoutloosTypen.Core.Data
 
             try
             {
-                linesToInsert.ForEach(l => 
+                foreach (var line in linesToInsert)
                 {
-                    Connection.ExecuteNonQuery(l);
-                    Debug.WriteLine($"Executed: {l}");
-                });
+                    using var command = Connection.CreateCommand();
+                    command.CommandText = line;
+                    command.ExecuteNonQuery();
+                }
                 transaction.Commit();
-                Debug.WriteLine("Transaction committed");
+                Debug.WriteLine($"Transaction committed: {linesToInsert.Count} statements");
             }
             catch (Exception ex)
             {
@@ -81,15 +111,12 @@ namespace FoutloosTypen.Core.Data
                 transaction.Rollback();
                 throw;
             }
-            finally
-            {
-                transaction.Dispose();
-            }
         }
 
         public void Dispose()
         {
             CloseConnection();
+            Connection?.Dispose();
         }
     }
 }
