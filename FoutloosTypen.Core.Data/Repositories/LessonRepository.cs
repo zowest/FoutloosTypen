@@ -20,18 +20,19 @@ namespace FoutloosTypen.Core.Data.Repositories
                 )");
 
             List<string> insertQueries = new()
-            {
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 1', 'Dit is de allereerste les', False, False, 1)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 2', 'Dit is de tweede les', False, False, 1)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 3', 'Dit is de derde les', False, False, 1)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 4', 'Dit is de vierde les', False, False, 1)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 5', 'Dit is de vijfde les', False, False, 1)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Test Les', 'Dit is een test les', False, False, 2)"
-            };
+        {
+            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 1', 'Dit is de allereerste les', False, False, 1)",
+            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 2', 'Dit is de tweede les', False, False, 1)",
+            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 3', 'Dit is de derde les', False, False, 1)",
+            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 4', 'Dit is de vierde les', False, False, 1)",
+            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 5', 'Dit is de vijfde les', False, False, 1)",
+            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Test Les', 'Dit is een test les', False, False, 2)"
+        };
 
             InsertMultipleWithTransaction(insertQueries);
             GetAll();
         }
+
 
         public List<Lesson> GetAll()
         {
@@ -62,6 +63,7 @@ namespace FoutloosTypen.Core.Data.Repositories
             return lessons;
         }
 
+
         public Lesson Get(int id)
         {
             string selectQuery = $"SELECT Id, Name, Description, IsTest, IsDone, CourseId FROM Lessons WHERE Id = {id}";
@@ -81,7 +83,7 @@ namespace FoutloosTypen.Core.Data.Repositories
                     bool isTest = reader.GetBoolean(3);
                     bool isDone = reader.GetBoolean(4);
                     int courseId = reader.GetInt32(5);
-                    double totalTime = 60; // Elke les is 60 seconden
+                    double totalTime = 0;
 
                     tmpLesson = new Lesson(Id, name, description, isTest, isDone, courseId, totalTime);
                 }
