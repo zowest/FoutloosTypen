@@ -15,7 +15,7 @@ namespace TestCore
         }
 
         [Test]
-        public void Compare_SameText_NoErrors()
+        public void CompareSameTextNoErrors()
         {
             var result = TypingComparisonService.Compare("hallo", "hallo");
 
@@ -29,7 +29,7 @@ namespace TestCore
         }
 
         [Test]
-        public void Compare_Typo_DetectedAsError()
+        public void CompareTypoDetectedAsError()
         {
             var result = TypingComparisonService.Compare("hallo", "hxllo");
 
@@ -40,7 +40,7 @@ namespace TestCore
         }
 
         [Test]
-        public void Compare_TypedShorterThanExpected_DetectsMissingCharacters()
+        public void CompareTypedShorterThanExpectedDetectsMissingCharacters()
         {
             var result = TypingComparisonService.Compare("hallo", "hal");
 
@@ -51,7 +51,7 @@ namespace TestCore
         }
 
         [Test]
-        public void Compare_TypedLongerThanExpected_DetectsExtraCharacters()
+        public void CompareTypedLongerThanExpectedDetectsExtraCharacters()
         {
             var result = TypingComparisonService.Compare("hal", "hallo");
 
