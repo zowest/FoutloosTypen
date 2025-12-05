@@ -27,7 +27,7 @@ namespace FoutloosTypen.Core.Data.Repositories
                     );
                 ");
 
-                // Insert 30 assignments (one per lesson) each with 60 seconds
+                // Insert 150 assignments (5 per lesson, 30 lessons)
                 InsertDefaultAssignments();
 
                 Debug.WriteLine("AssignmentRepository initialized successfully");
@@ -45,10 +45,13 @@ namespace FoutloosTypen.Core.Data.Repositories
             {
                 List<string> insertQueries = new();
                 
-                // Create 30 assignments (1 for each lesson) each with 60 seconds
+                // Create 5 assignments per lesson (30 lessons x 5 = 150 assignments)
                 for (int lessonId = 1; lessonId <= 30; lessonId++)
                 {
-                    insertQueries.Add($@"INSERT OR IGNORE INTO Assignments(TimeLimit, LessonId) VALUES(60, {lessonId})");
+                    for (int assignmentNum = 1; assignmentNum <= 5; assignmentNum++)
+                    {
+                        insertQueries.Add($@"INSERT OR IGNORE INTO Assignments(TimeLimit, LessonId) VALUES(60, {lessonId})");
+                    }
                 }
 
                 InsertMultipleWithTransaction(insertQueries);
