@@ -80,7 +80,7 @@
                 Spacing="12" 
                 HorizontalOptions="FillAndExpand" 
                 VerticalOptions="CenterAndExpand">
-                <Label Text="{Binding TimeRemainingFormatted}"
+                <Label Text="{Binding Timer.TimeRemainingFormatted}"
                    FontSize="26"
                    VerticalOptions="End"
                        TextColor="MediumPurple"
