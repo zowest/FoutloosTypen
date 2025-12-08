@@ -20,6 +20,11 @@ public partial class AssignmentView : ContentPage
     public AssignmentView(AssignmentViewModel vm) : this()
     {
         BindingContext = _vm = vm;
+        Shell.SetBackButtonBehavior(this, new BackButtonBehavior
+        {
+            IsVisible = false,
+            IsEnabled = false
+        });
     }
 
     protected override async void OnAppearing()

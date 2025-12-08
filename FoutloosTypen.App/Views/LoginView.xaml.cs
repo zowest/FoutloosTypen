@@ -8,6 +8,11 @@ public partial class LoginView : ContentPage
     {
         InitializeComponent();
         BindingContext = viewModel;
+        Shell.SetBackButtonBehavior(this, new BackButtonBehavior
+        {
+            IsVisible = false,
+            IsEnabled = false
+        });
 
         Microsoft.Maui.Handlers.EntryHandler.Mapper.AppendToMapping("NoUnderline", (handler, view) =>
         {

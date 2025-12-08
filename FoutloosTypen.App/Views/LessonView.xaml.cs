@@ -19,6 +19,11 @@ namespace FoutloosTypen.Views
         public LessonView(LearnpathViewModel vm) : this()
         {
             BindingContext = _vm = vm;
+            Shell.SetBackButtonBehavior(this, new BackButtonBehavior
+            {
+                IsVisible = false,
+                IsEnabled = false
+            });
         }
 
         protected override async void OnAppearing()

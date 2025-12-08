@@ -18,16 +18,14 @@
                     Spacing="24"
                     VerticalOptions="Center"
                     HorizontalOptions="StartAndExpand">
-                    <Button Text="BolType"
-                            BackgroundColor="Transparent"
-                            BorderWidth="0"
-                            WidthRequest="140"
-                            HeightRequest="80"
-                            FontSize="34"
-                            FontAttributes="Bold"
-                            FontFamily="OpenSansSemibold"
-                            CornerRadius="0"
-                            Padding="2" />
+<Image 
+    Grid.Row="0"
+    Source="boltype.png"
+    HeightRequest="140"
+    WidthRequest="140"
+    HorizontalOptions="Center"
+    VerticalOptions="End" 
+    Margin="0,0,0,10" />
                 </HorizontalStackLayout>
 
                 <HorizontalStackLayout 
