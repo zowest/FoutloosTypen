@@ -382,6 +382,13 @@ namespace FoutloosTypen.ViewModels
             _timerService.Restart();
         }
 
+        [RelayCommand]
+        private void Refresh()
+        {
+            ResetTyping();
+            RestartTimer();
+        }
+
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
