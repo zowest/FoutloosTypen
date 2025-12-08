@@ -1,4 +1,4 @@
-﻿using FoutloosTypen.Core.Interfaces.Repositories;
+using FoutloosTypen.Core.Interfaces.Repositories;
 using FoutloosTypen.Core.Models;
 using Microsoft.Data.Sqlite;
 
