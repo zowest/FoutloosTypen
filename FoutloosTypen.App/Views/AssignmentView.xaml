@@ -19,7 +19,6 @@
                     VerticalOptions="Center"
                     HorizontalOptions="StartAndExpand">
 <Image 
-    Grid.Row="0"
     Source="boltype.png"
     HeightRequest="140"
     WidthRequest="140"
