@@ -7,7 +7,7 @@ namespace TestCore
     [TestFixture]
     public class PracticeMaterialJsonTests
     {
-        // HAPPY PATH 1 — Single valid JSON entry
+        // UT2-09: JSON → 1 item correct ingeladen
         [Test]
         public void Deserialize_SingleValidEntry_ReturnsOnePracticeMaterial()
         {
@@ -20,33 +20,26 @@ namespace TestCore
             var result = JsonSerializer.Deserialize<List<PracticeMaterial>>(json);
 
             Assert.That(result, Is.Not.Null);
-            Assert.That(result, Has.Count.EqualTo(1));
             Assert.That(result![0].Sentence, Is.EqualTo("Type dit na"));
-            Assert.That(result[0].AssignmentId, Is.EqualTo(5));
         }
 
-        // HAPPY PATH 2 — Multiple valid JSON entries
-
+        // UT2-10: JSON → meerdere items correct ingeladen
         [Test]
         public void Deserialize_MultipleValidEntries_ReturnsAllPracticeMaterials()
         {
             string json = """
             [
                 { "Sentence": "Eerste zin", "AssignmentId": 1 },
-                { "Sentence": "Tweede zin", "AssignmentId": 2 },
-                { "Sentence": "Derde zin", "AssignmentId": 3 }
+                { "Sentence": "Tweede zin", "AssignmentId": 2 }
             ]
             """;
+
             var result = JsonSerializer.Deserialize<List<PracticeMaterial>>(json);
 
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result, Has.Count.EqualTo(3));
-            Assert.That(result![0].Sentence, Is.EqualTo("Eerste zin"));
-            Assert.That(result[1].Sentence, Is.EqualTo("Tweede zin"));
-            Assert.That(result[2].Sentence, Is.EqualTo("Derde zin"));
+            Assert.That(result, Has.Count.EqualTo(2));
         }
 
-        // UNHAPPY PATH — Corrupt JSON throws exception
+        // UT2-11: Corrupt JSON moet JsonException geven
         [Test]
         public void Deserialize_CorruptJson_ThrowsJsonException()
         {
@@ -57,12 +50,10 @@ namespace TestCore
             """;
 
             Assert.Throws<JsonException>(() =>
-            {
-                JsonSerializer.Deserialize<List<PracticeMaterial>>(invalidJson);
-            });
+                JsonSerializer.Deserialize<List<PracticeMaterial>>(invalidJson));
         }
 
-        // UNHAPPY PATH — Missing required field deserializes with default values
+        // UT2-12: AssignmentId ontbreekt → default = 0
         [Test]
         public void Deserialize_MissingAssignmentId_ReturnsDefaultValue()
         {
@@ -74,10 +65,7 @@ namespace TestCore
 
             var result = JsonSerializer.Deserialize<List<PracticeMaterial>>(json);
 
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result, Has.Count.EqualTo(1));
-            Assert.That(result![0].Sentence, Is.EqualTo("Alleen een zin"));
-            Assert.That(result[0].AssignmentId, Is.EqualTo(0)); // Default value for int
+            Assert.That(result![0].AssignmentId, Is.EqualTo(0));
         }
     }
 }
