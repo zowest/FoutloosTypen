@@ -27,7 +27,7 @@ namespace TestCore
         }
 
 
-        /// Test 1: Controleert of GetAll() lessen teruggeeft
+        /// Test UT11-1: Controleert of GetAll() lessen teruggeeft
         [Test]
         public void LessonRepository_GetAll_ShouldReturnLessons()
         {
@@ -39,7 +39,7 @@ namespace TestCore
             Assert.That(lessons.Count, Is.GreaterThan(0), "Er moeten lessen aanwezig zijn");
         }
 
-        /// Test 2: Controleert of er exact 30 lessen zijn (3 cursussen x 10 lessen)
+        /// Test UT11-2: Controleert of er exact 30 lessen zijn (3 cursussen x 10 lessen)
         [Test]
         public void LessonRepository_GetAll_ShouldReturn30Lessons()
         {
@@ -50,7 +50,7 @@ namespace TestCore
             Assert.That(lessons.Count, Is.EqualTo(30), "Er moeten exact 30 lessen zijn");
         }
 
-        /// Test 3: Controleert of Get() een specifieke les kan ophalen
+        /// Test UT11-3: Controleert of Get() een specifieke les kan ophalen
         [Test]
         public void LessonRepository_Get_ShouldReturnSpecificLesson()
         {
@@ -66,7 +66,7 @@ namespace TestCore
             Assert.That(lesson.Name, Is.Not.Empty, "Les moet een naam hebben");
         }
 
-        /// Test 4: Controleert of elke cursus 10 lessen heeft
+        /// Test UT11-4: Controleert of elke cursus 10 lessen heeft
         [Test]
         public void LessonRepository_GetAll_EachCourseShouldHave10Lessons()
         {
@@ -82,7 +82,7 @@ namespace TestCore
             Assert.That(course3Lessons.Count, Is.EqualTo(10), "Cursus 3 moet 10 lessen hebben");
         }
 
-        /// Test 5: Controleert of alle lessen 60 seconden duren
+        /// Test UT11-5: Controleert of alle lessen 60 seconden duren
         [Test]
         public void LessonRepository_GetAll_AllLessonsShouldHave60SecondsDuration()
         {
@@ -95,7 +95,7 @@ namespace TestCore
         }
 
 
-        /// Test 6: Controleert of alle lessen geldige properties hebben
+        /// Test UT11-6: Controleert of alle lessen geldige properties hebben
         [Test]
         public void LessonRepository_GetAll_AllLessonsShouldHaveValidProperties()
         {
@@ -113,7 +113,7 @@ namespace TestCore
             }
         }
 
-        /// Test 7: Controleert of Get() null teruggeeft voor een niet-bestaande les
+        /// Test UT11-7: Controleert of Get() null teruggeeft voor een niet-bestaande les
         [Test]
         public void LessonRepository_Get_ShouldReturnNullForNonExistentLesson()
         {
@@ -128,7 +128,7 @@ namespace TestCore
         }
 
 
-        /// Test 8: Controleert of GetAll() practice materials teruggeeft
+        /// Test UT11-8: Controleert of GetAll() practice materials teruggeeft
         [Test]
         public void PracticeMaterialRepository_GetAll_ShouldReturnMaterials()
         {
@@ -141,7 +141,7 @@ namespace TestCore
         }
 
 
-        /// Test 9: Controleert of Get() een specifiek practice material kan ophalen
+        /// Test UT11-9: Controleert of Get() een specifiek practice material kan ophalen
         [Test]
         public void PracticeMaterialRepository_Get_ShouldReturnSpecificMaterial()
         {
@@ -158,7 +158,7 @@ namespace TestCore
             Assert.That(material.AssignmentId, Is.GreaterThan(0), "Material moet gekoppeld zijn aan een assignment");
         }
 
-        /// Test 10: Controleert of alle practice materials een zin hebben
+        /// Test UT11-10: Controleert of alle practice materials een zin hebben
         [Test]
         public void PracticeMaterialRepository_GetAll_AllMaterialsShouldHaveSentences()
         {
@@ -172,7 +172,7 @@ namespace TestCore
 
 
 
-        /// Test 11: Controleert of alle AssignmentIds geldig zijn (1-150)
+        /// Test UT11-11: Controleert of alle AssignmentIds geldig zijn (1-150)
         [Test]
         public void PracticeMaterialRepository_GetAll_AllAssignmentIdsShouldBeValid()
         {
@@ -187,7 +187,7 @@ namespace TestCore
             }
         }
 
-        /// Test 12: Controleert of Get() null teruggeeft voor een niet-bestaand material
+        /// Test UT11-12: Controleert of Get() null teruggeeft voor een niet-bestaand material
         [Test]
         public void PracticeMaterialRepository_Get_ShouldReturnNullForNonExistentMaterial()
         {
