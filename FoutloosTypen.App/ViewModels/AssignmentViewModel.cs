@@ -15,7 +15,6 @@ namespace FoutloosTypen.ViewModels
         private readonly IPracticeMaterialService _practiceMaterialService;
         private readonly ITimerService _timerService;
 
-        private System.Timers.Timer? _timer;
         private const double TIMER_DURATION = 60; // 60 seconden per opdracht
 
         public ObservableCollection<Lesson> Lessons { get; set; } = new();
@@ -59,11 +58,13 @@ namespace FoutloosTypen.ViewModels
                 _selectedLesson = value;
                 OnPropertyChanged(nameof(SelectedLesson));
                 FilterAssignmentsByLesson();
-                
+
                 // Initialize timer with lesson's total time
                 if (value != null && value.TotalTime > 0)
                 {
-                    StartTimer();
+                    Debug.WriteLine($"Initializing timer with {value.TotalTime} seconds from lesson");
+                    _timerService.Initialize(TIMER_DURATION);
+                    _timerService.Start();
                 }
             }
         }
@@ -205,68 +206,6 @@ namespace FoutloosTypen.ViewModels
             if (Lessons.Any())
             {
                 SelectedLesson = Lessons.First();
-        }
-
-        private void StartTimer()
-        {
-            if (_timer != null)
-                return;
-
-            TimeRemaining = TIMER_DURATION;
-            _timer = new System.Timers.Timer(1000);
-            _timer.Elapsed += OnTimerTick;
-            _timer.Start();
-            Debug.WriteLine("Timer started");
-        }
-
-        private void StopTimer()
-        {
-            if (_timer != null)
-            {
-                _timer.Stop();
-                _timer.Elapsed -= OnTimerTick;
-                _timer.Dispose();
-                _timer = null;
-                Debug.WriteLine("Timer stopped");
-            }
-        }
-
-        private void RestartTimer()
-        {
-            StopTimer();
-            TimeRemaining = TIMER_DURATION;
-            StartTimer();
-            Debug.WriteLine("Timer restarted to 60 seconds");
-        }
-
-        private void OnTimerTick(object? sender, System.Timers.ElapsedEventArgs e)
-        {
-            Application.Current?.Dispatcher.Dispatch(() =>
-            {
-                TimeRemaining--;
-
-                if (TimeRemaining <= 0)
-                {
-                    TimeRemaining = 0;
-                    StopTimer();
-                    _ = OnTimerExpiredAsync();
-                }
-            });
-        }
-
-        private async Task OnTimerExpiredAsync()
-        {
-            Debug.WriteLine("Timer expired!");
-
-            if (Application.Current?.MainPage != null)
-            {
-                await Application.Current.MainPage.DisplayAlert(
-                    "Tijd Voorbij!",
-                    $"Je hebt {_currentAssignmentIndex + 1} van de 5 opdrachten voltooid.",
-                    "OK");
-
-                await Shell.Current.GoToAsync("..");
-                StopTimer();
             }
         }
 

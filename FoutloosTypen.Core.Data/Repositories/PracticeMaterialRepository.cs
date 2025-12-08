@@ -19,7 +19,7 @@ namespace FoutloosTypen.Core.Data.Repositories
             try
             {
                 Debug.WriteLine("PracticeMaterialRepository: Starting initialization...");
-                
+
                 CreateTable(@"
                     CREATE TABLE IF NOT EXISTS PracticeMaterials (
                         Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -51,7 +51,7 @@ namespace FoutloosTypen.Core.Data.Repositories
             try
             {
                 Debug.WriteLine("Loading PracticeMaterial.json...");
-                
+
                 // Gebruik Task.Run om async te vermijden in constructor
                 Task.Run(async () =>
                 {
@@ -75,7 +75,7 @@ namespace FoutloosTypen.Core.Data.Repositories
                         {
                             int assignmentId = item.GetProperty("AssignmentId").GetInt32();
                             string sentence = item.GetProperty("Sentence").GetString() ?? "";
-                            
+
                             sentence = sentence.Replace("'", "''");
 
                             insertQueries.Add($@"INSERT OR IGNORE INTO PracticeMaterials(Sentence, AssignmentId) 
@@ -114,7 +114,7 @@ namespace FoutloosTypen.Core.Data.Repositories
         private void InsertFallbackData()
         {
             Debug.WriteLine("Inserting fallback practice materials...");
-            
+
             List<string> insertQueries = new()
             {
                 @"INSERT OR IGNORE INTO PracticeMaterials(Sentence, AssignmentId) VALUES('De kat speelt met een bal. De hond rent door de tuin. Het is een mooie zonnige dag vandaag. Ik zie een vogel in de boom zitten.', 1)",
