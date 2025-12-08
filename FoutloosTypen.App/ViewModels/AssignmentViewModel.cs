@@ -15,11 +15,14 @@ namespace FoutloosTypen.ViewModels
         private readonly IPracticeMaterialService _practiceMaterialService;
         private readonly ITimerService _timerService;
 
+        private const double TIMER_DURATION = 60; // 60 seconden per opdracht
+
         public ObservableCollection<Lesson> Lessons { get; set; } = new();
         public ObservableCollection<Assignment> Assignments { get; set; } = new();
 
         private List<PracticeMaterial> _materials = new();
         private int _materialIndex = 0;
+        private int _currentAssignmentIndex = 0;
 
         private int _lessonId;
         public int LessonId 
@@ -55,12 +58,12 @@ namespace FoutloosTypen.ViewModels
                 _selectedLesson = value;
                 OnPropertyChanged(nameof(SelectedLesson));
                 FilterAssignmentsByLesson();
-                
+
                 // Initialize timer with lesson's total time
                 if (value != null && value.TotalTime > 0)
                 {
                     Debug.WriteLine($"Initializing timer with {value.TotalTime} seconds from lesson");
-                    _timerService.Initialize(value.TotalTime);
+                    _timerService.Initialize(TIMER_DURATION);
                     _timerService.Start();
                 }
             }
@@ -74,6 +77,7 @@ namespace FoutloosTypen.ViewModels
             {
                 _selectedAssignment = value;
                 OnPropertyChanged(nameof(SelectedAssignment));
+                OnPropertyChanged(nameof(AssignmentProgress));
                 LoadPracticeMaterials();
             }
         }
@@ -98,6 +102,17 @@ namespace FoutloosTypen.ViewModels
             {
                 _formattedText = value;
                 OnPropertyChanged(nameof(FormattedText));
+            }
+        }
+
+        // Progress voor opdrachten (1/5, 2/5, etc.)
+        public string AssignmentProgress
+        {
+            get
+            {
+                if (Assignments.Count == 0)
+                    return "Opdracht 0/5";
+                return $"Opdracht {_currentAssignmentIndex + 1}/{Assignments.Count}";
             }
         }
 
@@ -140,7 +155,7 @@ namespace FoutloosTypen.ViewModels
 
         public string ProgressText
         {
-            get => $"{Math.Round(Progress * 100)}%";
+            get => $"{Math.Round(Progress * 100)}% - {AssignmentProgress}";
         }
 
         public ITimerService Timer => _timerService;
@@ -217,6 +232,7 @@ namespace FoutloosTypen.ViewModels
                 Debug.WriteLine($"Added assignment: Id={assignment.Id}, LessonId={assignment.LessonId}");
             }
 
+            _currentAssignmentIndex = 0;
             if (Assignments.Any())
                 SelectedAssignment = Assignments.First();
         }
@@ -239,6 +255,27 @@ namespace FoutloosTypen.ViewModels
                 CurrentMaterial = _materials[_materialIndex];
             else
                 CurrentMaterial = new PracticeMaterial { Sentence = "Geen zinnen gevonden." };
+        }
+
+        private void MoveToNextAssignment()
+        {
+            _currentAssignmentIndex++;
+            OnPropertyChanged(nameof(AssignmentProgress));
+            OnPropertyChanged(nameof(ProgressText));
+
+            if (_currentAssignmentIndex >= Assignments.Count)
+            {
+                // Alle 5 opdrachten zijn voltooid - Geen popup meer
+                Debug.WriteLine("All 5 assignments completed! Timer continues running.");
+                return;
+            }
+
+            // Reset timer naar 60 seconden voor de volgende opdracht
+            RestartTimer();
+            
+            // Ga naar de volgende opdracht
+            SelectedAssignment = Assignments[_currentAssignmentIndex];
+            Debug.WriteLine($"Moved to assignment {_currentAssignmentIndex + 1}/{Assignments.Count}");
         }
 
         private void UpdateTotalCharactersCount()
@@ -289,6 +326,7 @@ namespace FoutloosTypen.ViewModels
             UserInput = typedText;
             UpdateFormattedText();
 
+            // Check of de zin compleet en correct is
             if (typedText.Length == CurrentMaterial.Sentence.Length)
             {
                 bool allCorrect = true;
@@ -303,7 +341,8 @@ namespace FoutloosTypen.ViewModels
 
                 if (allCorrect)
                 {
-                    Debug.WriteLine("Sentence completed correctly!");
+                    Debug.WriteLine("Sentence completed correctly! Moving to next assignment...");
+                    MoveToNextAssignment();
                 }
             }
         }
@@ -367,7 +406,14 @@ namespace FoutloosTypen.ViewModels
         [RelayCommand]
         private void StartTimer()
         {
-            _timerService.Start();
+            _currentAssignmentIndex = 0;
+            OnPropertyChanged(nameof(AssignmentProgress));
+            OnPropertyChanged(nameof(ProgressText));
+            
+            if (Assignments.Any())
+                SelectedAssignment = Assignments.First();
+                
+            RestartTimer();
         }
 
         [RelayCommand]
