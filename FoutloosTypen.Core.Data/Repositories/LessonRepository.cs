@@ -1,6 +1,9 @@
 ﻿using FoutloosTypen.Core.Interfaces.Repositories;
 using FoutloosTypen.Core.Models;
 using Microsoft.Data.Sqlite;
+using Microsoft.Maui.Storage;
+using System.Diagnostics;
+using System.Text.Json;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
@@ -10,6 +13,8 @@ namespace FoutloosTypen.Core.Data.Repositories
 
         public LessonRepository()
         {
+            Debug.WriteLine("LessonRepository: Starting initialization...");
+            
             CreateTable(@"CREATE TABLE IF NOT EXISTS Lessons (
                         [Id] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                         [Name] NVARCHAR(80) NOT NULL,
@@ -20,6 +25,18 @@ namespace FoutloosTypen.Core.Data.Repositories
                         UNIQUE(Name, CourseId)
                 )");
 
+            Debug.WriteLine("LessonRepository: Table created");
+
+            // Gebruik fallback direct (geen JSON loading voor nu)
+            InsertFallbackLessons();
+            
+            GetAll();
+            
+            Debug.WriteLine("LessonRepository: Initialization complete");
+        }
+
+        private void InsertFallbackLessons()
+        {
             List<string> insertQueries = new()
             {
                 // Cursus 1 - Beginners (10 lessen)
@@ -60,9 +77,8 @@ namespace FoutloosTypen.Core.Data.Repositories
             };
 
             InsertMultipleWithTransaction(insertQueries);
-            GetAll();
+            Debug.WriteLine($"LessonRepository: Inserted {insertQueries.Count} lessons");
         }
-
 
         public List<Lesson> GetAll()
         {
@@ -83,16 +99,16 @@ namespace FoutloosTypen.Core.Data.Repositories
                     bool isTest = reader.GetBoolean(3);
                     bool isDone = reader.GetBoolean(4);
                     int courseId = reader.GetInt32(5);
-                    double totalTime = 60; // Elke les is 60 seconden
+                    double totalTime = 60;
 
                     lessons.Add(new Lesson(id, name, description, isTest, isDone, courseId, totalTime));
                 }
             }
 
             CloseConnection();
+            Debug.WriteLine($"LessonRepository: Retrieved {lessons.Count} lessons");
             return lessons;
         }
-
 
         public Lesson Get(int id)
         {
@@ -113,7 +129,7 @@ namespace FoutloosTypen.Core.Data.Repositories
                     bool isTest = reader.GetBoolean(3);
                     bool isDone = reader.GetBoolean(4);
                     int courseId = reader.GetInt32(5);
-                    double totalTime = 60; // Elke les is 60 seconden
+                    double totalTime = 60;
 
                     tmpLesson = new Lesson(Id, name, description, isTest, isDone, courseId, totalTime);
                 }
