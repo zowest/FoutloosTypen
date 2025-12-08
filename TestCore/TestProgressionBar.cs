@@ -7,6 +7,7 @@ namespace TestCore
     [TestFixture]
     public class TestProgressBar
     {
+        // UT3-01
         [Test]
         public void Progress_IncreasesOnFirstCorrectCharacter()
         {
@@ -17,6 +18,7 @@ namespace TestCore
             Assert.That(progress, Is.EqualTo(0.2));
         }
 
+        // UT3-02
         [Test]
         public void Progress_UpdatesRealtimeWithMoreCharacters()
         {
@@ -26,6 +28,7 @@ namespace TestCore
             Assert.That(c2, Is.GreaterThan(c1));
         }
 
+        // UT3-03
         [Test]
         public void Progress_Reaches100Percent()
         {
@@ -35,6 +38,7 @@ namespace TestCore
             Assert.That(progress, Is.EqualTo(1.0));
         }
 
+        // UT3-04
         [Test]
         public void Progress_RemainsAccurateWithFastTyping()
         {
@@ -44,6 +48,7 @@ namespace TestCore
             Assert.That(progress, Is.EqualTo(1.0));
         }
 
+        // UT3-05
         [Test]
         public void Progress_DoesNotIncreaseOnIncorrectCharacters()
         {
@@ -52,6 +57,7 @@ namespace TestCore
             Assert.That(correct, Is.EqualTo(1));
         }
 
+        // UT3-06
         [Test]
         public void Progress_ContinuesAfterCorrectingError()
         {
@@ -61,6 +67,7 @@ namespace TestCore
             Assert.That(after, Is.GreaterThan(before));
         }
 
+        // UT3-07
         [Test]
         public void Progress_ResetsToZero()
         {
@@ -68,6 +75,7 @@ namespace TestCore
             Assert.That(progress, Is.EqualTo(0));
         }
 
+        // UT3-08
         [Test]
         public void Progress_ShowsDifferenceBetweenCompletedAndRemaining()
         {
@@ -78,6 +86,7 @@ namespace TestCore
             Assert.That(progress, Is.LessThan(1));
         }
 
+        // UT3-09
         [Test]
         public void Progress_CalculatesUnder100ms()
         {
