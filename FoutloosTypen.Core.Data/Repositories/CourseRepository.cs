@@ -4,6 +4,7 @@ using Microsoft.Data.Sqlite;
 using System.Collections.Generic;
 using System.Diagnostics;
 
+
 namespace FoutloosTypen.Core.Data.Repositories
 {
     public class CourseRepository : DatabaseConnection, ICourseRepository

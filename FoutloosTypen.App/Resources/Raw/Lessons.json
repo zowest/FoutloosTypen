@@ -1,0 +1,214 @@
+{
+  "Lessons": [
+    {
+      "Name": "Les 1",
+      "Description": "Leer typen met eenvoudige korte zinnen",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 1
+    },
+    {
+      "Name": "Les 2",
+      "Description": "Oefen met veelgebruikte woorden",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 1
+    },
+    {
+      "Name": "Les 3",
+      "Description": "Type eenvoudige vraagzinnen",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 1
+    },
+    {
+      "Name": "Les 4",
+      "Description": "Oefen met korte mededelingen",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 1
+    },
+    {
+      "Name": "Les 5",
+      "Description": "Type eenvoudige instructies",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 1
+    },
+    {
+      "Name": "Les 6",
+      "Description": "Oefen met begroetingen en afscheid",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 1
+    },
+    {
+      "Name": "Les 7",
+      "Description": "Type zinnen met cijfers en tijden",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 1
+    },
+    {
+      "Name": "Les 8",
+      "Description": "Oefen met winkeldialogen",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 1
+    },
+    {
+      "Name": "Les 9",
+      "Description": "Type over het weer",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 1
+    },
+    {
+      "Name": "Les 10",
+      "Description": "Test je basiskennis",
+      "IsTest": true,
+      "IsDone": false,
+      "CourseId": 1
+    },
+    {
+      "Name": "Les 1",
+      "Description": "Oefen met uitgebreidere zinnen",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 2
+    },
+    {
+      "Name": "Les 2",
+      "Description": "Type professionele berichten",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 2
+    },
+    {
+      "Name": "Les 3",
+      "Description": "Oefen met korte verhalen",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 2
+    },
+    {
+      "Name": "Les 4",
+      "Description": "Type technische beschrijvingen",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 2
+    },
+    {
+      "Name": "Les 5",
+      "Description": "Oefen met nieuwsberichten",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 2
+    },
+    {
+      "Name": "Les 6",
+      "Description": "Type complexere zinsstructuren",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 2
+    },
+    {
+      "Name": "Les 7",
+      "Description": "Oefen met gesprekken",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 2
+    },
+    {
+      "Name": "Les 8",
+      "Description": "Type officiële correspondentie",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 2
+    },
+    {
+      "Name": "Les 9",
+      "Description": "Oefen met beoordelingen schrijven",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 2
+    },
+    {
+      "Name": "Les 10",
+      "Description": "Test je gevorderde vaardigheden",
+      "IsTest": true,
+      "IsDone": false,
+      "CourseId": 2
+    },
+    {
+      "Name": "Les 1",
+      "Description": "Type literaire fragmenten",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 3
+    },
+    {
+      "Name": "Les 2",
+      "Description": "Oefen met academische content",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 3
+    },
+    {
+      "Name": "Les 3",
+      "Description": "Type juridische teksten",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 3
+    },
+    {
+      "Name": "Les 4",
+      "Description": "Oefen met diepe onderwerpen",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 3
+    },
+    {
+      "Name": "Les 5",
+      "Description": "Type gedetailleerde instructies",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 3
+    },
+    {
+      "Name": "Les 6",
+      "Description": "Oefen met gedichten en rijm",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 3
+    },
+    {
+      "Name": "Les 7",
+      "Description": "Type historische beschrijvingen",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 3
+    },
+    {
+      "Name": "Les 8",
+      "Description": "Oefen met beargumenteerde teksten",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 3
+    },
+    {
+      "Name": "Les 9",
+      "Description": "Type creatieve verhalen",
+      "IsTest": false,
+      "IsDone": false,
+      "CourseId": 3
+    },
+    {
+      "Name": "Les 10",
+      "Description": "Test je expertise",
+      "IsTest": true,
+      "IsDone": false,
+      "CourseId": 3
+    }
+  ]
+}

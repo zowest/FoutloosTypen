@@ -13,17 +13,40 @@ namespace FoutloosTypen.Core.Services
     public class LessonService : ILessonService
     {
         private readonly ILessonRepository _lessonRepository;
-        public LessonService(ILessonRepository lessonRepository)
+        private readonly IAssignmentRepository _assignmentRepository;
+        public LessonService(ILessonRepository lessonRepository, IAssignmentRepository assignmentRepository)
         {
             _lessonRepository = lessonRepository;
+            _assignmentRepository = assignmentRepository;
         }
         public IEnumerable<Lesson> GetAll()
         {
-            return _lessonRepository.GetAll();
+            var lessons = _lessonRepository.GetAll();
+            foreach (var lesson in lessons)
+            {
+                lesson.TotalTime = CalculateTotalTime(lesson.Id);
+            }
+            return lessons;
         }
         public Lesson Get(int id)
         {
-            return _lessonRepository.Get(id);
+            try
+            {
+                var lesson = _lessonRepository.Get(id);
+
+                lesson.TotalTime = CalculateTotalTime(lesson.Id);
+                return lesson;
+            }
+            catch (Exception)
+            {
+                throw new KeyNotFoundException($"Lesson with id {id} not found.");
+
+            }
+        }
+        public double CalculateTotalTime(int lessonId)
+        {
+            var assignments = _assignmentRepository.GetAll().Where(a => a.LessonId == lessonId);
+            return assignments.Sum(a => a.TimeLimit);
         }
     }
 }
