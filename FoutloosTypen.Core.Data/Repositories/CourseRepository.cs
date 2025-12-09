@@ -68,12 +68,10 @@ namespace FoutloosTypen.Core.Data.Repositories
                 foreach (var item in items.EnumerateArray())
                 {
                     int id = item.TryGetProperty("Id", out var idProp) ? idProp.GetInt32() : 0;
-                    string name = item.TryGetProperty("Name", out var nameProp) ? (nameProp.GetString() ?? string.Empty) :
-                                  item.TryGetProperty("name", out var nameProp2) ? (nameProp2.GetString() ?? string.Empty) : string.Empty;
-                    string description = item.TryGetProperty("Description", out var descProp) ? (descProp.GetString() ?? string.Empty) :
-                                        item.TryGetProperty("description", out var descProp2) ? (descProp2.GetString() ?? string.Empty) : string.Empty;
-                    int difficulty = item.TryGetProperty("Difficulty", out var diffProp) ? diffProp.GetInt32() :
-                                     item.TryGetProperty("difficulty", out var diffProp2) ? diffProp2.GetInt32() : 0;
+                    string name = item.TryGetProperty("Name", out var nameProp) ? (nameProp.GetString() ?? string.Empty) : string.Empty;
+                    string description = item.TryGetProperty("Description", out var descProp) ? (descProp.GetString() ?? string.Empty) : string.Empty;
+                    int difficulty = item.TryGetProperty("Difficulty", out var diffProp) ? diffProp.GetInt32(): 0;
+                                
 
                     if (string.IsNullOrWhiteSpace(name)) continue;
 

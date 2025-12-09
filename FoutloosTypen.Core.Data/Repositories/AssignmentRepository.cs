@@ -70,10 +70,8 @@ namespace FoutloosTypen.Core.Data.Repositories
                 foreach (var item in items.EnumerateArray())
                 {
                     int id = item.TryGetProperty("Id", out var idProp) ? idProp.GetInt32() : 0;
-                    double timeLimit = item.TryGetProperty("TimeLimit", out var tlProp) ? tlProp.GetDouble() :
-                                       item.TryGetProperty("timeLimit", out var tlProp2) ? tlProp2.GetDouble() : 60;
-                    int lessonId = item.TryGetProperty("LessonId", out var lidProp) ? lidProp.GetInt32() :
-                                   item.TryGetProperty("lessonId", out var lidProp2) ? lidProp2.GetInt32() : 0;
+                    double timeLimit = item.TryGetProperty("TimeLimit", out var tlProp) ? tlProp.GetDouble():0;
+                    int lessonId = item.TryGetProperty("LessonId", out var lidProp) ? lidProp.GetInt32() : 0;
 
                     if (lessonId == 0) continue;
 

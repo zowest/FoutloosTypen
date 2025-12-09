@@ -77,11 +77,9 @@ namespace FoutloosTypen.Core.Data.Repositories
 
                 foreach (var item in materialsElement.EnumerateArray())
                 {
-                    // Support different casing/keys
-                    int assignmentId = item.TryGetProperty("AssignmentId", out var aid) ? aid.GetInt32() :
-                                       item.TryGetProperty("assignmentId", out var aid2) ? aid2.GetInt32() : 0;
-                    string sentence = item.TryGetProperty("Sentence", out var s) ? (s.GetString() ?? "") :
-                                      item.TryGetProperty("sentence", out var s2) ? (s2.GetString() ?? "") : "";
+                   
+                    int assignmentId = item.TryGetProperty("AssignmentId", out var aid) ? aid.GetInt32() : 0;
+                    string sentence = item.TryGetProperty("Sentence", out var s) ? (s.GetString() ?? "") : "";
 
                     if (assignmentId == 0 || string.IsNullOrWhiteSpace(sentence))
                         continue;
