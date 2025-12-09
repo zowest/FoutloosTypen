@@ -27,57 +27,77 @@ namespace FoutloosTypen.Core.Data.Repositories
 
             Debug.WriteLine("LessonRepository: Table created");
 
-            // Gebruik fallback direct (geen JSON loading voor nu)
-            InsertFallbackLessons();
-            
+            LoadLessonsFromJsonSync();
+
             GetAll();
             
             Debug.WriteLine("LessonRepository: Initialization complete");
         }
 
-        private void InsertFallbackLessons()
+        private void LoadLessonsFromJsonSync()
         {
-            List<string> insertQueries = new()
-            {
-                // Cursus 1 - Beginners (10 lessen)
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 1', 'Leer typen met eenvoudige korte zinnen', 0, 0, 1)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 2', 'Oefen met veelgebruikte woorden', 0, 0, 1)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 3', 'Type eenvoudige vraagzinnen', 0, 0, 1)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 4', 'Oefen met korte mededelingen', 0, 0, 1)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 5', 'Type eenvoudige instructies', 0, 0, 1)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 6', 'Oefen met begroetingen en afscheid', 0, 0, 1)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 7', 'Type zinnen met cijfers en tijden', 0, 0, 1)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 8', 'Oefen met winkeldialogen', 0, 0, 1)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 9', 'Type over het weer', 0, 0, 1)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 10', 'Test je basiskennis', 1, 0, 1)",
-                
-                // Cursus 2 - Gevorderden (10 lessen)
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 1', 'Oefen met uitgebreidere zinnen', 0, 0, 2)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 2', 'Type professionele berichten', 0, 0, 2)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 3', 'Oefen met korte verhalen', 0, 0, 2)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 4', 'Type technische beschrijvingen', 0, 0, 2)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 5', 'Oefen met nieuwsberichten', 0, 0, 2)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 6', 'Type complexere zinsstructuren', 0, 0, 2)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 7', 'Oefen met gesprekken', 0, 0, 2)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 8', 'Type officiële correspondentie', 0, 0, 2)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 9', 'Oefen met beoordelingen schrijven', 0, 0, 2)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 10', 'Test je gevorderde vaardigheden', 1, 0, 2)",
-                
-                // Cursus 3 - Expert (10 lessen)
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 1', 'Type literaire fragmenten', 0, 0, 3)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 2', 'Oefen met academische content', 0, 0, 3)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 3', 'Type juridische teksten', 0, 0, 3)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 4', 'Oefen met diepe onderwerpen', 0, 0, 3)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 5', 'Type gedetailleerde instructies', 0, 0, 3)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 6', 'Oefen met gedichten en rijm', 0, 0, 3)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 7', 'Type historische beschrijvingen', 0, 0, 3)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 8', 'Oefen met beargumenteerde teksten', 0, 0, 3)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 9', 'Type creatieve verhalen', 0, 0, 3)",
-                @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 10', 'Test je expertise', 1, 0, 3)"
-            };
+            var stopwatch = Stopwatch.StartNew();
+            List<string> insertQueries = new();
 
-            InsertMultipleWithTransaction(insertQueries);
-            Debug.WriteLine($"LessonRepository: Inserted {insertQueries.Count} lessons");
+            try
+            {
+                Debug.WriteLine("Loading Lessons.json...");
+
+                Task.Run(async () =>
+                {
+                    using var stream = await FileSystem.OpenAppPackageFileAsync("Lessons.json");
+                    using var reader = new StreamReader(stream);
+                    var json = await reader.ReadToEndAsync();
+
+                    using var jsonDoc = JsonDocument.Parse(json);
+                    var root = jsonDoc.RootElement;
+
+                    JsonElement lessonsElement = root;
+                    if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("Lessons", out var le))
+                        lessonsElement = le;
+
+                    if (lessonsElement.ValueKind != JsonValueKind.Array)
+                        throw new Exception("Invalid JSON structure for lessons");
+
+                    foreach (var item in lessonsElement.EnumerateArray())
+                    {
+                        int id = item.TryGetProperty("Id", out var idProp) ? idProp.GetInt32() : 0;
+                        string name = item.GetProperty("Name").GetString() ?? string.Empty;
+                        string description = item.TryGetProperty("Description", out var descProp) ? (descProp.GetString() ?? string.Empty) : string.Empty;
+                        bool isTest = item.TryGetProperty("IsTest", out var isTestProp) && isTestProp.GetBoolean();
+                        bool isDone = item.TryGetProperty("IsDone", out var isDoneProp) && isDoneProp.GetBoolean();
+                        int courseId = item.GetProperty("CourseId").GetInt32();
+
+                        name = name.Replace("'", "''");
+                        description = description.Replace("'", "''");
+
+                        if (id > 0)
+                        {
+                            insertQueries.Add($@"INSERT OR IGNORE INTO Lessons(Id, Name, Description, IsTest, IsDone, CourseId)
+                            VALUES({id}, '{name}', '{description}', {(isTest ? 1 : 0)}, {(isDone ? 1 : 0)}, {courseId})");
+                        }
+                        else
+                        {
+                            insertQueries.Add($@"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('{name}', '{description}', {(isTest ? 1 : 0)}, {(isDone ? 1 : 0)}, {courseId})");
+                        }
+                    }
+                }).GetAwaiter().GetResult();
+
+                if (insertQueries.Any())
+                {
+                    InsertMultipleWithTransaction(insertQueries);
+                    stopwatch.Stop();
+                    Debug.WriteLine($"SUCCESS: Loaded {insertQueries.Count} lessons from JSON in {stopwatch.ElapsedMilliseconds}ms");
+                }
+            }
+            catch (FileNotFoundException)
+            {
+                Debug.WriteLine("Lessons.json not found; skipping JSON seed for lessons");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"ERROR loading Lessons.json: {ex.Message}");
+            }
         }
 
         public List<Lesson> GetAll()

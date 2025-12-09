@@ -27,8 +27,8 @@ namespace FoutloosTypen.Core.Data.Repositories
                     );
                 ");
 
-                // Insert 150 assignments (5 per lesson, 30 lessons)
-                InsertDefaultAssignments();
+                // Seed from packaged JSON if available
+                LoadAssignmentsFromJsonSync();
 
                 Debug.WriteLine("AssignmentRepository initialized successfully");
             }
@@ -39,27 +39,67 @@ namespace FoutloosTypen.Core.Data.Repositories
             }
         }
 
-        private void InsertDefaultAssignments()
+        private void LoadAssignmentsFromJsonSync()
         {
             try
             {
-                List<string> insertQueries = new();
-                
-                // Create 5 assignments per lesson (30 lessons x 5 = 150 assignments)
-                for (int lessonId = 1; lessonId <= 30; lessonId++)
+                using var stream = FileSystem.OpenAppPackageFileAsync("Assignment.json").GetAwaiter().GetResult();
+                using var reader = new StreamReader(stream);
+                var json = reader.ReadToEnd();
+
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                // Accept either array root or object with common property names
+                JsonElement items = root;
+                if (root.ValueKind == JsonValueKind.Object)
                 {
-                    for (int assignmentNum = 1; assignmentNum <= 5; assignmentNum++)
+                    if (root.TryGetProperty("Assignments", out var aPlural)) items = aPlural;
+                    else if (root.TryGetProperty("Assignment", out var aSingular)) items = aSingular;
+                    else if (root.TryGetProperty("Items", out var itemsProp)) items = itemsProp;
+                    else if (root.TryGetProperty("Data", out var dataProp)) items = dataProp;
+                }
+
+                if (items.ValueKind != JsonValueKind.Array)
+                {
+                    Debug.WriteLine("Assignment JSON has unexpected shape; expected array or object with 'Assignments'/'Assignment'.");
+                    return;
+                }
+
+                var insertQueries = new List<string>();
+                foreach (var item in items.EnumerateArray())
+                {
+                    int id = item.TryGetProperty("Id", out var idProp) ? idProp.GetInt32() : 0;
+                    double timeLimit = item.TryGetProperty("TimeLimit", out var tlProp) ? tlProp.GetDouble() :
+                                       item.TryGetProperty("timeLimit", out var tlProp2) ? tlProp2.GetDouble() : 60;
+                    int lessonId = item.TryGetProperty("LessonId", out var lidProp) ? lidProp.GetInt32() :
+                                   item.TryGetProperty("lessonId", out var lidProp2) ? lidProp2.GetInt32() : 0;
+
+                    if (lessonId == 0) continue;
+
+                    if (id > 0)
                     {
-                        insertQueries.Add($@"INSERT OR IGNORE INTO Assignments(TimeLimit, LessonId) VALUES(60, {lessonId})");
+                        insertQueries.Add($@"INSERT OR IGNORE INTO Assignments(Id, TimeLimit, LessonId) VALUES({id}, {timeLimit}, {lessonId})");
+                    }
+                    else
+                    {
+                        insertQueries.Add($@"INSERT OR IGNORE INTO Assignments(TimeLimit, LessonId) VALUES({timeLimit}, {lessonId})");
                     }
                 }
 
-                InsertMultipleWithTransaction(insertQueries);
-                Debug.WriteLine($"Inserted {insertQueries.Count} assignments");
+                if (insertQueries.Count > 0)
+                {
+                    InsertMultipleWithTransaction(insertQueries);
+                    Debug.WriteLine($"Seeded {insertQueries.Count} assignments from JSON");
+                }
+            }
+            catch (FileNotFoundException)
+            {
+                Debug.WriteLine("Assignment.json not found; skipping JSON seed");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error inserting default assignments: {ex.Message}");
+                Debug.WriteLine($"Error loading assignments from JSON: {ex.Message}");
             }
         }
 
