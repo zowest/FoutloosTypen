@@ -3,12 +3,13 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using FoutloosTypen.Core.Interfaces.Services;
+using Microsoft.Maui.Dispatching;
 
 namespace FoutloosTypen.Core.Services
 {
     public class TimerService : ObservableObject, ITimerService
     {
-        private System.Timers.Timer? _timer;
+        private IDispatcherTimer? _timer;
         private double _initialTime;
         private double _timeRemaining;
 
@@ -18,62 +19,41 @@ namespace FoutloosTypen.Core.Services
             set
             {
                 if (SetProperty(ref _timeRemaining, value))
-                {
                     OnPropertyChanged(nameof(TimeRemainingFormatted));
-                }
             }
         }
 
         public string TimeRemainingFormatted
-        {
-            get
-            {
-                int totalMinutes = (int)(TimeRemaining / 60);
-                int seconds = (int)(TimeRemaining % 60);
-                return $"{totalMinutes:D2}:{seconds:D2}";
-            }
-        }
+            => $"{(int)(TimeRemaining / 60):D2}:{(int)(TimeRemaining % 60):D2}";
 
-        public bool IsRunning => _timer != null;
+        public bool IsRunning => _timer?.IsRunning == true;
 
         public void Initialize(double timeInSeconds)
         {
-            if (timeInSeconds > 3600)
-            {
-                timeInSeconds = 3600;
-            }
-            _initialTime = timeInSeconds;
-            TimeRemaining = timeInSeconds;
-            Debug.WriteLine($"Timer initialized: {timeInSeconds} seconds");
+            _initialTime = Math.Min(timeInSeconds, 3600);
+            TimeRemaining = _initialTime;
         }
 
         public void Start()
         {
-            if (_timer != null)
-            {
-                Debug.WriteLine("Timer already running");
-                return;
-            }
+            if (_timer != null && _timer.IsRunning) return;
+            if (Application.Current?.Dispatcher == null) return;
 
-            _timer = new System.Timers.Timer(1000); // Tick every second
-            _timer.Elapsed += OnTimerTick;
-            _timer.AutoReset = true;
+            _timer ??= Application.Current.Dispatcher.CreateTimer();
+            _timer.Interval = TimeSpan.FromSeconds(1);
+            _timer.Tick -= OnTimerTick;
+            _timer.Tick += OnTimerTick;
             _timer.Start();
             OnPropertyChanged(nameof(IsRunning));
-            Debug.WriteLine("Timer started");
         }
 
         public void Stop()
         {
-            if (_timer != null)
-            {
-                _timer.Stop();
-                _timer.Elapsed -= OnTimerTick;
-                _timer.Dispose();
-                _timer = null;
-                OnPropertyChanged(nameof(IsRunning));
-                Debug.WriteLine("Timer stopped");
-            }
+            if (_timer == null) return;
+            _timer.Stop();
+            _timer.Tick -= OnTimerTick;
+            _timer = null;
+            OnPropertyChanged(nameof(IsRunning));
         }
 
         public void Restart()
@@ -81,37 +61,24 @@ namespace FoutloosTypen.Core.Services
             Stop();
             TimeRemaining = _initialTime;
             Start();
-            Debug.WriteLine("Timer restarted");
         }
 
-        private void OnTimerTick(object? sender, System.Timers.ElapsedEventArgs e)
+        private void OnTimerTick(object? sender, EventArgs e)
         {
-            Application.Current?.Dispatcher.Dispatch(() =>
+            if (TimeRemaining > 0) TimeRemaining--;
+            if (TimeRemaining <= 0)
             {
-                TimeRemaining--;
-
-                Debug.WriteLine($"Time remaining: {TimeRemainingFormatted}");
-
-                if (TimeRemaining <= 0)
-                {
-                    TimeRemaining = 0;
-                    Stop();
-                    _ = OnTimerExpiredAsync();
-                }
-            });
+                TimeRemaining = 0;
+                Stop();
+                _ = OnTimerExpiredAsync();
+            }
         }
 
         private async Task OnTimerExpiredAsync()
         {
-            Debug.WriteLine("Timer expired!");
-
             if (Application.Current?.MainPage != null)
             {
-                await Application.Current.MainPage.DisplayAlert(
-                    "Tijd Voorbij!",
-                    "De tijd is afgelopen.",
-                    "OK");
-
+                await Application.Current.MainPage.DisplayAlert("Tijd Voorbij!", "De tijd is afgelopen.", "OK");
                 await Shell.Current.GoToAsync("..");
             }
         }

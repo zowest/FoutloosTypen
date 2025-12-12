@@ -3,6 +3,8 @@ using FoutloosTypen.Core.Models;
 using Microsoft.Data.Sqlite;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Text.Json;
 
 
 namespace FoutloosTypen.Core.Data.Repositories
@@ -23,20 +25,83 @@ namespace FoutloosTypen.Core.Data.Repositories
                     [Difficulty] INTEGER
                 )");
 
-                List<string> insertQueries = new()
-                {
-                    @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('Course 1', 'Leer de basics van typen', 1)",
-                    @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('Course 2', 'Voor snelle typers', 2)",
-                    @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('Course 3', 'Voor de echte pro''s', 3)"
-                };
+                // Seed from JSON if available
+                LoadCoursesFromJsonSync();
 
-                InsertMultipleWithTransaction(insertQueries);
                 Debug.WriteLine("CourseRepository initialized successfully");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"CourseRepository initialization error: {ex.Message}");
                 throw;
+            }
+        }
+
+        private void LoadCoursesFromJsonSync()
+        {
+            try
+            {
+                using var stream = FileSystem.OpenAppPackageFileAsync("Courses.json").GetAwaiter().GetResult();
+                using var reader = new StreamReader(stream);
+                var json = reader.ReadToEnd();
+
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                // Accept array root or object with common property names
+                JsonElement items = root;
+                if (root.ValueKind == JsonValueKind.Object)
+                {
+                    if (root.TryGetProperty("Courses", out var plural)) items = plural;
+                    else if (root.TryGetProperty("Course", out var singular)) items = singular;
+                    else if (root.TryGetProperty("Items", out var itemsProp)) items = itemsProp;
+                    else if (root.TryGetProperty("Data", out var dataProp)) items = dataProp;
+                }
+
+                if (items.ValueKind != JsonValueKind.Array)
+                {
+                    Debug.WriteLine("Courses JSON has unexpected shape; expected array or object with 'Courses'/'Course'.");
+                    return;
+                }
+
+                var insertQueries = new List<string>();
+                foreach (var item in items.EnumerateArray())
+                {
+                    int id = item.TryGetProperty("Id", out var idProp) ? idProp.GetInt32() : 0;
+                    string name = item.TryGetProperty("Name", out var nameProp) ? (nameProp.GetString() ?? string.Empty) : string.Empty;
+                    string description = item.TryGetProperty("Description", out var descProp) ? (descProp.GetString() ?? string.Empty) : string.Empty;
+                    int difficulty = item.TryGetProperty("Difficulty", out var diffProp) ? diffProp.GetInt32(): 0;
+                                
+
+                    if (string.IsNullOrWhiteSpace(name)) continue;
+
+                    // escape single quotes for raw SQL
+                    name = name.Replace("'", "''");
+                    description = description.Replace("'", "''");
+
+                    if (id > 0)
+                    {
+                        insertQueries.Add($@"INSERT OR IGNORE INTO Courses(Id, Name, Description, Difficulty) VALUES({id}, '{name}', '{description}', {difficulty})");
+                    }
+                    else
+                    {
+                        insertQueries.Add($@"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('{name}', '{description}', {difficulty})");
+                    }
+                }
+
+                if (insertQueries.Count > 0)
+                {
+                    InsertMultipleWithTransaction(insertQueries);
+                    Debug.WriteLine($"Seeded {insertQueries.Count} courses from JSON");
+                }
+            }
+            catch (FileNotFoundException)
+            {
+                Debug.WriteLine("Courses.json not found; skipping JSON seed");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error loading courses from JSON: {ex.Message}");
             }
         }
 

@@ -105,13 +105,13 @@ namespace FoutloosTypen.ViewModels
             }
         }
 
-        // Progress voor opdrachten (1/5, 2/5, etc.)
+        // Progress voor opdrachten (1/n)
         public string AssignmentProgress
         {
             get
             {
                 if (Assignments.Count == 0)
-                    return "Opdracht 0/5";
+                    return "Opdracht 0/0";
                 return $"Opdracht {_currentAssignmentIndex + 1}/{Assignments.Count}";
             }
         }
@@ -259,21 +259,20 @@ namespace FoutloosTypen.ViewModels
 
         private void MoveToNextAssignment()
         {
+            // If current is the last assignment, do not advance or change the displayed count
+            if (_currentAssignmentIndex + 1 >= Assignments.Count)
+            {
+                Debug.WriteLine("All assignments completed. Staying on the last assignment and not incrementing count.");
+                OnPropertyChanged(nameof(AssignmentProgress));
+                OnPropertyChanged(nameof(ProgressText));
+                return;
+            }
+
             _currentAssignmentIndex++;
             OnPropertyChanged(nameof(AssignmentProgress));
             OnPropertyChanged(nameof(ProgressText));
 
-            if (_currentAssignmentIndex >= Assignments.Count)
-            {
-                // Alle 5 opdrachten zijn voltooid - Geen popup meer
-                Debug.WriteLine("All 5 assignments completed! Timer continues running.");
-                return;
-            }
-
-            // Reset timer naar 60 seconden voor de volgende opdracht
             RestartTimer();
-            
-            // Ga naar de volgende opdracht
             SelectedAssignment = Assignments[_currentAssignmentIndex];
             Debug.WriteLine($"Moved to assignment {_currentAssignmentIndex + 1}/{Assignments.Count}");
         }
