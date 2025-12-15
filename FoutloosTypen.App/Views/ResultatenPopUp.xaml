@@ -11,7 +11,7 @@
            HeightRequest="500"
            HorizontalOptions="Center"
            VerticalOptions="Center">
-        <VerticalStackLayout Spacing="90" 
+        <VerticalStackLayout Spacing="80" 
                              HorizontalOptions="Center" 
                              VerticalOptions="Center">
 
