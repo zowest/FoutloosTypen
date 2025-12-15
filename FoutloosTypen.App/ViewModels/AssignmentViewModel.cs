@@ -14,6 +14,8 @@ namespace FoutloosTypen.ViewModels
         private readonly ILessonService _lessonService;
         private readonly IPracticeMaterialService _practiceMaterialService;
         private readonly ITimerService _timerService;
+        private readonly ITypingComparisonService _typingComparisonService;
+        private readonly ILessonProgressService _lessonProgressService;
 
         private const double TIMER_DURATION = 60; // 60 seconden per opdracht
 
@@ -23,6 +25,7 @@ namespace FoutloosTypen.ViewModels
         private List<PracticeMaterial> _materials = new();
         private int _materialIndex = 0;
         private int _currentAssignmentIndex = 0;
+        private string _previousUserInput = string.Empty;
 
         private int _lessonId;
         public int LessonId 
@@ -32,7 +35,6 @@ namespace FoutloosTypen.ViewModels
             { 
                 _lessonId = value; 
                 OnPropertyChanged(nameof(LessonId));
-                Debug.WriteLine($"LessonId set to: {value}");
             } 
         }
 
@@ -62,7 +64,6 @@ namespace FoutloosTypen.ViewModels
                 // Initialize timer with lesson's total time
                 if (value != null && value.TotalTime > 0)
                 {
-                    Debug.WriteLine($"Initializing timer with {value.TotalTime} seconds from lesson");
                     _timerService.Initialize(TIMER_DURATION);
                     _timerService.Start();
                 }
@@ -116,7 +117,7 @@ namespace FoutloosTypen.ViewModels
             }
         }
 
-        // AANGEPASTE PROPERTIES VOOR PROGRESSIEBAR (PER KARAKTER)
+        // Properties voor progressiebar (per karakter)
         private int _typedCharactersCount;
         public int TypedCharactersCount
         {
@@ -164,12 +165,16 @@ namespace FoutloosTypen.ViewModels
             ILessonService lessonService,
             IAssignmentService assignmentService,
             IPracticeMaterialService practiceMaterialService,
-            ITimerService timerService)
+            ITimerService timerService,
+            ITypingComparisonService typingComparisonService,
+            ILessonProgressService lessonProgressService)
         {
             _lessonService = lessonService;
             _assignmentService = assignmentService;
             _practiceMaterialService = practiceMaterialService;
             _timerService = timerService;
+            _typingComparisonService = typingComparisonService;
+            _lessonProgressService = lessonProgressService;
 
             FormattedText = new FormattedString();
         }
@@ -198,6 +203,8 @@ namespace FoutloosTypen.ViewModels
                 {
                     SelectedLesson = targetLesson;
                     Debug.WriteLine($"Selected lesson: {targetLesson.Name} (ID: {targetLesson.Id}) with TotalTime: {targetLesson.TotalTime}");
+                    
+                    _lessonProgressService.StartLesson(targetLesson.Id);
                     return;
                 }
             }
@@ -206,6 +213,11 @@ namespace FoutloosTypen.ViewModels
             if (Lessons.Any())
             {
                 SelectedLesson = Lessons.First();
+                
+                if (SelectedLesson != null)
+                {
+                    _lessonProgressService.StartLesson(SelectedLesson.Id);
+                }
             }
         }
 
@@ -310,39 +322,60 @@ namespace FoutloosTypen.ViewModels
             TypedCharactersCount = correctChars;
         }
 
-        private void ResetTyping()
-        {
-            UserInput = string.Empty;
-            TypedCharactersCount = 0;
-            UpdateFormattedText();
-        }
-
         public void UpdateTypedText(string typedText)
         {
             if (CurrentMaterial == null || string.IsNullOrEmpty(CurrentMaterial.Sentence))
                 return;
 
+            // Check if user made a mistake with the newly typed character
+            if (_typingComparisonService.IsCharacterIncorrect(
+                CurrentMaterial.Sentence, 
+                _previousUserInput, 
+                typedText))
+            {
+                if (SelectedLesson != null)
+                {
+                    _lessonProgressService.RecordMistake(SelectedLesson.Id);
+                    Debug.WriteLine($"Mistake recorded! Total: {_lessonProgressService.GetProgress(SelectedLesson.Id)?.TotalMistakes}");
+                }
+            }
+
+            _previousUserInput = typedText;
             UserInput = typedText;
             UpdateFormattedText();
 
-            // Check of de zin compleet en correct is
-            if (typedText.Length == CurrentMaterial.Sentence.Length)
+            // Check if sentence is complete and correct
+            if (typedText == CurrentMaterial.Sentence)
             {
-                bool allCorrect = true;
-                for (int i = 0; i < typedText.Length; i++)
+                if (SelectedLesson != null)
                 {
-                    if (typedText[i] != CurrentMaterial.Sentence[i])
-                    {
-                        allCorrect = false;
-                        break;
-                    }
+                    _lessonProgressService.CompleteSentence(SelectedLesson.Id);
+                    var progress = _lessonProgressService.GetProgress(SelectedLesson.Id);
+                    Debug.WriteLine($"Sentence completed! Total mistakes: {progress?.TotalMistakes}, Sentences: {progress?.SentencesCompleted}");
                 }
+                
+                // Move to next sentence or assignment
+                MoveToNextMaterial();
+            }
+        }
 
-                if (allCorrect)
-                {
-                    Debug.WriteLine("Sentence completed correctly! Moving to next assignment...");
-                    MoveToNextAssignment();
-                }
+        private void MoveToNextMaterial()
+        {
+            if (_materials == null || !_materials.Any())
+                return;
+
+            _materialIndex++;
+
+            if (_materialIndex < _materials.Count)
+            {
+                CurrentMaterial = _materials[_materialIndex];
+                Debug.WriteLine($"Moved to next material: {_materialIndex + 1}/{_materials.Count}");
+            }
+            else
+            {
+                // All materials in current assignment completed, move to next assignment
+                Debug.WriteLine("All materials completed in this assignment");
+                MoveToNextAssignment();
             }
         }
 
@@ -364,22 +397,26 @@ namespace FoutloosTypen.ViewModels
                 {
                     if (typedText[i] == targetText[i])
                     {
+                        // Correct character - show in black
                         span.TextColor = Colors.Black;
                         span.BackgroundColor = Colors.Transparent;
                     }
                     else
                     {
+                        // Incorrect character - show in red with background
                         span.TextColor = Colors.White;
                         span.BackgroundColor = Colors.Red;
                     }
                 }
                 else if (i == typedText.Length)
                 {
+                    // Current character cursor position
                     span.TextColor = Colors.Gray;
                     span.BackgroundColor = Colors.LightGray;
                 }
                 else
                 {
+                    // Not yet typed - show in light gray
                     span.TextColor = Colors.LightGray;
                     span.BackgroundColor = Colors.Transparent;
                 }
@@ -388,6 +425,28 @@ namespace FoutloosTypen.ViewModels
             }
 
             FormattedText = formatted;
+        }
+
+        private void ResetTyping()
+        {
+            UserInput = string.Empty;
+            _previousUserInput = string.Empty;
+            TypedCharactersCount = 0;
+            UpdateFormattedText();
+        }
+
+        public override void OnDisappearing()
+        {
+            base.OnDisappearing();
+            
+            if (SelectedLesson != null)
+            {
+                _lessonProgressService.EndLesson(SelectedLesson.Id);
+                var progress = _lessonProgressService.GetProgress(SelectedLesson.Id);
+                Debug.WriteLine($"Lesson ended. Total mistakes: {progress?.TotalMistakes}, Time: {progress?.TimeSpent:F2}s");
+            }
+
+            _timerService.Stop();
         }
 
         [RelayCommand]
@@ -443,7 +502,7 @@ namespace FoutloosTypen.ViewModels
 
         ~AssignmentViewModel()
         {
-            StopTimer();
+            _timerService.Stop();
         }
     }
 }

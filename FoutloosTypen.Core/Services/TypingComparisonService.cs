@@ -1,32 +1,52 @@
 ﻿using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Models;
 
-namespace FoutloosTypen.Core.Services;
-
-public class TypingComparisonService : ITypingComparisonService
+namespace FoutloosTypen.Core.Services
 {
-    public TypingSentenceResult Compare(string expectedText, string typedText)
+    public class TypingComparisonService : ITypingComparisonService
     {
-        var result = new TypingSentenceResult
+        public bool IsCharacterIncorrect(string expectedText, string previousInput, string currentInput)
         {
-            ExpectedText = expectedText,
-            TypedText = typedText
-        };
+            // Only check if a character was added (not removed)
+            if (currentInput.Length <= previousInput.Length)
+                return false;
 
-        int maxLength = Math.Max(expectedText.Length, typedText.Length);
+            // Get the newly typed character index
+            int newCharIndex = previousInput.Length;
+            
+            // Check if we're still within expected text bounds
+            if (newCharIndex >= expectedText.Length)
+                return true; // Typing beyond expected length is incorrect
 
-        for (int i = 0; i < maxLength; i++)
-        {
-            char? expected = i < expectedText.Length ? expectedText[i] : null;
-            char? typed = i < typedText.Length ? typedText[i] : null;
+            char typedChar = currentInput[newCharIndex];
+            char expectedChar = expectedText[newCharIndex];
 
-            result.Characters.Add(new TypingCharacterResult
-            {
-                Expected = expected,
-                Typed = typed
-            });
+            return typedChar != expectedChar;
         }
 
-        return result;
+        public TypingComparisonResult Compare(string expectedText, string typedText)
+        {
+            var result = new TypingComparisonResult
+            {
+                ExpectedText = expectedText,
+                TypedText = typedText
+            };
+
+            int maxLength = Math.Max(expectedText.Length, typedText.Length);
+
+            for (int i = 0; i < maxLength; i++)
+            {
+                char? expected = i < expectedText.Length ? expectedText[i] : null;
+                char? typed = i < typedText.Length ? typedText[i] : null;
+
+                result.Characters.Add(new TypingCharacterResult
+                {
+                    Expected = expected,
+                    Typed = typed
+                });
+            }
+
+            return result;
+        }
     }
 }

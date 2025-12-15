@@ -50,6 +50,8 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IAuthService, AuthService>();
             builder.Services.AddSingleton<IStudentService, StudentService>();
             builder.Services.AddSingleton<ITimerService, TimerService>();
+            builder.Services.AddSingleton<ITypingComparisonService, TypingComparisonService>();
+            builder.Services.AddSingleton<ILessonProgressService, LessonProgressService>();
 
             // ViewModels
             builder.Services.AddTransient<LessonViewModel>();
