@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using FoutloosTypen.Core.Interfaces.Services;
-using Microsoft.Maui.Dispatching;
 
 namespace FoutloosTypen.Core.Services
 {
@@ -12,6 +10,8 @@ namespace FoutloosTypen.Core.Services
         private IDispatcherTimer? _timer;
         private double _initialTime;
         private double _timeRemaining;
+
+        public event EventHandler? TimerExpired;
 
         public double TimeRemaining
         {
@@ -65,21 +65,14 @@ namespace FoutloosTypen.Core.Services
 
         private void OnTimerTick(object? sender, EventArgs e)
         {
-            if (TimeRemaining > 0) TimeRemaining--;
+            if (TimeRemaining > 0) 
+                TimeRemaining--;
+            
             if (TimeRemaining <= 0)
             {
                 TimeRemaining = 0;
                 Stop();
-                _ = OnTimerExpiredAsync();
-            }
-        }
-
-        private async Task OnTimerExpiredAsync()
-        {
-            if (Application.Current?.MainPage != null)
-            {
-                await Application.Current.MainPage.DisplayAlert("Tijd Voorbij!", "De tijd is afgelopen.", "OK");
-                await Shell.Current.GoToAsync("..");
+                TimerExpired?.Invoke(this, EventArgs.Empty);
             }
         }
     }

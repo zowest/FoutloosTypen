@@ -12,51 +12,14 @@ namespace FoutloosTypen.ViewModels
             _progress = progress;
         }
 
-        public int Score
-        {
-            get
-            {
-                // Calculate score based on accuracy and time
-                double accuracyScore = AccuracyPercent * 10; // Max 1000 points for 100% accuracy
-                double timeBonus = _progress.TimeRemaining * 7; // Bonus for time remaining
-                return (int)((accuracyScore + timeBonus)*10);
-            }
-        }
+        // All calculations are now done in the service, just expose the values
+        public int Score => _progress.Score;
 
-        public int StrokesPerMinute
-        {
-            get
-            {
-                if (_progress.TimeSpent == 0) return 0;
-                
-                double minutes = _progress.TimeSpent / 60.0;
-                int totalCharacters = _progress.TotalCharactersTyped;
-                
-                return totalCharacters > 0 ? (int)(totalCharacters / minutes) : 0;
-            }
-        }
+        public int StrokesPerMinute => _progress.StrokesPerMinute;
 
-        public int WordsPerMinute
-        {
-            get
-            {
-                // Temporary solution until data layer is finished
-                return StrokesPerMinute / 5;
-            }
-        }
+        public int WordsPerMinute => _progress.WordsPerMinute;
 
-        private double AccuracyPercent
-        {
-            get
-            {
-                if (_progress.TotalCharactersTyped == 0) return 0;
-                
-                double accuracyPercent = ((double)(_progress.TotalCharactersTyped - _progress.TotalMistakes) / _progress.TotalCharactersTyped) * 100;
-                return Math.Max(0, accuracyPercent);
-            }
-        }
-
-        public string Accuracy => $"{Math.Round(AccuracyPercent, 1)}%";
+        public string Accuracy => $"{Math.Round(_progress.AccuracyPercent, 1)}%";
 
         public int TotalMistakes => _progress.TotalMistakes;
 
@@ -64,10 +27,16 @@ namespace FoutloosTypen.ViewModels
         {
             get
             {
+                if (_progress.TimerExpired)
+                {
+                    return "00:00";
+                }
+
                 var timeSpan = TimeSpan.FromSeconds(_progress.TimeRemaining);
                 return $"{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
             }
         }
+        public string ResultTitle => _progress.Score > 0 ? "Les Voltooid!" : "Les Gefaald";
 
         public event PropertyChangedEventHandler? PropertyChanged;
     }

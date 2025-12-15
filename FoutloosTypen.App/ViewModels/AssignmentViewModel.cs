@@ -4,6 +4,7 @@ using FoutloosTypen.Core.Interfaces.Services;
 using System.ComponentModel;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.Input;
+using FoutloosTypen.Views;
 
 namespace FoutloosTypen.ViewModels
 {
@@ -176,7 +177,56 @@ namespace FoutloosTypen.ViewModels
             _typingComparisonService = typingComparisonService;
             _lessonProgressService = lessonProgressService;
 
+            // Subscribe to timer expired event
+            _timerService.TimerExpired += OnTimerExpired;
+
             FormattedText = new FormattedString();
+        }
+
+        private async void OnTimerExpired(object? sender, EventArgs e)
+        {
+            Debug.WriteLine("Timer expired! Showing results...");
+            
+            if (SelectedLesson == null) return;
+
+            // Mark that the timer expired
+            _lessonProgressService.MarkTimerExpired(SelectedLesson.Id);
+            
+            // End the lesson (this will automatically calculate results)
+            _lessonProgressService.EndLesson(SelectedLesson.Id);
+            
+            // Show results popup
+            await ShowLessonResultsAsync();
+        }
+
+        private async Task ShowLessonResultsAsync()
+        {
+            StopTimer();
+            
+            if (SelectedLesson == null || Application.Current?.MainPage == null)
+                return;
+
+            var progress = _lessonProgressService.GetProgress(SelectedLesson.Id);
+            if (progress == null)
+                return;
+
+            // Show custom popup with progress data
+            var popup = new ResultatenPopUp(progress);
+            await Application.Current.MainPage.Navigation.PushModalAsync(popup);
+            
+            // Wait for user response
+            bool shouldContinue = await popup.WaitForUserResponseAsync();
+            
+            if (shouldContinue)
+            {
+                // User clicked "Ga verder" - navigate back
+                await Shell.Current.GoToAsync("..");
+            }
+            else
+            {
+                // User clicked "Herstart" - restart the lesson
+                RestartLesson();
+            }
         }
 
         public async Task OnAppearingAsync()
@@ -277,16 +327,22 @@ namespace FoutloosTypen.ViewModels
 
             if (_currentAssignmentIndex >= Assignments.Count)
             {
-                // Alle 5 opdrachten zijn voltooid - Toon resultaten popup
-                Debug.WriteLine("All 5 assignments completed! Showing results...");
+                // All assignments completed - Show results popup
+                Debug.WriteLine("All assignments completed! Showing results...");
+                
+                if (SelectedLesson != null)
+                {
+                    _lessonProgressService.EndLesson(SelectedLesson.Id);
+                }
+                
                 ShowLessonResults();
                 return;
             }
 
-            // Reset timer naar 60 seconden voor de volgende opdracht
+            // Reset timer for next assignment
             RestartTimer();
             
-            // Ga naar de volgende opdracht
+            // Move to next assignment
             SelectedAssignment = Assignments[_currentAssignmentIndex];
             Debug.WriteLine($"Moved to assignment {_currentAssignmentIndex + 1}/{Assignments.Count}");
         }
@@ -557,6 +613,8 @@ namespace FoutloosTypen.ViewModels
 
         ~AssignmentViewModel()
         {
+            // Unsubscribe from event
+            _timerService.TimerExpired -= OnTimerExpired;
             _timerService.Stop();
         }
     }
