@@ -34,7 +34,6 @@ namespace FoutloosTypen.Core.Data
                 Connection.Close();
         }
 
-        // 🔴 DEZE ONTBRAK
         protected void CreateTable(string sql)
         {
             OpenConnection();
@@ -42,7 +41,6 @@ namespace FoutloosTypen.Core.Data
             cmd.ExecuteNonQuery();
         }
 
-        // 🔴 DEZE ONTBRAK
         protected void InsertMultipleWithTransaction(IEnumerable<string> statements)
         {
             OpenConnection();
