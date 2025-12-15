@@ -4,14 +4,15 @@ using CommunityToolkit.Maui.Storage;
 using Microsoft.Maui.ApplicationModel.DataTransfer;
 using Microsoft.Maui.Storage;
 using Microsoft.Maui.ApplicationModel; // Browser
-using CommunityToolkit.Maui.Views; // Popup
-using FoutloosTypen.Views; // ImagePreviewPopup
+using CommunityToolkit.Maui.Views; 
+using FoutloosTypen.Views;
 
 namespace FoutloosTypen.Services
 {
     public interface ISocialShareService
     {
         Task<bool> ShareToXWithConfirmationAsync(string lessonName, string progressText);
+        Task<bool> RegrantPostingConsentAsync();
     }
 
     public class SocialShareService : ISocialShareService
@@ -29,7 +30,6 @@ namespace FoutloosTypen.Services
             _fileSaver = FileSaver.Default;
         }
 
-        // Uses X API to upload the generated SkiaSharp image and tweet with media
         public async Task<bool> ShareToTwitterAsync(string lessonName, string progressText)
         {
             var accessToken = await EnsureAccessTokenAsync();
@@ -38,19 +38,50 @@ namespace FoutloosTypen.Services
                 return false;
             }
 
-            // Derive correct content type from generated file
             var imagePath = await _shareImageService.SaveLessonSummaryImageAsync(lessonName, progressText);
             var contentType = Path.GetExtension(imagePath).Equals(".png", StringComparison.OrdinalIgnoreCase)
                 ? "image/png"
                 : "image/jpeg";
 
-            var mediaId = await _xAuthService.UploadMediaAsync(imagePath, contentType);
+            string? mediaId = null;
+            try
+            {
+                mediaId = await _xAuthService.UploadMediaV11Async(
+                    imagePath,
+                    contentType,
+                    _settings.ConsumerKey,
+                    _settings.ConsumerSecret,
+                    accessToken,
+                    _settings.AccessTokenSecret);
+            }
+            catch (HttpRequestException hre) when (hre.Message.Contains("403") || hre.Message.Contains("Forbidden", StringComparison.OrdinalIgnoreCase))
+            {
+                // Force user consent to gain missing scopes like media.write
+                var regranted = await RegrantPostingConsentAsync();
+                if (regranted)
+                {
+                    mediaId = await _xAuthService.UploadMediaV11Async(
+                        imagePath,
+                        contentType,
+                        _settings.ConsumerKey,
+                        _settings.ConsumerSecret,
+                        accessToken,
+                        _settings.AccessTokenSecret);
+                }
+            }
+
             if (string.IsNullOrEmpty(mediaId))
             {
                 var refreshed = await TryRefreshTokenAsync();
                 if (string.IsNullOrEmpty(refreshed)) return false;
 
-                mediaId = await _xAuthService.UploadMediaAsync(imagePath, contentType);
+                mediaId = await _xAuthService.UploadMediaV11Async(
+                    imagePath,
+                    contentType,
+                    _settings.ConsumerKey,
+                    _settings.ConsumerSecret,
+                    accessToken,
+                    _settings.AccessTokenSecret);
                 if (string.IsNullOrEmpty(mediaId)) return false;
             }
 
@@ -71,7 +102,8 @@ namespace FoutloosTypen.Services
 
         public async Task<bool> AuthenticateWithXAsync()
         {
-            var code = await _xAuthService.AuthenticateAsync(_settings.ClientId, _settings.RedirectUri, _settings.Scopes);
+            // Always request user consent when authenticating explicitly
+            var code = await _xAuthService.AuthenticateAsync(_settings.ClientId, _settings.RedirectUri, _settings.Scopes, forceConsent: true);
             if (string.IsNullOrEmpty(code))
             {
                 return false;
@@ -101,13 +133,29 @@ namespace FoutloosTypen.Services
 
         private async Task<string?> EnsureAccessTokenAsync()
         {
+            // Try existing access token
             var accessToken = await _xAuthService.GetStoredAccessTokenAsync();
             if (!string.IsNullOrEmpty(accessToken))
             {
                 return accessToken;
             }
 
-            return await TryRefreshTokenAsync();
+            // Try refresh token first
+            var refreshed = await TryRefreshTokenAsync();
+            if (!string.IsNullOrEmpty(refreshed))
+            {
+                return refreshed;
+            }
+
+            // No tokens available: require explicit consent before posting
+            var code = await _xAuthService.AuthenticateAsync(_settings.ClientId, _settings.RedirectUri, _settings.Scopes, forceConsent: true);
+            if (string.IsNullOrEmpty(code))
+            {
+                return null;
+            }
+
+            var exchanged = await _xAuthService.ExchangeCodeForTokenAsync(_settings.ClientId, code, _settings.RedirectUri);
+            return exchanged;
         }
 
         private async Task<string?> TryRefreshTokenAsync()
@@ -121,6 +169,16 @@ namespace FoutloosTypen.Services
             return await _xAuthService.RefreshAccessTokenAsync(_settings.ClientId, refreshToken, _settings.RedirectUri);
         }
 
+        public async Task<bool> RegrantPostingConsentAsync()
+        {
+            // Clear local tokens and force user consent to acquire new scopes (e.g., media.write)
+            await _xAuthService.SignOutAsync();
+            var code = await _xAuthService.AuthenticateAsync(_settings.ClientId, _settings.RedirectUri, _settings.Scopes, forceConsent: true);
+            if (string.IsNullOrEmpty(code)) return false;
+            var access = await _xAuthService.ExchangeCodeForTokenAsync(_settings.ClientId, code, _settings.RedirectUri);
+            return !string.IsNullOrEmpty(access);
+        }
+
         private async Task<bool> ShareToXViaBrowserAsync(string lessonName, string progressText)
         {
             var tweetText = Uri.EscapeDataString($"{lessonName} - {progressText} #FoutloosTypen");
@@ -128,9 +186,16 @@ namespace FoutloosTypen.Services
             try { await Browser.OpenAsync(url, BrowserLaunchMode.External); return true; }
             catch { return false; }
         }
-
         public async Task<bool> ShareToXWithConfirmationAsync(string lessonName, string progressText)
         {
+            // Require fresh consent before showing preview
+            var regranted = await RegrantPostingConsentAsync();
+            if (!regranted)
+            {
+                // If user cancels consent, stop early
+                return false;
+            }
+
             var imagePath = await _shareImageService.SaveLessonSummaryImageAsync(lessonName, progressText);
             var tweetText = $"{lessonName} - {progressText} #FoutloosTypen";
 
@@ -141,22 +206,53 @@ namespace FoutloosTypen.Services
             var confirmed = (await mainPage.ShowPopupAsync(popup)) is bool b && b;
             if (!confirmed) return false;
 
-            var accessToken = await EnsureAccessTokenAsync();
+            var accessToken = await _xAuthService.GetStoredAccessTokenAsync();
             if (string.IsNullOrEmpty(accessToken))
             {
-                // Guide user to login or fallback
                 await Share.RequestAsync(new ShareFileRequest { Title = "Deel op X", File = new ShareFile(imagePath) });
                 await ShareToXViaBrowserAsync(lessonName, progressText);
                 return false;
             }
 
             var contentType = Path.GetExtension(imagePath).Equals(".png", StringComparison.OrdinalIgnoreCase) ? "image/png" : "image/jpeg";
-            var mediaId = await _xAuthService.UploadMediaAsync(imagePath, contentType);
+            string? mediaId = null;
+            try
+            {
+                mediaId = await _xAuthService.UploadMediaV11Async(
+                    imagePath,
+                    contentType,
+                    _settings.ConsumerKey,
+                    _settings.ConsumerSecret,
+                    accessToken,
+                    _settings.AccessTokenSecret);
+            }
+            catch (HttpRequestException hre) when (hre.Message.Contains("403") || hre.Message.Contains("Forbidden", StringComparison.OrdinalIgnoreCase))
+            {
+                // If 403 occurs even after consent, allow one retry by re-consenting
+                var consentRetry = await RegrantPostingConsentAsync();
+                if (consentRetry)
+                {
+                    mediaId = await _xAuthService.UploadMediaV11Async(
+                        imagePath,
+                        contentType,
+                        _settings.ConsumerKey,
+                        _settings.ConsumerSecret,
+                        accessToken,
+                        _settings.AccessTokenSecret);
+                }
+            }
+
             if (string.IsNullOrEmpty(mediaId))
             {
                 var refreshed = await TryRefreshTokenAsync();
                 if (!string.IsNullOrEmpty(refreshed))
-                    mediaId = await _xAuthService.UploadMediaAsync(imagePath, contentType);
+                    mediaId = await _xAuthService.UploadMediaV11Async(
+                        imagePath,
+                        contentType,
+                        _settings.ConsumerKey,
+                        _settings.ConsumerSecret,
+                        accessToken,
+                        _settings.AccessTokenSecret);
             }
             if (string.IsNullOrEmpty(mediaId))
             {
@@ -166,10 +262,7 @@ namespace FoutloosTypen.Services
             }
 
             await _xAuthService.CreateTweetAsync(tweetText, mediaId);
-
-            // Optionally, you can open the generic X (Twitter) homepage instead:
             await Browser.OpenAsync("https://twitter.com", BrowserLaunchMode.External);
-
             return true;
         }
     }

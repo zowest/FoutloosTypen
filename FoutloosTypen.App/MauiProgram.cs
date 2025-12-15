@@ -59,8 +59,14 @@ namespace FoutloosTypen
             {
                 ClientId = "RW5hLTJ2eFExaHVjRnBDUFhGcmU6MTpjaQ",
                 RedirectUri = "http://127.0.0.1:51789/callback",
-                Scopes = new[] { "tweet.write","users.read", "media.write",
-"offline.access" }
+                Scopes = new[] { "tweet.write","users.read", "media.write" , "offline.access" },
+                // OAuth1 credentials for v1.1 media upload (required for free tier)
+                // Get these from https://developer.x.com/en/portal/dashboard -> Your App -> Keys and tokens
+                ConsumerKey = Environment.GetEnvironmentVariable("X_CONSUMER_KEY") ?? string.Empty,
+                ConsumerSecret = Environment.GetEnvironmentVariable("X_CONSUMER_SECRET") ?? string.Empty,
+                // Note: For OAuth1, you need a user-specific access token, not the OAuth2 token
+                // Generate this in the X Developer Portal under "Authentication Tokens"
+                AccessTokenSecret = Environment.GetEnvironmentVariable("X_ACCESS_TOKEN_SECRET") ?? string.Empty
             });
             
             // Image sharing and social sharing
