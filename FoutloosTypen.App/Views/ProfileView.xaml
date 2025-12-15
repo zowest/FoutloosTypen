@@ -41,7 +41,7 @@
             
             <!-- Naam -->
             <HorizontalStackLayout Spacing="12">
-                <Label Text="Goededag "
+                <Label Text="Goedendag "
                        TextColor="Black"
                        FontSize="48"
                        FontAttributes="Bold"/>
