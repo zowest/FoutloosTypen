@@ -1,4 +1,3 @@
-using FoutloosTypen.Core.Data.Helpers;
 using Microsoft.Maui.Storage;
 using System.Diagnostics;
 
@@ -11,18 +10,15 @@ namespace FoutloosTypen.Core.Data.Helpers
 #if DEBUG
             try
             {
-                string dbName = ConnectionHelper.ConnectionStringValue("FoutloosTypenDb");
-                string dbDirectory = FileSystem.AppDataDirectory;
-                string dbPath = Path.Combine(dbDirectory, dbName);
+                var provider = ConnectionHelper.GetProvider();
 
-                if (File.Exists(dbPath))
+                if (provider == "Sqlite")
                 {
-                    File.Delete(dbPath);
-                    Debug.WriteLine($"[DEBUG] Deleted existing database at: {dbPath}");
+                    ResetSqlite();
                 }
-                else
+                else if (provider == "MySql")
                 {
-                    Debug.WriteLine($"[DEBUG] No database to delete at: {dbPath}");
+                    ResetMySql();
                 }
             }
             catch (Exception ex)
@@ -30,6 +26,37 @@ namespace FoutloosTypen.Core.Data.Helpers
                 Debug.WriteLine($"[DEBUG] Failed to reset database: {ex.Message}");
             }
 #endif
+        }
+
+        private static void ResetSqlite()
+        {
+            string dbName = ConnectionHelper.GetConnectionString();
+            string dbDirectory = FileSystem.AppDataDirectory;
+            string dbPath = Path.Combine(dbDirectory, dbName);
+
+            if (File.Exists(dbPath))
+            {
+                File.Delete(dbPath);
+                Debug.WriteLine($"[DEBUG] Deleted SQLite database at: {dbPath}");
+            }
+            else
+            {
+                Debug.WriteLine($"[DEBUG] No SQLite database found at: {dbPath}");
+            }
+        }
+
+        private static void ResetMySql()
+        {
+            using var connection = new MySqlConnector.MySqlConnection(
+                ConnectionHelper.GetConnectionString());
+
+            connection.Open();
+
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "DROP DATABASE IF EXISTS foutloostypen;";
+            cmd.ExecuteNonQuery();
+
+            Debug.WriteLine("[DEBUG] Dropped MySQL database 'foutloostypen'");
         }
     }
 }

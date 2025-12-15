@@ -1,11 +1,11 @@
 ﻿using FoutloosTypen.Core.Interfaces.Repositories;
 using FoutloosTypen.Core.Models;
-using Microsoft.Data.Sqlite;
+using Microsoft.Maui.Storage;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
-
+using System.Data.Common;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
@@ -15,166 +15,125 @@ namespace FoutloosTypen.Core.Data.Repositories
 
         public CourseRepository()
         {
-            try
-            {
-                CreateTable(@"
+            CreateTable("""
                 CREATE TABLE IF NOT EXISTS Courses (
-                    [Id] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                    [Name] NVARCHAR(80) UNIQUE NOT NULL,
-                    [Description] NVARCHAR(250),
-                    [Difficulty] INTEGER
-                )");
+                    Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    Name VARCHAR(80) UNIQUE NOT NULL,
+                    Description VARCHAR(250),
+                    Difficulty INT
+                );
+            """);
 
-                // Seed from JSON if available
-                LoadCoursesFromJsonSync();
-
-                Debug.WriteLine("CourseRepository initialized successfully");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"CourseRepository initialization error: {ex.Message}");
-                throw;
-            }
+            LoadCoursesFromJsonSync();
         }
 
         private void LoadCoursesFromJsonSync()
         {
             try
             {
-                using var stream = FileSystem.OpenAppPackageFileAsync("Courses.json").GetAwaiter().GetResult();
+                using var stream = FileSystem
+                    .OpenAppPackageFileAsync("Courses.json")
+                    .GetAwaiter()
+                    .GetResult();
+
                 using var reader = new StreamReader(stream);
-                var json = reader.ReadToEnd();
+                using var doc = JsonDocument.Parse(reader.ReadToEnd());
 
-                using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
-
-                // Accept array root or object with common property names
-                JsonElement items = root;
-                if (root.ValueKind == JsonValueKind.Object)
-                {
-                    if (root.TryGetProperty("Courses", out var plural)) items = plural;
-                    else if (root.TryGetProperty("Course", out var singular)) items = singular;
-                    else if (root.TryGetProperty("Items", out var itemsProp)) items = itemsProp;
-                    else if (root.TryGetProperty("Data", out var dataProp)) items = dataProp;
-                }
-
-                if (items.ValueKind != JsonValueKind.Array)
-                {
-                    Debug.WriteLine("Courses JSON has unexpected shape; expected array or object with 'Courses'/'Course'.");
+                if (root.ValueKind != JsonValueKind.Array &&
+                    !(root.ValueKind == JsonValueKind.Object &&
+                      root.TryGetProperty("Courses", out root)))
                     return;
-                }
 
-                var insertQueries = new List<string>();
-                foreach (var item in items.EnumerateArray())
+                var statements = new List<string>();
+
+                foreach (var item in root.EnumerateArray())
                 {
-                    int id = item.TryGetProperty("Id", out var idProp) ? idProp.GetInt32() : 0;
-                    string name = item.TryGetProperty("Name", out var nameProp) ? (nameProp.GetString() ?? string.Empty) : string.Empty;
-                    string description = item.TryGetProperty("Description", out var descProp) ? (descProp.GetString() ?? string.Empty) : string.Empty;
-                    int difficulty = item.TryGetProperty("Difficulty", out var diffProp) ? diffProp.GetInt32(): 0;
-                                
+                    string name = item.GetProperty("Name").GetString() ?? "";
+                    if (string.IsNullOrWhiteSpace(name))
+                        continue;
 
-                    if (string.IsNullOrWhiteSpace(name)) continue;
+                    string description = item.TryGetProperty("Description", out var d)
+                        ? d.GetString() ?? ""
+                        : "";
 
-                    // escape single quotes for raw SQL
+                    int difficulty = item.TryGetProperty("Difficulty", out var diff)
+                        ? diff.GetInt32()
+                        : 0;
+
                     name = name.Replace("'", "''");
                     description = description.Replace("'", "''");
 
-                    if (id > 0)
-                    {
-                        insertQueries.Add($@"INSERT OR IGNORE INTO Courses(Id, Name, Description, Difficulty) VALUES({id}, '{name}', '{description}', {difficulty})");
-                    }
-                    else
-                    {
-                        insertQueries.Add($@"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('{name}', '{description}', {difficulty})");
-                    }
+                    statements.Add(
+                        $"INSERT IGNORE INTO Courses(Name, Description, Difficulty) " +
+                        $"VALUES('{name}', '{description}', {difficulty});"
+                    );
                 }
 
-                if (insertQueries.Count > 0)
+                if (statements.Count > 0)
                 {
-                    InsertMultipleWithTransaction(insertQueries);
-                    Debug.WriteLine($"Seeded {insertQueries.Count} courses from JSON");
+                    InsertMultipleWithTransaction(statements);
+                    Debug.WriteLine($"Seeded {statements.Count} courses");
                 }
-            }
-            catch (FileNotFoundException)
-            {
-                Debug.WriteLine("Courses.json not found; skipping JSON seed");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error loading courses from JSON: {ex.Message}");
+                Debug.WriteLine($"Course seed error: {ex.Message}");
             }
         }
 
         public List<Course> GetAll()
         {
             courses.Clear();
+            OpenConnection();
 
-            try
+            using var command = Connection.CreateCommand();
+            command.CommandText =
+                "SELECT Id, Name, Description, Difficulty FROM Courses";
+
+            using DbDataReader reader = command.ExecuteReader();
+            while (reader.Read())
             {
-                string selectQuery = "SELECT Id, Name, Description, Difficulty FROM Courses";
-                OpenConnection();
-
-                using (SqliteCommand command = new(selectQuery, Connection))
-                {
-                    SqliteDataReader reader = command.ExecuteReader();
-
-                    while (reader.Read())
-                    {
-                        int id = reader.GetInt32(0);
-                        string name = reader.GetString(1);
-                        string description = reader.IsDBNull(2) ? "" : reader.GetString(2);
-                        int difficulty = reader.GetInt32(3);
-
-                        courses.Add(new Course(id, name, description, difficulty));
-                        Debug.WriteLine($"Loaded course: {id} - {name}");
-                    }
-                }
-
-                CloseConnection();
-                Debug.WriteLine($"Total courses loaded: {courses.Count}");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error loading courses: {ex.Message}");
-                CloseConnection();
+                courses.Add(new Course(
+                    reader.GetInt32(0),
+                    reader.GetString(1),
+                    reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    reader.GetInt32(3)
+                ));
             }
 
+            CloseConnection();
             return courses;
         }
 
-        public Course Get(int id)
+        public Course? Get(int id)
         {
-            string selectQuery = $"SELECT Id, Name, Description, Difficulty FROM Courses WHERE Id = {id}";
-            Course tmpCourse = null;
+            OpenConnection();
 
-            try
+            using var command = Connection.CreateCommand();
+            command.CommandText =
+                "SELECT Id, Name, Description, Difficulty FROM Courses WHERE Id = @id";
+
+            var p = command.CreateParameter();
+            p.ParameterName = "@id";
+            p.Value = id;
+            command.Parameters.Add(p);
+
+            using DbDataReader reader = command.ExecuteReader();
+            Course? result = null;
+
+            if (reader.Read())
             {
-                OpenConnection();
-
-                using (SqliteCommand command = new(selectQuery, Connection))
-                {
-                    SqliteDataReader reader = command.ExecuteReader();
-
-                    if (reader.Read())
-                    {
-                        int Id = reader.GetInt32(0);
-                        string name = reader.GetString(1);
-                        string description = reader.IsDBNull(2) ? "" : reader.GetString(2);
-                        int difficulty = reader.GetInt32(3);
-
-                        tmpCourse = new Course(Id, name, description, difficulty);
-                    }
-                }
-
-                CloseConnection();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error loading course {id}: {ex.Message}");
-                CloseConnection();
+                result = new Course(
+                    reader.GetInt32(0),
+                    reader.GetString(1),
+                    reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    reader.GetInt32(3)
+                );
             }
 
-            return tmpCourse;
+            CloseConnection();
+            return result;
         }
     }
 }
