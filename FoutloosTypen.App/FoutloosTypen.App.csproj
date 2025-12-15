@@ -61,6 +61,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Update="Views\ProfileView.xaml.cs">
+	    <DependentUpon>ProfileView.xaml</DependentUpon>
+	  </Compile>
 	  <Compile Update="Views\ResultatenPopUp.xaml.cs">
 	    <DependentUpon>ResultatenPopUp.xaml</DependentUpon>
 	  </Compile>
@@ -72,6 +75,9 @@
 		</MauiXaml>
 		<MauiXaml Update="Views\AssignmentView.xaml">
 			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Views\ProfileView.xaml">
+		  <Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 		<MauiXaml Update="Views\ResultatenPopUp.xaml">
 		  <Generator>MSBuild:Compile</Generator>
