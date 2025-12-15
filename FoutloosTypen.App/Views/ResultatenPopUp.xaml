@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="FoutloosTypen.Views.LessonCompletedPopup"
+             x:Class="FoutloosTypen.Views.ResultatenPopUp"
              BackgroundColor="#80000000">
     <Frame BackgroundColor="White"
            BorderColor="Black"
@@ -53,7 +53,7 @@
                 <HorizontalStackLayout>
                     <Label Text="Fouten:"
                         TextColor="Black"/>
-                    <Label Text="{Binding SessionMistakes}"
+                    <Label Text="{Binding TotalMistakes}"
                          TextColor="Black"/>
                 </HorizontalStackLayout>
                 <HorizontalStackLayout>

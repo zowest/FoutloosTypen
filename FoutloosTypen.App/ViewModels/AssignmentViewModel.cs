@@ -319,17 +319,18 @@ namespace FoutloosTypen.ViewModels
         private async void ShowLessonResults()
         {
             StopTimer();
-            
+
             // Toon custom popup
-            if (Application.Current?.MainPage != null)
+            if (Application.Current?.MainPage != null && SelectedLesson != null)
             {
-                var popup = new Views.LessonCompletedPopup();
+                var progress = _lessonProgressService.GetProgress(SelectedLesson.Id);
+                var popup = new Views.ResultatenPopUp(progress);
                 await Application.Current.MainPage.Navigation.PushModalAsync(popup);
-                
+
                 // Wacht tot de gebruiker op de knop klikt
                 // true = Ga verder, false = Herstart
                 bool shouldContinue = await popup.WaitForUserResponseAsync();
-                
+
                 if (shouldContinue)
                 {
                     // Gebruiker klikte op "Ga verder" - navigeer terug
@@ -403,7 +404,7 @@ namespace FoutloosTypen.ViewModels
             {
                 if (SelectedLesson != null)
                 {
-                    _lessonProgressService.CompleteSentence(SelectedLesson.Id);
+                    _lessonProgressService.CompleteSentence(SelectedLesson.Id, UserInput?.Length ?? 0);
                     var progress = _lessonProgressService.GetProgress(SelectedLesson.Id);
                     Debug.WriteLine($"Sentence completed! Total mistakes: {progress?.TotalMistakes}, Sentences: {progress?.SentencesCompleted}");
                 }

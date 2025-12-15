@@ -6,7 +6,7 @@ namespace FoutloosTypen.Core.Interfaces.Services
     {
         void StartLesson(int lessonId);
         void RecordMistake(int lessonId);
-        void CompleteSentence(int lessonId);
+        void CompleteSentence(int lessonId, int charactersTyped);
         void EndLesson(int lessonId);
         LessonProgress? GetProgress(int lessonId);
     }

@@ -25,11 +25,12 @@ namespace FoutloosTypen.Core.Services
             }
         }
 
-        public void CompleteSentence(int lessonId)
+        public void CompleteSentence(int lessonId, int charactersTyped)
         {
             if (_activeLessons.TryGetValue(lessonId, out var progress))
             {
                 progress.SentencesCompleted++;
+                progress.TotalCharactersTyped += charactersTyped;
             }
         }
 
