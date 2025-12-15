@@ -271,22 +271,45 @@ namespace FoutloosTypen.ViewModels
 
         private void MoveToNextAssignment()
         {
-            // If current is the last assignment, do not advance or change the displayed count
-            if (_currentAssignmentIndex + 1 >= Assignments.Count)
-            {
-                Debug.WriteLine("All assignments completed. Staying on the last assignment and not incrementing count.");
-                OnPropertyChanged(nameof(AssignmentProgress));
-                OnPropertyChanged(nameof(ProgressText));
-                return;
-            }
-
             _currentAssignmentIndex++;
             OnPropertyChanged(nameof(AssignmentProgress));
             OnPropertyChanged(nameof(ProgressText));
 
+            if (_currentAssignmentIndex >= Assignments.Count)
+            {
+                // Alle 5 opdrachten zijn voltooid - Toon resultaten popup
+                Debug.WriteLine("All 5 assignments completed! Showing results...");
+                ShowLessonResults();
+                return;
+            }
+
+            // Reset timer naar 60 seconden voor de volgende opdracht
             RestartTimer();
+
+            // Ga naar de volgende opdracht
             SelectedAssignment = Assignments[_currentAssignmentIndex];
             Debug.WriteLine($"Moved to assignment {_currentAssignmentIndex + 1}/{Assignments.Count}");
+        }
+
+        private async void ShowLessonResults()
+        {
+            StopTimer();
+
+            // Toon custom popup
+            if (Application.Current?.MainPage != null)
+            {
+                var popup = new Views.LessonCompletedPopup();
+                await Application.Current.MainPage.Navigation.PushModalAsync(popup);
+
+                // Wacht tot de gebruiker op de knop klikt
+                await popup.WaitForUserResponseAsync();
+
+                // Na het klikken, navigeer terug
+                await Shell.Current.GoToAsync("..");
+            }
+        }
+
+
         }
 
         private void UpdateTotalCharactersCount()
