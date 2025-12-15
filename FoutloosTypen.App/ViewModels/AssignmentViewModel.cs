@@ -279,6 +279,31 @@ namespace FoutloosTypen.ViewModels
             Debug.WriteLine($"Moved to assignment {_currentAssignmentIndex + 1}/{Assignments.Count}");
         }
 
+        /// <summary>
+        /// Herstart de huidige les vanaf het begin
+        /// </summary>
+        public void RestartLesson()
+        {
+            Debug.WriteLine("Restarting lesson...");
+            
+            // Reset naar de eerste opdracht
+            _currentAssignmentIndex = 0;
+            OnPropertyChanged(nameof(AssignmentProgress));
+            OnPropertyChanged(nameof(ProgressText));
+            
+            // Selecteer de eerste opdracht
+            if (Assignments.Any())
+            {
+                SelectedAssignment = Assignments.First();
+            }
+            
+            // Reset typing en timer
+            ResetTyping();
+            RestartTimer();
+            
+            Debug.WriteLine("Lesson restarted successfully");
+        }
+
         private async void ShowLessonResults()
         {
             StopTimer();
@@ -290,10 +315,19 @@ namespace FoutloosTypen.ViewModels
                 await Application.Current.MainPage.Navigation.PushModalAsync(popup);
                 
                 // Wacht tot de gebruiker op de knop klikt
-                await popup.WaitForUserResponseAsync();
+                // true = Ga verder, false = Herstart
+                bool shouldContinue = await popup.WaitForUserResponseAsync();
                 
-                // Na het klikken, navigeer terug
-                await Shell.Current.GoToAsync("..");
+                if (shouldContinue)
+                {
+                    // Gebruiker klikte op "Ga verder" - navigeer terug
+                    await Shell.Current.GoToAsync("..");
+                }
+                else
+                {
+                    // Gebruiker klikte op "Herstart" - herstart de les
+                    RestartLesson();
+                }
             }
         }
 

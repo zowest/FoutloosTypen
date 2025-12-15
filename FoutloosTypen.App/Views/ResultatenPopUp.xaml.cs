@@ -12,6 +12,10 @@ namespace FoutloosTypen.Views
             _userResponseTcs = new TaskCompletionSource<bool>();
         }
 
+        /// <summary>
+        /// Wacht op gebruikersrespons.
+        /// Returns true als "Ga verder" wordt geklikt, false als "Herstart" wordt geklikt.
+        /// </summary>
         public Task<bool> WaitForUserResponseAsync()
         {
             return _userResponseTcs.Task;
@@ -19,8 +23,15 @@ namespace FoutloosTypen.Views
 
         private async void OnContinueClicked(object sender, EventArgs e)
         {
-            // Signal dat de gebruiker heeft geklikt
+            // Signal dat de gebruiker op "Ga verder" heeft geklikt (true)
             _userResponseTcs.TrySetResult(true);
+            await Navigation.PopModalAsync();
+        }
+
+        private async void OnRestartClicked(object sender, EventArgs e)
+        {
+            // Signal dat de gebruiker heeft geklikt
+            _userResponseTcs.TrySetResult(false);
             await Navigation.PopModalAsync();
         }
 
@@ -44,16 +55,6 @@ namespace FoutloosTypen.Views
         {
             // Voorkom dat de gebruiker de popup kan sluiten met back button
             return true;
-        }
-
-        private void Button_Clicked(object sender, EventArgs e)
-        {
-
-        }
-
-        private void Button_Clicked_1(object sender, EventArgs e)
-        {
-
         }
     }
 }
