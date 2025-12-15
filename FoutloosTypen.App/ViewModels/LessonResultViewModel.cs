@@ -40,7 +40,7 @@ namespace FoutloosTypen.ViewModels
         {
             get
             {
-                // Typically 5 characters = 1 word
+                // Temporary solution until data layer is finished
                 return StrokesPerMinute / 5;
             }
         }
