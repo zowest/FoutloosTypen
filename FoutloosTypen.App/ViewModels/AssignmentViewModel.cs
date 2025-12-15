@@ -289,8 +289,10 @@ namespace FoutloosTypen.ViewModels
                 var popup = new Views.LessonCompletedPopup();
                 await Application.Current.MainPage.Navigation.PushModalAsync(popup);
                 
-                // Wacht tot popup wordt gesloten, dan navigeer terug
-                await Task.Delay(100); // Kleine delay om modal te laten sluiten
+                // Wacht tot de gebruiker op de knop klikt
+                await popup.WaitForUserResponseAsync();
+                
+                // Na het klikken, navigeer terug
                 await Shell.Current.GoToAsync("..");
             }
         }
