@@ -1,7 +1,9 @@
+using System.Collections.Generic;
 using SkiaSharp;
 using Microsoft.Maui.Storage;
 using Microsoft.Maui.ApplicationModel.DataTransfer;
 using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Controls;
 using CommunityToolkit.Maui.Storage;
 
 namespace FoutloosTypen.Services
@@ -47,8 +49,18 @@ namespace FoutloosTypen.Services
 
         public async Task ShareToTwitterAsync(string lessonName, string progressText)
         {
-            // Use generic share so the user can pick Twitter/X from the system chooser
-            await ShareLessonSummaryImageAsync(lessonName, progressText);
+            var imagePath = await GenerateImageAsync(lessonName, progressText);
+
+            var status = $"{lessonName} - {progressText} #FoutloosTypen #TypingPractice";
+            await Clipboard.SetTextAsync(status);
+
+            var request = new ShareFileRequest
+            {
+                Title = "Deel op X",
+                File = new ShareFile(imagePath)
+            };
+
+            await Share.RequestAsync(request);
         }
 
         public async Task<string?> SaveWithPickerAsync(string lessonName, string progressText)

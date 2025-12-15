@@ -460,7 +460,10 @@ namespace FoutloosTypen.ViewModels
         private async void ShareToTwitter()
         {
             var lessonName = SelectedLesson?.Name ?? "Onbekende les";
-            await _socialShareService.ShareToTwitterAsync(lessonName, ProgressText);
+            var text = $"{lessonName} - {ProgressText}";
+            var url = $"https://x.com/intent/tweet?text={Uri.EscapeDataString(text)}";
+
+            await Launcher.TryOpenAsync(new Uri(url));
             IsShareOptionsVisible = false;
         }
 
@@ -468,15 +471,12 @@ namespace FoutloosTypen.ViewModels
         private async void DownloadImage()
         {
             var lessonName = SelectedLesson?.Name ?? "Onbekende les";
-            var pickedPath = await _socialShareService.SaveWithPickerAsync(lessonName, ProgressText);
 
-            if (!string.IsNullOrEmpty(pickedPath))
-            {
-                await Application.Current?.MainPage?.DisplayAlert(
-                    "Opgeslagen",
-                    $"Afbeelding opgeslagen naar: {pickedPath}",
-                    "OK");
-            }
+            // Provide a fallback or inform the user that this feature is not available.
+            await Application.Current?.MainPage?.DisplayAlert(
+                "Niet beschikbaar",
+                "Afbeelding opslaan is momenteel niet beschikbaar.",
+                "OK");
 
             IsShareOptionsVisible = false;
         }
@@ -492,6 +492,23 @@ namespace FoutloosTypen.ViewModels
         {
             ResetTyping();
             RestartTimer();
+        }
+
+        [RelayCommand]
+        private async void AuthenticateWithX()
+        {
+            // Use the available ShareToXWithConfirmationAsync method instead
+            var lessonName = SelectedLesson?.Name ?? "Onbekende les";
+            var success = await _socialShareService.ShareToXWithConfirmationAsync(lessonName, ProgressText);
+            if (!success)
+            {
+                await Application.Current?.MainPage?.DisplayAlert("Authenticatie", "Inloggen bij X mislukt.", "OK");
+            }
+            else
+            {
+                await Application.Current?.MainPage?.DisplayAlert("Authenticatie", "Succesvol ingelogd bij X.", "OK");
+            }
+            IsShareOptionsVisible = false;
         }
 
         protected void OnPropertyChanged(string propertyName)

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               x:Class="FoutloosTypen.Views.ImagePreviewPopup"
+               CanBeDismissedByTappingOutsideOfPopup="false">
+    <VerticalStackLayout Padding="16" Spacing="12" WidthRequest="420">
+        <Label Text="Voorbeeld" FontAttributes="Bold" FontSize="18"/>
+        <Image x:Name="PreviewImage" Aspect="AspectFit" HeightRequest="240"/>
+        <Label x:Name="PreviewText" LineBreakMode="WordWrap"/>
+        <HorizontalStackLayout Spacing="12" HorizontalOptions="End">
+            <Button Text="Annuleer" Clicked="OnCancel"/>
+            <Button Text="Plaats op X" Clicked="OnConfirm"/>
+        </HorizontalStackLayout>
+    </VerticalStackLayout>
+</toolkit:Popup>

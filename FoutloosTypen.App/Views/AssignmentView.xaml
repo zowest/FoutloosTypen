@@ -171,7 +171,7 @@
                                        Spacing="20"
                                        HorizontalOptions="Center">
                     <ImageButton Source="x.png"
-                                 Command="{Binding ShareToTwitterCommand}"
+                                 Command="{Binding AuthenticateWithXCommand}"
                                  BackgroundColor="Transparent"
                                  WidthRequest="64"
                                  HeightRequest="64"

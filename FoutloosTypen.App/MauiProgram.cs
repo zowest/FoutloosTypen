@@ -1,16 +1,16 @@
+using CommunityToolkit.Maui;
 using FoutloosTypen.Core.Data.Helpers;
 using FoutloosTypen.Core.Data.Repositories;
 using FoutloosTypen.Core.Interfaces.Repositories;
 using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Services;
+using FoutloosTypen.Services;
 using FoutloosTypen.ViewModels;
 using FoutloosTypen.Views;
 using Grocery.Core.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.LifecycleEvents;
 using System.Diagnostics;
-using FoutloosTypen.Services;
-using CommunityToolkit.Maui;
 
 #if WINDOWS
 using Windows.System;
@@ -44,7 +44,6 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IPracticeMaterialRepository, PracticeMaterialRepository>();
             builder.Services.AddSingleton<IStudentRepository, StudentRepository>();
 
-
             // Services
             builder.Services.AddSingleton<ILessonService, LessonService>();
             builder.Services.AddSingleton<ICourseService, CourseService>();
@@ -53,8 +52,25 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IAuthService, AuthService>();
             builder.Services.AddSingleton<IStudentService, StudentService>();
             builder.Services.AddSingleton<ITimerService, TimerService>();
+
+            // OAuth for X
+            builder.Services.AddSingleton<IXAuthService, XAuthService>();
+            builder.Services.AddSingleton(new XAuthSettings
+            {
+                ClientId = "RW5hLTJ2eFExaHVjRnBDUFhGcmU6MTpjaQ",
+                RedirectUri = "http://127.0.0.1:51789/callback",
+                Scopes = new[] { "tweet.write","users.read", "media.write",
+"offline.access" }
+            });
+            
+            // Image sharing and social sharing
             builder.Services.AddSingleton<IShareImageService, ShareImageService>();
-            builder.Services.AddSingleton<ISocialShareService, SocialShareService>();
+            builder.Services.AddSingleton<ISocialShareService>(sp =>
+                new SocialShareService(
+                    sp.GetRequiredService<IShareImageService>(),
+                    sp.GetRequiredService<IXAuthService>(),
+                    sp.GetRequiredService<XAuthSettings>()
+                ));
 
             // ViewModels
             builder.Services.AddTransient<LessonViewModel>();
@@ -88,9 +104,9 @@ namespace FoutloosTypen
                         {
                             if (args.Key == VirtualKey.Escape)
                             {
-                                if (Application.Current?.MainPage != null)
+                                if (Microsoft.Maui.Controls.Application.Current?.MainPage != null)
                                 {
-                                    var result = await Application.Current.MainPage.DisplayAlert(
+                                    var result = await Microsoft.Maui.Controls.Application.Current.MainPage.DisplayAlert(
                                         "Close BolType",
                                         "Are you sure you want to close BolType?",
                                         "Yes",
@@ -98,7 +114,7 @@ namespace FoutloosTypen
 
                                     if (result)
                                     {
-                                        Application.Current?.Quit();
+                                        Microsoft.Maui.Controls.Application.Current?.Quit();
                                     }
                                 }
                             }
