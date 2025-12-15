@@ -1,14 +1,20 @@
+using FoutloosTypen.Core.Models;
+using FoutloosTypen.ViewModels;
 using Microsoft.Maui.Controls;
 
 namespace FoutloosTypen.Views
 {
-    public partial class LessonCompletedPopup : ContentPage
+    public partial class ResultatenPopUp : ContentPage
     {
         private TaskCompletionSource<bool> _userResponseTcs;
 
-        public LessonCompletedPopup()
+        public ResultatenPopUp(LessonProgress progress)
         {
             InitializeComponent();
+            
+            // Set the BindingContext to LessonResultViewModel
+            BindingContext = new LessonResultViewModel(progress);
+            
             _userResponseTcs = new TaskCompletionSource<bool>();
         }
 
@@ -30,7 +36,7 @@ namespace FoutloosTypen.Views
 
         private async void OnRestartClicked(object sender, EventArgs e)
         {
-            // Signal dat de gebruiker heeft geklikt
+            // Signal dat de gebruiker op "Herstart" heeft geklikt (false)
             _userResponseTcs.TrySetResult(false);
             await Navigation.PopModalAsync();
         }
