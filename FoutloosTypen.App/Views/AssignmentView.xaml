@@ -162,6 +162,20 @@
             </VerticalStackLayout>
 
             <HorizontalStackLayout Grid.Row="2" HorizontalOptions="Center" Spacing="30">
+                <Button Text="Twitter/X" 
+                        Command="{Binding ShareToTwitterCommand}"
+                        BackgroundColor="#1DA1F2"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        Padding="20,10"
+                        CornerRadius="8" />
+                <Button Text="Download" 
+                        Command="{Binding DownloadImageCommand}"
+                        BackgroundColor="#512BD4"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        Padding="20,10"
+                        CornerRadius="8" />
             </HorizontalStackLayout>
         </Grid>
     </ContentPage.Content>

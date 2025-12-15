@@ -9,6 +9,8 @@ using Grocery.Core.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.LifecycleEvents;
 using System.Diagnostics;
+using FoutloosTypen.Services;
+using CommunityToolkit.Maui;
 
 #if WINDOWS
 using Windows.System;
@@ -28,6 +30,7 @@ namespace FoutloosTypen
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
+                .UseMauiCommunityToolkit()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -50,6 +53,7 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IAuthService, AuthService>();
             builder.Services.AddSingleton<IStudentService, StudentService>();
             builder.Services.AddSingleton<ITimerService, TimerService>();
+            builder.Services.AddSingleton<IShareImageService, ShareImageService>();
 
             // ViewModels
             builder.Services.AddTransient<LessonViewModel>();

@@ -4,6 +4,8 @@ using FoutloosTypen.Core.Interfaces.Services;
 using System.ComponentModel;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.Input;
+using FoutloosTypen.Services;
+using Microsoft.Maui.Storage;
 
 namespace FoutloosTypen.ViewModels
 {
@@ -14,6 +16,7 @@ namespace FoutloosTypen.ViewModels
         private readonly ILessonService _lessonService;
         private readonly IPracticeMaterialService _practiceMaterialService;
         private readonly ITimerService _timerService;
+        private readonly IShareImageService _shareImageService;
 
         private const double TIMER_DURATION = 60; // 60 seconden per opdracht
 
@@ -164,12 +167,14 @@ namespace FoutloosTypen.ViewModels
             ILessonService lessonService,
             IAssignmentService assignmentService,
             IPracticeMaterialService practiceMaterialService,
-            ITimerService timerService)
+            ITimerService timerService,
+            IShareImageService shareImageService)
         {
             _lessonService = lessonService;
             _assignmentService = assignmentService;
             _practiceMaterialService = practiceMaterialService;
             _timerService = timerService;
+            _shareImageService = shareImageService;
 
             FormattedText = new FormattedString();
         }
@@ -416,9 +421,42 @@ namespace FoutloosTypen.ViewModels
         }
 
         [RelayCommand]
-        private void StopTimer()
+        private async void StopTimer()
         {
             _timerService.Stop();
+
+            // After lesson stopped, show share popup with generated image
+            var lessonName = SelectedLesson?.Name ?? "Onbekende les";
+            await _shareImageService.ShareLessonSummaryImageAsync(lessonName, ProgressText);
+        }
+
+        [RelayCommand]
+        private async void ShareToTwitter()
+        {
+            var lessonName = SelectedLesson?.Name ?? "Onbekende les";
+            await _shareImageService.ShareToTwitterAsync(lessonName, ProgressText);
+        }
+
+        [RelayCommand]
+        private async void DownloadImage()
+        {
+            var lessonName = SelectedLesson?.Name ?? "Onbekende les";
+            var pickedPath = await _shareImageService.SaveWithPickerAsync(lessonName, ProgressText);
+
+            if (!string.IsNullOrEmpty(pickedPath))
+            {
+                await Application.Current?.MainPage?.DisplayAlert(
+                    "Opgeslagen",
+                    $"Afbeelding opgeslagen naar: {pickedPath}",
+                    "OK");
+            }
+            else
+            {
+                await Application.Current?.MainPage?.DisplayAlert(
+                    "Geannuleerd",
+                    "Opslaan is geannuleerd of mislukt.",
+                    "OK");
+            }
         }
 
         [RelayCommand]
