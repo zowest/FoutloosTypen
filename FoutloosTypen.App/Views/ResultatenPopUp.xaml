@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="FoutloosTypen.Views.LessonCompletedPopup"
+             BackgroundColor="#80000000">
+    <Frame BackgroundColor="White"
+           BorderColor="Black"
+           CornerRadius="20"
+           Padding="40"
+           WidthRequest="1000"
+           HeightRequest="500"
+           HorizontalOptions="Center"
+           VerticalOptions="Center">
+        <VerticalStackLayout Spacing="100" 
+                             HorizontalOptions="Center" 
+                             VerticalOptions="Center">
+
+            <Label Text="Les Voltooid!"
+                   FontSize="48"
+                   FontAttributes="Bold"
+                   TextColor="Black"
+                   HorizontalOptions="Center"/>
+            <VerticalStackLayout
+                HorizontalOptions="Start">
+                <Label Text="Score: 1000"
+                    TextColor="Black"/>
+                <Label Text="APM: 120"
+                       TextColor="Black"/>
+                <Label Text="WPM: 50"
+                       TextColor="Black"/>
+                <Label Text="Nauwkeurigheid : 90%"
+                       TextColor="Black"/>
+                <Label Text="Tijd over: 23"
+                       TextColor="Black"/>
+            </VerticalStackLayout>
+            <HorizontalStackLayout
+                Spacing="300"
+                VerticalOptions="End"
+                HorizontalOptions="Center">
+                <Button Text="Herstart"
+                        FontSize="12"
+                        BackgroundColor="White"
+                        TextColor="Black"
+                        BorderColor="Black"
+                        BorderWidth="2"
+                        WidthRequest="100"
+                        HeightRequest="30"
+                        HorizontalOptions="Start"
+                        Clicked="OnRestartClicked">
+                    <Button.GestureRecognizers>
+                        <PointerGestureRecognizer
+                            PointerEntered="OnHoverEnter"
+                            PointerExited="OnHoverExit"/>
+                    </Button.GestureRecognizers>
+                </Button>
+                <Button Text="Ga verder"
+                        FontSize="12"
+                        BackgroundColor="White"
+                        TextColor="Black"
+                        BorderColor="Black"
+                        BorderWidth="2"
+                        WidthRequest="100"
+                        HeightRequest="30"
+                        HorizontalOptions="Center"
+                        Clicked="OnContinueClicked">
+                    <Button.GestureRecognizers>
+                        <PointerGestureRecognizer
+                            PointerEntered="OnHoverEnter"
+                            PointerExited="OnHoverExit"/>
+                    </Button.GestureRecognizers>
+                </Button>
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+    </Frame>
+</ContentPage>
