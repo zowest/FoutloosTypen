@@ -11,7 +11,7 @@
            HeightRequest="500"
            HorizontalOptions="Center"
            VerticalOptions="Center">
-        <VerticalStackLayout Spacing="100" 
+        <VerticalStackLayout Spacing="90" 
                              HorizontalOptions="Center" 
                              VerticalOptions="Center">
 
@@ -22,16 +22,40 @@
                    HorizontalOptions="Center"/>
             <VerticalStackLayout
                 HorizontalOptions="Start">
-                <Label Text="Score: 1000"
-                    TextColor="Black"/>
-                <Label Text="APM: 120"
+                <Label Text="Resultaten: "
+                       TextColor="Black"
+                       FontSize="24"
+                       FontAttributes="Bold"/>
+                <HorizontalStackLayout>
+                    <Label Text="Score: "
+                        TextColor="Black"/>
+                    <Label Text="{Binding Score}"
+                           TextColor="Black"/>
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
+                    <Label Text="APM:"
                        TextColor="Black"/>
-                <Label Text="WPM: 50"
+                    <Label Text="{Binding StrokesPerMinute}"
+                        TextColor="Black"/>
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
+                    <Label Text="WPM:"
                        TextColor="Black"/>
-                <Label Text="Nauwkeurigheid : 90%"
+                    <Label Text="{Binding WordsPerMinute}"
+                        TextColor="Black"/>
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
+                    <Label Text="Nauwkeurigheid:"
                        TextColor="Black"/>
-                <Label Text="Tijd over: 23"
+                    <Label Text="{Binding Accuracy}"
+                         TextColor="Black"/>
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
+                    <Label Text="Tijd over: "
                        TextColor="Black"/>
+                    <Label Text="{Binding TimeRemaining}"
+                        TextColor="Black"/>
+                </HorizontalStackLayout>
             </VerticalStackLayout>
             <HorizontalStackLayout
                 Spacing="300"
