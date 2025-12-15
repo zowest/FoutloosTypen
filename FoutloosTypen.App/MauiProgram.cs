@@ -54,6 +54,7 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IStudentService, StudentService>();
             builder.Services.AddSingleton<ITimerService, TimerService>();
             builder.Services.AddSingleton<IShareImageService, ShareImageService>();
+            builder.Services.AddSingleton<ISocialShareService, SocialShareService>();
 
             // ViewModels
             builder.Services.AddTransient<LessonViewModel>();

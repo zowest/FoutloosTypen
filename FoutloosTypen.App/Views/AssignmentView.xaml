@@ -139,16 +139,11 @@
 
                 <VerticalStackLayout Spacing="0" Margin="20,12,20,12">
                     <BoxView HeightRequest="5" Color="Black"/>
-                    <ProgressBar Progress="{Binding Progress}" 
-                                 ProgressColor="LightGreen"/>
-                    <ProgressBar Progress="{Binding Progress}" 
-                                 ProgressColor="LightGreen"/>
-                    <ProgressBar Progress="{Binding Progress}" 
-                                 ProgressColor="LightGreen"/>
-                    <ProgressBar Progress="{Binding Progress}" 
-                                 ProgressColor="LightGreen"/>
-                    <ProgressBar Progress="{Binding Progress}" 
-                                 ProgressColor="LightGreen"/>
+                    <ProgressBar Progress="{Binding Progress}" ProgressColor="LightGreen"/>
+                    <ProgressBar Progress="{Binding Progress}" ProgressColor="LightGreen"/>
+                    <ProgressBar Progress="{Binding Progress}" ProgressColor="LightGreen"/>
+                    <ProgressBar Progress="{Binding Progress}" ProgressColor="LightGreen"/>
+                    <ProgressBar Progress="{Binding Progress}" ProgressColor="LightGreen"/>
                     <BoxView HeightRequest="5" Color="Black"/>
                     
                     <Label 
@@ -161,22 +156,34 @@
                 </VerticalStackLayout>
             </VerticalStackLayout>
 
-            <HorizontalStackLayout Grid.Row="2" HorizontalOptions="Center" Spacing="30">
-                <Button Text="Twitter/X" 
-                        Command="{Binding ShareToTwitterCommand}"
-                        BackgroundColor="#1DA1F2"
-                        TextColor="White"
-                        FontAttributes="Bold"
-                        Padding="20,10"
-                        CornerRadius="8" />
-                <Button Text="Download" 
-                        Command="{Binding DownloadImageCommand}"
+            <VerticalStackLayout Grid.Row="2" HorizontalOptions="Center" Spacing="10">
+                <Button Text="Delen" 
+                        IsVisible="{Binding ShowShareButton}"
+                        Command="{Binding ShareCommand}"
                         BackgroundColor="#512BD4"
                         TextColor="White"
                         FontAttributes="Bold"
                         Padding="20,10"
                         CornerRadius="8" />
-            </HorizontalStackLayout>
+
+                <!-- Simplified share options -->
+                <HorizontalStackLayout IsVisible="{Binding IsShareOptionsVisible}"
+                                       Spacing="20"
+                                       HorizontalOptions="Center">
+                    <ImageButton Source="x.png"
+                                 Command="{Binding ShareToTwitterCommand}"
+                                 BackgroundColor="Transparent"
+                                 WidthRequest="64"
+                                 HeightRequest="64"
+                                 Aspect="AspectFit" />
+                    <ImageButton Source="download.png"
+                                 Command="{Binding DownloadImageCommand}"
+                                 BackgroundColor="Transparent"
+                                 WidthRequest="64"
+                                 HeightRequest="64"
+                                 Aspect="AspectFit" />
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
         </Grid>
     </ContentPage.Content>
 </ContentPage>

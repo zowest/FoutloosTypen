@@ -5,7 +5,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.Input;
 using FoutloosTypen.Services;
-using Microsoft.Maui.Storage;
 
 namespace FoutloosTypen.ViewModels
 {
@@ -16,7 +15,7 @@ namespace FoutloosTypen.ViewModels
         private readonly ILessonService _lessonService;
         private readonly IPracticeMaterialService _practiceMaterialService;
         private readonly ITimerService _timerService;
-        private readonly IShareImageService _shareImageService;
+        private readonly ISocialShareService _socialShareService;
 
         private const double TIMER_DURATION = 60; // 60 seconden per opdracht
 
@@ -163,18 +162,41 @@ namespace FoutloosTypen.ViewModels
 
         public ITimerService Timer => _timerService;
 
+        private bool _isShareOptionsVisible;
+        public bool IsShareOptionsVisible
+        {
+            get => _isShareOptionsVisible;
+            set
+            {
+                _isShareOptionsVisible = value;
+                ShowShareButton = !value;
+                OnPropertyChanged(nameof(IsShareOptionsVisible));
+            }
+        }
+
+        private bool _showShareButton = true;
+        public bool ShowShareButton
+        {
+            get => _showShareButton;
+            private set
+            {
+                _showShareButton = value;
+                OnPropertyChanged(nameof(ShowShareButton));
+            }
+        }
+
         public AssignmentViewModel(
             ILessonService lessonService,
             IAssignmentService assignmentService,
             IPracticeMaterialService practiceMaterialService,
             ITimerService timerService,
-            IShareImageService shareImageService)
+            ISocialShareService socialShareService)
         {
             _lessonService = lessonService;
             _assignmentService = assignmentService;
             _practiceMaterialService = practiceMaterialService;
             _timerService = timerService;
-            _shareImageService = shareImageService;
+            _socialShareService = socialShareService;
 
             FormattedText = new FormattedString();
         }
@@ -421,27 +443,32 @@ namespace FoutloosTypen.ViewModels
         }
 
         [RelayCommand]
-        private async void StopTimer()
+        private void StopTimer()
         {
             _timerService.Stop();
+            // SRP: No sharing triggered here. Share actions are handled by dedicated commands below.
+        }
 
-            // After lesson stopped, show share popup with generated image
-            var lessonName = SelectedLesson?.Name ?? "Onbekende les";
-            await _shareImageService.ShareLessonSummaryImageAsync(lessonName, ProgressText);
+        [RelayCommand]
+        private void Share()
+        {
+            // Toggle the visibility of the icon options
+            IsShareOptionsVisible = !IsShareOptionsVisible;
         }
 
         [RelayCommand]
         private async void ShareToTwitter()
         {
             var lessonName = SelectedLesson?.Name ?? "Onbekende les";
-            await _shareImageService.ShareToTwitterAsync(lessonName, ProgressText);
+            await _socialShareService.ShareToTwitterAsync(lessonName, ProgressText);
+            IsShareOptionsVisible = false;
         }
 
         [RelayCommand]
         private async void DownloadImage()
         {
             var lessonName = SelectedLesson?.Name ?? "Onbekende les";
-            var pickedPath = await _shareImageService.SaveWithPickerAsync(lessonName, ProgressText);
+            var pickedPath = await _socialShareService.SaveWithPickerAsync(lessonName, ProgressText);
 
             if (!string.IsNullOrEmpty(pickedPath))
             {
@@ -450,13 +477,8 @@ namespace FoutloosTypen.ViewModels
                     $"Afbeelding opgeslagen naar: {pickedPath}",
                     "OK");
             }
-            else
-            {
-                await Application.Current?.MainPage?.DisplayAlert(
-                    "Geannuleerd",
-                    "Opslaan is geannuleerd of mislukt.",
-                    "OK");
-            }
+
+            IsShareOptionsVisible = false;
         }
 
         [RelayCommand]
