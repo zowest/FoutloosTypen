@@ -4,9 +4,10 @@ namespace FoutloosTypen.Core.Interfaces.Services
 {
     public interface ILessonProgressService
     {
-        void StartLesson(int lessonId);
+        void StartLesson(int lessonId, int numberOfAssignments);
         void RecordMistake(int lessonId);
-        void CompleteSentence(int lessonId, int charactersTyped);
+        void CompleteSentence(int lessonId, string typedSentence);
+        void UpdateCurrentProgress(int lessonId, int charactersTypedSoFar, string currentText);
         void EndLesson(int lessonId);
         void MarkTimerExpired(int lessonId);
         LessonProgress? GetProgress(int lessonId);

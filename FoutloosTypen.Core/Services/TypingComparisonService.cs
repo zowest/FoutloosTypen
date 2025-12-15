@@ -1,4 +1,5 @@
-﻿using FoutloosTypen.Core.Interfaces.Services;
+﻿using FoutloosTypen.Core.Interfaces.Repositories;
+using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Models;
 
 namespace FoutloosTypen.Core.Services

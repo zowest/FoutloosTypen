@@ -253,8 +253,7 @@ namespace FoutloosTypen.ViewModels
                 {
                     SelectedLesson = targetLesson;
                     Debug.WriteLine($"Selected lesson: {targetLesson.Name} (ID: {targetLesson.Id}) with TotalTime: {targetLesson.TotalTime}");
-                    
-                    _lessonProgressService.StartLesson(targetLesson.Id);
+                    // StartLesson is now called in FilterAssignmentsByLesson
                     return;
                 }
             }
@@ -263,11 +262,7 @@ namespace FoutloosTypen.ViewModels
             if (Lessons.Any())
             {
                 SelectedLesson = Lessons.First();
-                
-                if (SelectedLesson != null)
-                {
-                    _lessonProgressService.StartLesson(SelectedLesson.Id);
-                }
+                // StartLesson is now called in FilterAssignmentsByLesson
             }
         }
 
@@ -297,6 +292,8 @@ namespace FoutloosTypen.ViewModels
             _currentAssignmentIndex = 0;
             if (Assignments.Any())
                 SelectedAssignment = Assignments.First();
+            
+            _lessonProgressService.StartLesson(SelectedLesson.Id, Assignments.Count);
         }
 
         private void LoadPracticeMaterials()
@@ -455,12 +452,18 @@ namespace FoutloosTypen.ViewModels
             UserInput = typedText;
             UpdateFormattedText();
 
+            // Update current progress (including incomplete sentences)
+            if (SelectedLesson != null)
+            {
+                _lessonProgressService.UpdateCurrentProgress(SelectedLesson.Id, typedText.Length, typedText);
+            }
+
             // Check if sentence is complete and correct
             if (typedText == CurrentMaterial.Sentence)
             {
                 if (SelectedLesson != null)
                 {
-                    _lessonProgressService.CompleteSentence(SelectedLesson.Id, UserInput?.Length ?? 0);
+                    _lessonProgressService.CompleteSentence(SelectedLesson.Id, typedText);
                     var progress = _lessonProgressService.GetProgress(SelectedLesson.Id);
                     Debug.WriteLine($"Sentence completed! Total mistakes: {progress?.TotalMistakes}, Sentences: {progress?.SentencesCompleted}");
                 }
