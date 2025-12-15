@@ -51,6 +51,12 @@
                          TextColor="Black"/>
                 </HorizontalStackLayout>
                 <HorizontalStackLayout>
+                    <Label Text="Fouten:"
+                        TextColor="Black"/>
+                    <Label Text="{Binding SessionMistakes}"
+                         TextColor="Black"/>
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
                     <Label Text="Tijd over: "
                        TextColor="Black"/>
                     <Label Text="{Binding TimeRemaining}"
