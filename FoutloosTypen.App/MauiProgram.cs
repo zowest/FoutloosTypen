@@ -21,10 +21,6 @@ namespace FoutloosTypen
         public static MauiApp CreateMauiApp()
         {
 
-#if DEBUG
-            DebugDatabaseReset.Reset();
-#endif
-
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()

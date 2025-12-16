@@ -1,13 +1,9 @@
 ﻿using FoutloosTypen.Core.Interfaces.Repositories;
 using FoutloosTypen.Core.Models;
-using Microsoft.Data.Sqlite;
-using System;
-using System.Collections.Generic;
+using Microsoft.Maui.Storage;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.Maui.Storage;
-using System.IO;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
@@ -17,162 +13,118 @@ namespace FoutloosTypen.Core.Data.Repositories
 
         public AssignmentRepository()
         {
-            try
-            {
-                CreateTable(@"
-                    CREATE TABLE IF NOT EXISTS Assignments (
-                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                        TimeLimit DOUBLE NOT NULL,
-                        LessonId INTEGER NOT NULL
-                    );
-                ");
+            CreateTable("""
+                CREATE TABLE IF NOT EXISTS Assignments (
+                    Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    TimeLimit DOUBLE NOT NULL,
+                    LessonId INT NOT NULL
+                );
+            """);
 
-                // Seed from packaged JSON if available
-                LoadAssignmentsFromJsonSync();
-
-                Debug.WriteLine("AssignmentRepository initialized successfully");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"AssignmentRepository initialization error: {ex.Message}");
-                throw;
-            }
+            LoadAssignmentsFromJsonSync();
         }
 
         private void LoadAssignmentsFromJsonSync()
         {
             try
             {
-                using var stream = FileSystem.OpenAppPackageFileAsync("Assignment.json").GetAwaiter().GetResult();
-                using var reader = new StreamReader(stream);
-                var json = reader.ReadToEnd();
+                using var stream = FileSystem
+                    .OpenAppPackageFileAsync("Assignment.json")
+                    .GetAwaiter()
+                    .GetResult();
 
-                using var doc = JsonDocument.Parse(json);
+                using var reader = new StreamReader(stream);
+                using var doc = JsonDocument.Parse(reader.ReadToEnd());
+
                 var root = doc.RootElement;
 
-                // Accept either array root or object with common property names
                 JsonElement items = root;
                 if (root.ValueKind == JsonValueKind.Object)
                 {
-                    if (root.TryGetProperty("Assignments", out var aPlural)) items = aPlural;
-                    else if (root.TryGetProperty("Assignment", out var aSingular)) items = aSingular;
-                    else if (root.TryGetProperty("Items", out var itemsProp)) items = itemsProp;
-                    else if (root.TryGetProperty("Data", out var dataProp)) items = dataProp;
+                    if (root.TryGetProperty("Assignment", out var a))
+                        items = a;
+                    else if (root.TryGetProperty("Assignments", out var ap))
+                        items = ap;
+                    else
+                        return;
                 }
 
                 if (items.ValueKind != JsonValueKind.Array)
-                {
-                    Debug.WriteLine("Assignment JSON has unexpected shape; expected array or object with 'Assignments'/'Assignment'.");
                     return;
-                }
 
-                var insertQueries = new List<string>();
+                var statements = new List<string>();
+
                 foreach (var item in items.EnumerateArray())
                 {
-                    int id = item.TryGetProperty("Id", out var idProp) ? idProp.GetInt32() : 0;
-                    double timeLimit = item.TryGetProperty("TimeLimit", out var tlProp) ? tlProp.GetDouble():0;
-                    int lessonId = item.TryGetProperty("LessonId", out var lidProp) ? lidProp.GetInt32() : 0;
+                    double timeLimit = item.GetProperty("TimeLimit").GetDouble();
+                    int lessonId = item.GetProperty("LessonId").GetInt32();
 
-                    if (lessonId == 0) continue;
-
-                    if (id > 0)
-                    {
-                        insertQueries.Add($@"INSERT OR IGNORE INTO Assignments(Id, TimeLimit, LessonId) VALUES({id}, {timeLimit}, {lessonId})");
-                    }
-                    else
-                    {
-                        insertQueries.Add($@"INSERT OR IGNORE INTO Assignments(TimeLimit, LessonId) VALUES({timeLimit}, {lessonId})");
-                    }
+                    statements.Add(
+                        $"INSERT INTO Assignments(TimeLimit, LessonId) VALUES({timeLimit}, {lessonId});"
+                    );
                 }
 
-                if (insertQueries.Count > 0)
-                {
-                    InsertMultipleWithTransaction(insertQueries);
-                    Debug.WriteLine($"Seeded {insertQueries.Count} assignments from JSON");
-                }
-            }
-            catch (FileNotFoundException)
-            {
-                Debug.WriteLine("Assignment.json not found; skipping JSON seed");
+                if (statements.Count > 0)
+                    InsertMultipleWithTransaction(statements);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error loading assignments from JSON: {ex.Message}");
+                Debug.WriteLine($"Assignment seed error: {ex.Message}");
+                throw;
             }
         }
+
 
         public List<Assignment> GetAll()
         {
             assignments.Clear();
-            try
-            {
-                string query = "SELECT Id, TimeLimit, LessonId FROM Assignments";
+            OpenConnection();
 
-                OpenConnection();
-                using (SqliteCommand command = new(query, Connection))
-                {
-                    SqliteDataReader reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        int id = reader.GetInt32(0);
-                        double timeLimit = reader.GetDouble(1);
-                        int lessonId = reader.GetInt32(2);
+            using var command = Connection.CreateCommand();
+            command.CommandText =
+                "SELECT Id, TimeLimit, LessonId FROM Assignments";
 
-                        assignments.Add(new Assignment(id, timeLimit, lessonId));
-                        Debug.WriteLine($"Retrieved assignment: Id={id}, LessonId={lessonId}, TimeLimit={timeLimit}");
-                    }
-                }
-                
-                Debug.WriteLine($"Total assignments retrieved: {assignments.Count}");
-            }
-            catch (Exception ex)
+            using DbDataReader reader = command.ExecuteReader();
+            while (reader.Read())
             {
-                Debug.WriteLine($"Error retrieving assignments: {ex.Message}");
-                throw;
-            }
-            finally
-            {
-                CloseConnection();
+                assignments.Add(new Assignment(
+                    reader.GetInt32(0),
+                    reader.GetDouble(1),
+                    reader.GetInt32(2)
+                ));
             }
 
+            CloseConnection();
             return assignments;
         }
 
         public Assignment? Get(int id)
         {
-            Assignment? assignment = null;
+            OpenConnection();
 
-            try
+            using var command = Connection.CreateCommand();
+            command.CommandText =
+                "SELECT Id, TimeLimit, LessonId FROM Assignments WHERE Id = @id";
+
+            var p = command.CreateParameter();
+            p.ParameterName = "@id";
+            p.Value = id;
+            command.Parameters.Add(p);
+
+            using DbDataReader reader = command.ExecuteReader();
+            Assignment? result = null;
+
+            if (reader.Read())
             {
-                string query = "SELECT Id, TimeLimit, LessonId FROM Assignments WHERE Id = @Id";
-
-                OpenConnection();
-                using (SqliteCommand command = new(query, Connection))
-                {
-                    command.Parameters.AddWithValue("@Id", id);
-                    SqliteDataReader reader = command.ExecuteReader();
-
-                    if (reader.Read())
-                    {
-                        int assignmentId = reader.GetInt32(0);
-                        double timeLimit = reader.GetDouble(1);
-                        int lessonId = reader.GetInt32(2);
-
-                        assignment = new Assignment(assignmentId, timeLimit, lessonId);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error retrieving assignment with Id {id}: {ex.Message}");
-                throw;
-            }
-            finally
-            {
-                CloseConnection();
+                result = new Assignment(
+                    reader.GetInt32(0),
+                    reader.GetDouble(1),
+                    reader.GetInt32(2)
+                );
             }
 
-            return assignment;
+            CloseConnection();
+            return result;
         }
     }
 }
