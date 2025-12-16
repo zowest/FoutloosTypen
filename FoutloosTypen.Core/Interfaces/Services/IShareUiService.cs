@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace FoutloosTypen.Services
+namespace FoutloosTypen.Core.Interfaces.Services
 {
     public interface IShareUiService
     {

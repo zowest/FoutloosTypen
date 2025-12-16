@@ -4,7 +4,7 @@ using FoutloosTypen.Core.Interfaces.Services;
 using System.ComponentModel;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.Input;
-using FoutloosTypen.Services;
+using FoutloosTypen.Core.Services;
 
 namespace FoutloosTypen.ViewModels
 {

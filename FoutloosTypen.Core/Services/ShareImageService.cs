@@ -1,20 +1,17 @@
-using System.Collections.Generic;
+using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using SkiaSharp;
 using Microsoft.Maui.Storage;
 using Microsoft.Maui.ApplicationModel.DataTransfer;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Controls;
 using CommunityToolkit.Maui.Storage;
+using FoutloosTypen.Core.Interfaces.Services;
 
-namespace FoutloosTypen.Services
+namespace FoutloosTypen.Core.Services
 {
-    public interface IShareImageService
-    {
-        Task ShareLessonSummaryImageAsync(string lessonName, string progressText);
-        Task<string> SaveLessonSummaryImageAsync(string lessonName, string progressText);
-        Task ShareToTwitterAsync(string lessonName, string progressText);
-        Task<string?> SaveWithPickerAsync(string lessonName, string progressText);
-    }
 
     public class ShareImageService : IShareImageService
     {
@@ -39,8 +36,6 @@ namespace FoutloosTypen.Services
         public async Task<string> SaveLessonSummaryImageAsync(string lessonName, string progressText)
         {
             var filePath = await GenerateImageAsync(lessonName, progressText);
-
-            // Copy from cache to app data directory as a persistent save
             var downloadsDir = FileSystem.AppDataDirectory;
             var targetPath = Path.Combine(downloadsDir, Path.GetFileName(filePath));
             File.Copy(filePath, targetPath, overwrite: true);
@@ -50,7 +45,6 @@ namespace FoutloosTypen.Services
         public async Task ShareToTwitterAsync(string lessonName, string progressText)
         {
             var imagePath = await GenerateImageAsync(lessonName, progressText);
-
             var status = $"{lessonName} - {progressText} #FoutloosTypen #TypingPractice";
             await Clipboard.SetTextAsync(status);
 

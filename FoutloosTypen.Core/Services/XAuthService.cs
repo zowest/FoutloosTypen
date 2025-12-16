@@ -3,33 +3,22 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Maui.Authentication;
 using Microsoft.Maui.Storage;
+using Microsoft.Maui.ApplicationModel;
+using FoutloosTypen.Core.Interfaces.Services;
+using FoutloosTypen.Core.Models;  
 
-namespace FoutloosTypen.Services
+namespace FoutloosTypen.Core.Services
 {
-    public interface IXAuthService
-    {
-        Task<string?> AuthenticateAsync(string clientId, string redirectUri, string[] scopes, bool forceConsent = false);
-        Task<string?> ExchangeCodeForTokenAsync(string clientId, string code, string redirectUri);
-        Task<string?> RefreshAccessTokenAsync(string clientId, string refreshToken, string redirectUri);
-        Task<string> UploadMediaV11Async(string filePath, string contentType, string consumerKey, string consumerSecret, string accessToken, string accessTokenSecret);
-        Task CreateTweetAsync(string text, string? mediaId = null);
-        Task<string?> GetStoredAccessTokenAsync();
-        Task<string?> GetStoredRefreshTokenAsync();
-        Task<string?> GetAuthenticatedHandleAsync();
-        Task SignOutAsync();
-
-        // OAuth1 helpers: store/retrieve OAuth1 user token + secret (used for v1.1 endpoints)
-        Task<string?> GetStoredOAuth1TokenAsync();
-        Task<string?> GetStoredOAuth1SecretAsync();
-    }
 
     public class XAuthService : IXAuthService
     {
@@ -38,13 +27,10 @@ namespace FoutloosTypen.Services
         private const string TweetEndpoint = "https://api.x.com/2/tweets";
         private const string MediaUploadV11 = "https://upload.twitter.com/1.1/media/upload.json";
 
-        #region OAuth2 Auth
-
         public async Task<string?> AuthenticateAsync(string clientId, string redirectUri, string[] scopes, bool forceConsent = false)
         {
             try
             {
-                // Validate inputs early to avoid "Invalid URI: The URI is empty." from WebAuthenticator
                 if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(redirectUri))
                 {
                     Debug.WriteLine($"X OAuth authenticate error: Missing clientId or redirectUri. clientId set: {!string.IsNullOrWhiteSpace(clientId)}, redirectUri set: {!string.IsNullOrWhiteSpace(redirectUri)}");
@@ -60,38 +46,61 @@ namespace FoutloosTypen.Services
                 var scopeValue = string.Join(' ', required);
 
                 var promptParam = forceConsent ? "&prompt=consent" : string.Empty;
+
+                // Determine an effective redirect URI usable by HttpListener on Windows.
+                // If the provided redirectUri is not an absolute http(s) URI, open a random loopback port and use that.
+                string effectiveRedirectUri = redirectUri;
+                if (OperatingSystem.IsWindows())
+                {
+                    if (!Uri.TryCreate(redirectUri, UriKind.Absolute, out var parsed) || (parsed.Scheme != Uri.UriSchemeHttp && parsed.Scheme != Uri.UriSchemeHttps))
+                    {
+                        // allocate an available ephemeral port
+                        var listenerForPort = new TcpListener(IPAddress.Loopback, 0);
+                        listenerForPort.Start();
+                        var port = ((IPEndPoint)listenerForPort.LocalEndpoint).Port;
+                        listenerForPort.Stop();
+
+                        effectiveRedirectUri = $"http://127.0.0.1:{port}/";
+                    }
+                }
+
                 var authUrl =
                     $"{AuthorizationEndpoint}?response_type=code&client_id={Uri.EscapeDataString(clientId)}" +
-                    $"&redirect_uri={Uri.EscapeDataString(redirectUri)}&scope={Uri.EscapeDataString(scopeValue)}" +
+                    $"&redirect_uri={Uri.EscapeDataString(effectiveRedirectUri)}&scope={Uri.EscapeDataString(scopeValue)}" +
                     $"&state={Guid.NewGuid():N}&code_challenge={challenge}&code_challenge_method=S256" +
                     promptParam;
 
-#if WINDOWS
-                // Loopback listener for Windows
-                var uri = new Uri(redirectUri);
-                var prefix = $"http://{uri.Host}:{uri.Port}/{uri.AbsolutePath.TrimStart('/')}";
-                using var listener = new System.Net.HttpListener();
-                listener.Prefixes.Add(prefix.EndsWith("/") ? prefix : prefix + "/");
-                listener.Start();
-                await Launcher.Default.OpenAsync(new Uri(authUrl));
-                var context = await listener.GetContextAsync();
-                var query = context.Request.Url?.Query ?? string.Empty;
-                var parsed = System.Web.HttpUtility.ParseQueryString(query);
-                var code = parsed.Get("code");
+                // Use runtime platform detection so Windows runtime gets the custom loopback listener
+                if (OperatingSystem.IsWindows())
+                {
+                    var prefix = effectiveRedirectUri.EndsWith("/") ? effectiveRedirectUri : effectiveRedirectUri + "/";
+                    using var listener = new System.Net.HttpListener();
+                    listener.Prefixes.Add(prefix);
+                    listener.Start();
 
-                var responseString = "<html><body><h3>Je kunt het venster sluiten.</h3></body></html>";
-                var buffer = Encoding.UTF8.GetBytes(responseString);
-                context.Response.ContentLength64 = buffer.Length;
-                await context.Response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
-                context.Response.OutputStream.Close();
-                listener.Stop();
+                    // Open system browser to the auth URL
+                    await Launcher.OpenAsync(new Uri(authUrl));
 
-                return string.IsNullOrEmpty(code) ? null : code;
-#else
-                var result = await WebAuthenticator.AuthenticateAsync(new Uri(authUrl), new Uri(redirectUri));
-                if (result?.Properties != null && result.Properties.TryGetValue("code", out var code))
-                    return code;
-#endif
+                    var context = await listener.GetContextAsync();
+                    var query = context.Request.Url?.Query ?? string.Empty;
+                    var parsed = System.Web.HttpUtility.ParseQueryString(query);
+                    var code = parsed.Get("code");
+
+                    var responseString = "<html><body><h3>Je kunt het venster sluiten.</h3></body></html>";
+                    var buffer = Encoding.UTF8.GetBytes(responseString);
+                    context.Response.ContentLength64 = buffer.Length;
+                    await context.Response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+                    context.Response.OutputStream.Close();
+                    listener.Stop();
+
+                    return string.IsNullOrEmpty(code) ? null : code;
+                }
+                else
+                {
+                    var result = await WebAuthenticator.AuthenticateAsync(new Uri(authUrl), new Uri(effectiveRedirectUri));
+                    if (result?.Properties != null && result.Properties.TryGetValue("code", out var code))
+                        return code;
+                }
             }
             catch (Exception ex)
             {
@@ -191,13 +200,8 @@ namespace FoutloosTypen.Services
             }
         }
 
-        #endregion
-
-        #region Media Upload v1.1
-
         public async Task<string> UploadMediaV11Async(string filePath, string contentType, string consumerKey, string consumerSecret, string accessToken, string accessTokenSecret)
         {
-            // Debug: mask tokens to confirm correct OAuth1 credentials are used (do not log full secrets)
 #if DEBUG
             try
             {
@@ -217,7 +221,6 @@ namespace FoutloosTypen.Services
             using var client = new HttpClient();
             client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0");
 
-            // INIT
             var initParams = new List<KeyValuePair<string, string>>
             {
                 new("command", "INIT"),
@@ -237,7 +240,6 @@ namespace FoutloosTypen.Services
             using var initDoc = JsonDocument.Parse(initJson);
             var mediaId = initDoc.RootElement.GetProperty("media_id_string").GetString();
 
-            // APPEND (one chunk, base64)
             var base64 = Convert.ToBase64String(fileBytes);
             var appendParams = new List<KeyValuePair<string, string>>
             {
@@ -255,7 +257,6 @@ namespace FoutloosTypen.Services
             if (!appendResp.IsSuccessStatusCode)
                 throw new HttpRequestException($"v1.1 APPEND failed: {(int)appendResp.StatusCode} {appendResp.ReasonPhrase}");
 
-            // FINALIZE
             var finalizeParams = new List<KeyValuePair<string, string>>
             {
                 new("command", "FINALIZE"),
@@ -313,10 +314,6 @@ namespace FoutloosTypen.Services
             return string.Join(", ", headerParams.Select(kv => $"{kv.Key}=\"{Uri.EscapeDataString(kv.Value)}\""));
         }
 
-        #endregion
-
-        #region Tweet Create
-
         public async Task CreateTweetAsync(string text, string? mediaId = null)
         {
             var accessToken = await SecureStorage.GetAsync("x_access_token");
@@ -326,15 +323,9 @@ namespace FoutloosTypen.Services
             using var http = new HttpClient();
             http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-            object payload;
-            if (mediaId is not null)
-            {
-                payload = new { text = text, media = new { media_ids = new[] { mediaId } } };
-            }
-            else
-            {
-                payload = new { text = text };
-            }
+            object payload = mediaId is not null
+                ? new { text = text, media = new { media_ids = new[] { mediaId } } }
+                : new { text = text };
 
             var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
             content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
@@ -345,7 +336,6 @@ namespace FoutloosTypen.Services
                 throw new HttpRequestException($"Tweet create failed: {(int)resp.StatusCode} {resp.ReasonPhrase} - {body}");
         }
 
-        // Implemented: create tweet using OAuth1 (signed header) - equivalent to referenced JS example
         public async Task CreateTweetWithOAuth1Async(string text, string? mediaId, string consumerKey, string consumerSecret, string accessToken, string accessTokenSecret)
         {
             if (string.IsNullOrWhiteSpace(consumerKey) || string.IsNullOrWhiteSpace(consumerSecret) ||
@@ -379,10 +369,6 @@ namespace FoutloosTypen.Services
                 throw new HttpRequestException($"Tweet create failed: {(int)resp.StatusCode} {resp.ReasonPhrase} - {body}");
         }
 
-        #endregion
-
-        #region Storage
-
         public Task<string?> GetStoredAccessTokenAsync() => SecureStorage.GetAsync("x_access_token");
         public Task<string?> GetStoredRefreshTokenAsync() => SecureStorage.GetAsync("x_refresh_token");
         public Task<string?> GetAuthenticatedHandleAsync() => SecureStorage.GetAsync("x_handle");
@@ -393,18 +379,12 @@ namespace FoutloosTypen.Services
             SecureStorage.Remove("x_refresh_token");
             SecureStorage.Remove("x_pkce_verifier");
             SecureStorage.Remove("x_handle");
-            // Clear OAuth1 stored tokens as well
             SecureStorage.Remove("x_oauth_token");
             SecureStorage.Remove("x_oauth_token_secret");
         }
 
-        // OAuth1 helpers
         public Task<string?> GetStoredOAuth1TokenAsync() => SecureStorage.GetAsync("x_oauth_token");
         public Task<string?> GetStoredOAuth1SecretAsync() => SecureStorage.GetAsync("x_oauth_token_secret");
-
-        #endregion
-
-        #region PKCE Helper
 
         private static (string verifier, string challenge) CreatePkcePair()
         {
@@ -422,6 +402,59 @@ namespace FoutloosTypen.Services
             return Convert.ToBase64String(bytes).Replace('+', '-').Replace('/', '_').TrimEnd('=');
         }
 
-        #endregion
+        public string? Authenticate(string clientId, string redirectUri, string[] scopes, bool forceConsent = false)
+        {
+            return AuthenticateAsync(clientId, redirectUri, scopes, forceConsent).GetAwaiter().GetResult();
+        }
+
+        public string? ExchangeCodeForToken(string clientId, string code, string redirectUri)
+        {
+            return ExchangeCodeForTokenAsync(clientId, code, redirectUri).GetAwaiter().GetResult();
+        }
+
+        public string? RefreshAccessToken(string clientId, string refreshToken, string redirectUri)
+        {
+            return RefreshAccessTokenAsync(clientId, refreshToken, redirectUri).GetAwaiter().GetResult();
+        }
+
+        public string UploadMediaV11(string filePath, string contentType, string consumerKey, string consumerSecret, string accessToken, string accessTokenSecret)
+        {
+            return UploadMediaV11Async(filePath, contentType, consumerKey, consumerSecret, accessToken, accessTokenSecret).GetAwaiter().GetResult();
+        }
+
+        public void CreateTweet(string text, string? mediaId = null)
+        {
+            CreateTweetAsync(text, mediaId).GetAwaiter().GetResult();
+        }
+
+        public string? GetStoredAccessToken()
+        {
+            return GetStoredAccessTokenAsync().GetAwaiter().GetResult();
+        }
+
+        public string? GetStoredRefreshToken()
+        {
+            return GetStoredRefreshTokenAsync().GetAwaiter().GetResult();
+        }
+
+        public string? GetAuthenticatedHandle()
+        {
+            return GetAuthenticatedHandleAsync().GetAwaiter().GetResult();
+        }
+
+        public void SignOut()
+        {
+            SignOutAsync().GetAwaiter().GetResult();
+        }
+
+        public string? GetStoredOAuth1Token()
+        {
+            return GetStoredOAuth1TokenAsync().GetAwaiter().GetResult();
+        }
+
+        public string? GetStoredOAuth1Secret()
+        {
+            return GetStoredOAuth1SecretAsync().GetAwaiter().GetResult();
+        }
     }
 }

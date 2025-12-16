@@ -8,15 +8,10 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Net.Http.Headers;
 using System.Diagnostics;
+using FoutloosTypen.Core.Interfaces.Services;
 
-namespace FoutloosTypen.Services
+namespace FoutloosTypen.Core.Services
 {
-    public interface IXMediaUploadService
-    {
-        Task<string> UploadMediaV11Async(string filePath, string contentType, string consumerKey, string consumerSecret, string oauthToken, string oauthTokenSecret);
-        Task CreateTweetWithOAuth1Async(string text, string? mediaId, string consumerKey, string consumerSecret, string oauthToken, string oauthTokenSecret);
-    }
-
     public class MediaUploadService : IXMediaUploadService
     {
         private const string MediaUploadV11 = "https://upload.twitter.com/1.1/media/upload.json";

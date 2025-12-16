@@ -1,29 +1,49 @@
+using System;
+using System.IO;
 using CommunityToolkit.Maui.Views;
+using Microsoft.Maui.Controls;
 
-namespace FoutloosTypen.Views;
-
-public partial class ImagePreviewPopup : Popup
+namespace FoutloosTypen.Views
 {
-    private readonly string _imagePath;
-    private readonly string _tweetText;
-
-    public ImagePreviewPopup(string imagePath, string tweetText)
+    public partial class ImagePreviewPopup : Popup
     {
-        InitializeComponent();
-        _imagePath = imagePath;
-        _tweetText = tweetText;
+        private readonly string _imagePath;
+        private readonly string _tweetText;
 
-        PreviewImage.Source = ImageSource.FromFile(_imagePath);
-        PreviewText.Text = _tweetText;
-    }
+        public ImagePreviewPopup(string imagePath, string tweetText)
+        {
+            _imagePath = imagePath ?? throw new ArgumentNullException(nameof(imagePath));
+            _tweetText = tweetText ?? string.Empty;
 
-    private void OnCancel(object? sender, EventArgs e)
-    {
-        Close(false);
-    }
+            InitializeComponent();
 
-    private void OnConfirm(object? sender, EventArgs e)
-    {
-        Close(true);
+            // Wire up UI events
+            CancelButton.Clicked += OnCancelClicked;
+            ShareButton.Clicked += OnShareClicked;
+
+            TweetLabel.Text = _tweetText;
+
+            try
+            {
+                if (File.Exists(_imagePath))
+                {
+                    PreviewImage.Source = ImageSource.FromFile(_imagePath);
+                }
+            }
+            catch
+            {
+                // ignore image load failures
+            }
+        }
+
+        private void OnCancelClicked(object? sender, EventArgs e)
+        {
+            Close(false);
+        }
+
+        private void OnShareClicked(object? sender, EventArgs e)
+        {
+            Close(true);
+        }
     }
 }
