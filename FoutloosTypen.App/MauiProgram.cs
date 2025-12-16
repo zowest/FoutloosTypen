@@ -65,7 +65,6 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IShareImageService,ShareImageService>();
             builder.Services.AddSingleton<ISocialShareService,SocialShareService>();
 
-            // Use XAuthRepository to provide XAuthSettings in DI
             builder.Services.AddSingleton<FoutloosTypen.Core.XAuthSettings>(provider => provider.GetRequiredService<IXAuthRepository>().GetSettings());
 
             // ViewModels
