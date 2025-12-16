@@ -1,9 +1,9 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using BusinessLogic.Services;
 using FoutloosTypen.Core.Interfaces;
 using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Models;
+using FoutloosTypen.Core.Services;
 using Moq;
 using NUnit.Framework;
 

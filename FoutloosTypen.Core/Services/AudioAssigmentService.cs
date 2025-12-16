@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Models;
 
-namespace BusinessLogic.Services
+namespace FoutloosTypen.Core.Services
 {
     public class AudioAssignmentService : IAudioAssignmentService
     {
