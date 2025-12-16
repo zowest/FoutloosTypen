@@ -206,12 +206,14 @@ namespace FoutloosTypen
 
             // Image sharing and social sharing
             builder.Services.AddSingleton<IShareImageService, ShareImageService>();
+            builder.Services.AddSingleton<IShareUiService, ShareUiService>();
             builder.Services.AddSingleton<ISocialShareService>(sp =>
                 new SocialShareService(
                     sp.GetRequiredService<IShareImageService>(),
                     sp.GetRequiredService<IXAuthService>(),
                     sp.GetRequiredService<XAuthSettings>(),
-                    sp.GetRequiredService<IXMediaUploadService>()
+                    sp.GetRequiredService<IXMediaUploadService>(),
+                    sp.GetRequiredService<IShareUiService>()
                 ));
 
             // ViewModels

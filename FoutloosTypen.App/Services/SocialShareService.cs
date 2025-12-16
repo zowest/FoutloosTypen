@@ -15,15 +15,10 @@ using Microsoft.Maui.ApplicationModel.DataTransfer;
 using FoutloosTypen.Views;
 using CommunityToolkit.Maui.Storage;
 using CommunityToolkit.Maui.Views;
+using FoutloosTypen.Core.Interfaces.Services;
 
 namespace FoutloosTypen.Services
 {
-    public interface ISocialShareService
-    {
-        Task<bool> ShareToXWithConfirmationAsync(string lessonName, string progressText);
-        Task<bool> RegrantPostingConsentAsync();
-    }
-
     public class SocialShareService : ISocialShareService
     {
         private readonly IShareImageService _shareImageService;
@@ -31,14 +26,16 @@ namespace FoutloosTypen.Services
         private readonly IXAuthService _xAuthService;
         private readonly IXMediaUploadService _mediaUploadService;
         private readonly XAuthSettings _settings;
+        private readonly IShareUiService _shareUiService;
 
-        public SocialShareService(IShareImageService shareImageService, IXAuthService xAuthService, XAuthSettings settings, IXMediaUploadService mediaUploadService)
+        public SocialShareService(IShareImageService shareImageService, IXAuthService xAuthService, XAuthSettings settings, IXMediaUploadService mediaUploadService, IShareUiService shareUiService)
         {
             _shareImageService = shareImageService;
             _xAuthService = xAuthService;
             _settings = settings;
             _fileSaver = FileSaver.Default;
             _mediaUploadService = mediaUploadService;
+            _shareUiService = shareUiService;
         }
 
         public async Task<bool> ShareToTwitterAsync(string lessonName, string progressText)
@@ -69,7 +66,7 @@ namespace FoutloosTypen.Services
             catch (ArgumentException)
             {
                 // Missing OAuth1 credentials: fall back to native sharing and browser intent
-                await Share.RequestAsync(new ShareFileRequest { Title = "Deel op X", File = new ShareFile(imagePath) });
+                await _shareUiService.ShareFileAsync(imagePath, "Deel op X");
                 await ShareToXViaBrowserAsync(lessonName, progressText);
                 return false;
             }
@@ -238,7 +235,7 @@ namespace FoutloosTypen.Services
             var accessToken = await _xAuthService.GetStoredAccessTokenAsync();
             if (string.IsNullOrEmpty(accessToken))
             {
-                await Share.RequestAsync(new ShareFileRequest { Title = "Deel op X", File = new ShareFile(imagePath) });
+                await _shareUiService.ShareFileAsync(imagePath, "Deel op X");
                 await ShareToXViaBrowserAsync(lessonName, progressText);
                 return false;
             }
@@ -254,7 +251,7 @@ namespace FoutloosTypen.Services
                 if (string.IsNullOrWhiteSpace(oauth1Token) || string.IsNullOrWhiteSpace(oauth1Secret))
                 {
                     // Can't upload via v1.1 without OAuth1 credentials
-                    await Share.RequestAsync(new ShareFileRequest { Title = "Deel op X", File = new ShareFile(imagePath) });
+                    await _shareUiService.ShareFileAsync(imagePath, "Deel op X");
                     await ShareToXViaBrowserAsync(lessonName, progressText);
                     return false;
                 }
@@ -291,7 +288,7 @@ namespace FoutloosTypen.Services
 
             if (string.IsNullOrEmpty(mediaId))
             {
-                await Share.RequestAsync(new ShareFileRequest { Title = "Deel op X", File = new ShareFile(imagePath) });
+                await _shareUiService.ShareFileAsync(imagePath, "Deel op X");
                 await ShareToXViaBrowserAsync(lessonName, progressText);
                 return false;
             }
@@ -305,8 +302,12 @@ namespace FoutloosTypen.Services
             {
                 await _xAuthService.CreateTweetAsync(tweetText, mediaId);
             }
+            // Open the user's profile instead of the home page when possible
+            var handle = await _xAuthService.GetAuthenticatedHandleAsync();
+            var profileUrl = !string.IsNullOrWhiteSpace(handle) ? $"https://x.com/{handle}" : "https://x.com";
+            try { await Browser.OpenAsync(profileUrl, BrowserLaunchMode.External); }
+            catch { /* ignore browser open failures */ }
 
-            await Browser.OpenAsync("https://twitter.com", BrowserLaunchMode.External);
             return true;
         }
     }
