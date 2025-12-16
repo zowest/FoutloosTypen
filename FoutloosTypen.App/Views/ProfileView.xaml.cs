@@ -10,6 +10,11 @@ public partial class ProfileView : ContentPage
     {
         InitializeComponent();
         BindingContext = _viewModel = viewModel;
+        Shell.SetBackButtonBehavior(this, new BackButtonBehavior
+        {
+            IsVisible = false,
+            IsEnabled = false
+        });
     }
 
     protected override void OnAppearing()

@@ -24,63 +24,63 @@ namespace FoutloosTypen.Core.Data.Repositories
                 );
             """);
 
-            LoadCoursesFromJsonSync();
+            //LoadCoursesFromJsonSync();
         }
 
-        private void LoadCoursesFromJsonSync()
-        {
-            try
-            {
-                using var stream = FileSystem
-                    .OpenAppPackageFileAsync("Courses.json")
-                    .GetAwaiter()
-                    .GetResult();
+        //private void LoadCoursesFromJsonSync()
+        //{
+        //    try
+        //    {
+        //        using var stream = FileSystem
+        //            .OpenAppPackageFileAsync("Courses.json")
+        //            .GetAwaiter()
+        //            .GetResult();
 
-                using var reader = new StreamReader(stream);
-                using var doc = JsonDocument.Parse(reader.ReadToEnd());
+        //        using var reader = new StreamReader(stream);
+        //        using var doc = JsonDocument.Parse(reader.ReadToEnd());
 
-                var root = doc.RootElement;
-                if (root.ValueKind != JsonValueKind.Array &&
-                    !(root.ValueKind == JsonValueKind.Object &&
-                      root.TryGetProperty("Courses", out root)))
-                    return;
+        //        var root = doc.RootElement;
+        //        if (root.ValueKind != JsonValueKind.Array &&
+        //            !(root.ValueKind == JsonValueKind.Object &&
+        //              root.TryGetProperty("Courses", out root)))
+        //            return;
 
-                var statements = new List<string>();
+        //        var statements = new List<string>();
 
-                foreach (var item in root.EnumerateArray())
-                {
-                    string name = item.GetProperty("Name").GetString() ?? "";
-                    if (string.IsNullOrWhiteSpace(name))
-                        continue;
+        //        foreach (var item in root.EnumerateArray())
+        //        {
+        //            string name = item.GetProperty("Name").GetString() ?? "";
+        //            if (string.IsNullOrWhiteSpace(name))
+        //                continue;
 
-                    string description = item.TryGetProperty("Description", out var d)
-                        ? d.GetString() ?? ""
-                        : "";
+        //            string description = item.TryGetProperty("Description", out var d)
+        //                ? d.GetString() ?? ""
+        //                : "";
 
-                    int difficulty = item.TryGetProperty("Difficulty", out var diff)
-                        ? diff.GetInt32()
-                        : 0;
+        //            int difficulty = item.TryGetProperty("Difficulty", out var diff)
+        //                ? diff.GetInt32()
+        //                : 0;
 
-                    name = name.Replace("'", "''");
-                    description = description.Replace("'", "''");
+        //            name = name.Replace("'", "''");
+        //            description = description.Replace("'", "''");
 
-                    statements.Add(
-                        $"INSERT IGNORE INTO Courses(Name, Description, Difficulty) " +
-                        $"VALUES('{name}', '{description}', {difficulty});"
-                    );
-                }
+        //            statements.Add(
+        //                $"INSERT IGNORE INTO Courses(Name, Description, Difficulty) " +
+        //                $"VALUES('{name}', '{description}', {difficulty});"
+        //            );
+        //        }
 
-                if (statements.Count > 0)
-                {
-                    InsertMultipleWithTransaction(statements);
-                    Debug.WriteLine($"Seeded {statements.Count} courses");
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Course seed error: {ex.Message}");
-            }
-        }
+        //        if (statements.Count > 0)
+        //        {
+        //            InsertMultipleWithTransaction(statements);
+        //            Debug.WriteLine($"Seeded {statements.Count} courses");
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine($"Course seed error: {ex.Message}");
+        //    }
+        //}
 
         public List<Course> GetAll()
         {
