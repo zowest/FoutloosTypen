@@ -12,8 +12,8 @@ namespace FoutloosTypen.Core.Tests
     [TestFixture]
     public class AudioAssignmentServiceTests
     {
-        private Mock<ITtsService> _ttsMock!;
-        private AudioAssignmentService _service!;
+        private Mock<ITtsService> _ttsMock;
+        private AudioAssignmentService _service;
 
         [SetUp]
         public void SetUp()
@@ -28,15 +28,21 @@ namespace FoutloosTypen.Core.Tests
         {
             // Arrange
             var assignmentText = "Luister goed naar de opdracht";
+            var assignment = new AudioAssignment
+            {
+                InstructionText = assignmentText,
+                SpeechRate = 0.9f,
+                Volume = 1.0f
+            };
 
             // Act
-            await _service.PlayInstructionAsync(assignmentText);
+            await _service.PlayInstructionAsync(assignment);
 
             // Assert
             _ttsMock.Verify(t =>
                 t.SpeakAsync(
-                    It.Is<TtsRequest>(r => r.Text == assignmentText),
-                    It.IsAny<CancellationToken>()),
+                    It.Is<TtsRequest>(r => r.Text == assignmentText && r.Volume == assignment.Volume /* && r.Rate == assignment.SpeechRate if mapped */),
+                    It.IsAny<CancellationToken?>()),
                 Times.Once);
         }
     }

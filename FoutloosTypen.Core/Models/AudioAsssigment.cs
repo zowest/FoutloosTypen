@@ -9,7 +9,7 @@ namespace FoutloosTypen.Core.Models
 {
     public class AudioAssignment
     {
-        public Guid Id { get; set; }
+        public int Id { get; set; }
         public AssignmentType AssignmentType => AssignmentType.Audio;
 
         public string InstructionText { get; set; } = string.Empty;
