@@ -1,6 +1,6 @@
 namespace FoutloosTypen.Core.Models
 {
-    public class LessonProgress
+    public class Result
     {
         public int LessonId { get; set; }
         public int TotalMistakes { get; set; } = 0;

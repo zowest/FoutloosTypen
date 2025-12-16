@@ -2,7 +2,7 @@ using FoutloosTypen.Core.Models;
 
 namespace FoutloosTypen.Core.Interfaces.Services
 {
-    public interface ILessonProgressService
+    public interface IResultService
     {
         void StartLesson(int lessonId, int numberOfAssignments);
         void RecordMistake(int lessonId);
@@ -10,7 +10,7 @@ namespace FoutloosTypen.Core.Interfaces.Services
         void UpdateCurrentProgress(int lessonId, int charactersTypedSoFar, string currentText);
         void EndLesson(int lessonId);
         void MarkTimerExpired(int lessonId);
-        LessonProgress? GetProgress(int lessonId);
+        Result? GetProgress(int lessonId);
         void CalculateResults(int lessonId);
     }
 }

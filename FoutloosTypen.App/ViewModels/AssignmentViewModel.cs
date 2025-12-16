@@ -16,7 +16,7 @@ namespace FoutloosTypen.ViewModels
         private readonly IPracticeMaterialService _practiceMaterialService;
         private readonly ITimerService _timerService;
         private readonly ITypingComparisonService _typingComparisonService;
-        private readonly ILessonProgressService _lessonProgressService;
+        private readonly IResultService _ResultService;
 
         private const double TIMER_DURATION = 60; // 60 seconden per opdracht
 
@@ -168,14 +168,14 @@ namespace FoutloosTypen.ViewModels
             IPracticeMaterialService practiceMaterialService,
             ITimerService timerService,
             ITypingComparisonService typingComparisonService,
-            ILessonProgressService lessonProgressService)
+            IResultService ResultService)
         {
             _lessonService = lessonService;
             _assignmentService = assignmentService;
             _practiceMaterialService = practiceMaterialService;
             _timerService = timerService;
             _typingComparisonService = typingComparisonService;
-            _lessonProgressService = lessonProgressService;
+            _ResultService = ResultService;
 
             // Subscribe to timer expired event
             _timerService.TimerExpired += OnTimerExpired;
@@ -190,10 +190,10 @@ namespace FoutloosTypen.ViewModels
             if (SelectedLesson == null) return;
 
             // Mark that the timer expired
-            _lessonProgressService.MarkTimerExpired(SelectedLesson.Id);
+            _ResultService.MarkTimerExpired(SelectedLesson.Id);
             
             // End the lesson (this will automatically calculate results)
-            _lessonProgressService.EndLesson(SelectedLesson.Id);
+            _ResultService.EndLesson(SelectedLesson.Id);
             
             // Show results popup
             await ShowLessonResultsAsync();
@@ -206,7 +206,7 @@ namespace FoutloosTypen.ViewModels
             if (SelectedLesson == null || Application.Current?.MainPage == null)
                 return;
 
-            var progress = _lessonProgressService.GetProgress(SelectedLesson.Id);
+            var progress = _ResultService.GetProgress(SelectedLesson.Id);
             if (progress == null)
                 return;
 
@@ -293,7 +293,7 @@ namespace FoutloosTypen.ViewModels
             if (Assignments.Any())
                 SelectedAssignment = Assignments.First();
             
-            _lessonProgressService.StartLesson(SelectedLesson.Id, Assignments.Count);
+            _ResultService.StartLesson(SelectedLesson.Id, Assignments.Count);
         }
 
         private void LoadPracticeMaterials()
@@ -329,7 +329,7 @@ namespace FoutloosTypen.ViewModels
                 
                 if (SelectedLesson != null)
                 {
-                    _lessonProgressService.EndLesson(SelectedLesson.Id);
+                    _ResultService.EndLesson(SelectedLesson.Id);
                 }
                 
                 ShowLessonResults();
@@ -376,7 +376,7 @@ namespace FoutloosTypen.ViewModels
             // Toon custom popup
             if (Application.Current?.MainPage != null && SelectedLesson != null)
             {
-                var progress = _lessonProgressService.GetProgress(SelectedLesson.Id);
+                var progress = _ResultService.GetProgress(SelectedLesson.Id);
                 var popup = new Views.ResultatenPopUp(progress);
                 await Application.Current.MainPage.Navigation.PushModalAsync(popup);
 
@@ -443,8 +443,8 @@ namespace FoutloosTypen.ViewModels
             {
                 if (SelectedLesson != null)
                 {
-                    _lessonProgressService.RecordMistake(SelectedLesson.Id);
-                    Debug.WriteLine($"Mistake recorded! Total: {_lessonProgressService.GetProgress(SelectedLesson.Id)?.TotalMistakes}");
+                    _ResultService.RecordMistake(SelectedLesson.Id);
+                    Debug.WriteLine($"Mistake recorded! Total: {_ResultService.GetProgress(SelectedLesson.Id)?.TotalMistakes}");
                 }
             }
 
@@ -455,7 +455,7 @@ namespace FoutloosTypen.ViewModels
             // Update current progress (including incomplete sentences)
             if (SelectedLesson != null)
             {
-                _lessonProgressService.UpdateCurrentProgress(SelectedLesson.Id, typedText.Length, typedText);
+                _ResultService.UpdateCurrentProgress(SelectedLesson.Id, typedText.Length, typedText);
             }
 
             // Check if sentence is complete and correct
@@ -463,8 +463,8 @@ namespace FoutloosTypen.ViewModels
             {
                 if (SelectedLesson != null)
                 {
-                    _lessonProgressService.CompleteSentence(SelectedLesson.Id, typedText);
-                    var progress = _lessonProgressService.GetProgress(SelectedLesson.Id);
+                    _ResultService.CompleteSentence(SelectedLesson.Id, typedText);
+                    var progress = _ResultService.GetProgress(SelectedLesson.Id);
                     Debug.WriteLine($"Sentence completed! Total mistakes: {progress?.TotalMistakes}, Sentences: {progress?.SentencesCompleted}");
                 }
                 
@@ -555,8 +555,8 @@ namespace FoutloosTypen.ViewModels
             
             if (SelectedLesson != null)
             {
-                _lessonProgressService.EndLesson(SelectedLesson.Id);
-                var progress = _lessonProgressService.GetProgress(SelectedLesson.Id);
+                _ResultService.EndLesson(SelectedLesson.Id);
+                var progress = _ResultService.GetProgress(SelectedLesson.Id);
                 Debug.WriteLine($"Lesson ended. Total mistakes: {progress?.TotalMistakes}, Time: {progress?.TimeSpent:F2}s");
             }
 

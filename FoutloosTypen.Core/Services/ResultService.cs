@@ -7,14 +7,14 @@ using System.Linq;
 
 namespace FoutloosTypen.Core.Services
 {
-    public class LessonProgressService : ILessonProgressService
+    public class ResultService : IResultService
     {
-        private readonly Dictionary<int, LessonProgress> _activeLessons = new();
+        private readonly Dictionary<int, Result> _activeLessons = new();
         private const int TIME_PER_ASSIGNMENT = 60; // 60 seconds per assignment
 
         public void StartLesson(int lessonId, int numberOfAssignments)
         {
-            _activeLessons[lessonId] = new LessonProgress
+            _activeLessons[lessonId] = new Result
             {
                 LessonId = lessonId,
                 StartTime = DateTime.Now,
@@ -163,7 +163,7 @@ namespace FoutloosTypen.Core.Services
             Debug.WriteLine("=========================");
         }
 
-        public LessonProgress? GetProgress(int lessonId)
+        public Result? GetProgress(int lessonId)
         {
             return _activeLessons.TryGetValue(lessonId, out var progress) ? progress : null;
         }

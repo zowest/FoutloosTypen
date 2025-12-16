@@ -8,7 +8,7 @@ namespace FoutloosTypen.Views
     {
         private TaskCompletionSource<bool> _userResponseTcs;
 
-        public ResultatenPopUp(LessonProgress progress)
+        public ResultatenPopUp(Result progress)
         {
             InitializeComponent();
             

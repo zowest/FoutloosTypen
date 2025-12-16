@@ -5,9 +5,9 @@ namespace FoutloosTypen.ViewModels
 {
     public class LessonResultViewModel : INotifyPropertyChanged
     {
-        private readonly LessonProgress _progress;
+        private readonly Result _progress;
 
-        public LessonResultViewModel(LessonProgress progress)
+        public LessonResultViewModel(Result progress)
         {
             _progress = progress;
         }
