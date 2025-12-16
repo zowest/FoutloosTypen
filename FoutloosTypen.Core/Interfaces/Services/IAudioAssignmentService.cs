@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using FoutloosTypen.Core.Models;
 
@@ -11,5 +9,8 @@ namespace FoutloosTypen.Core.Interfaces.Services
     {
         Task PlayInstructionAsync(AudioAssignment assignment);
         void StopInstruction();
+
+        Task PlayPracticeMaterialsAsync(int assignmentId, CancellationToken? cancellationToken = null);
+        List<PracticeMaterial> GetPracticeMaterialsForAudio(int assignmentId);
     }
 }

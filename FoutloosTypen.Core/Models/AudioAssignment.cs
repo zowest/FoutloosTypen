@@ -7,14 +7,28 @@ using FoutloosTypen.Core.Enums;
 
 namespace FoutloosTypen.Core.Models
 {
-    public class AudioAssignment
+    public class AudioAssignment : Assignment
     {
-        public int Id { get; set; }
-        public AssignmentType AssignmentType => AssignmentType.Audio;
+        public AudioAssignment() : base()
+        {
+            base.AssignmentType = AssignmentTypeEnum.Audio;
+        }
+
+        public AudioAssignment(int id, double timelimit, int lessonId) : base(id, timelimit, lessonId)
+        {
+            base.AssignmentType = AssignmentTypeEnum.Audio;
+        }
+
+        // Hide the base property so consumers of AudioAssignment always see Audio.
+        public new AssignmentTypeEnum AssignmentType
+        {
+            get => AssignmentTypeEnum.Audio;
+            set => base.AssignmentType = AssignmentTypeEnum.Audio;
+        }
 
         public string InstructionText { get; set; } = string.Empty;
-
         public float SpeechRate { get; set; } = 0.9f;
         public float Volume { get; set; } = 1.0f;
     }
+
 }
