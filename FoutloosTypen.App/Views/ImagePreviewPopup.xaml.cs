@@ -7,34 +7,43 @@ namespace FoutloosTypen.Views
 {
     public partial class ImagePreviewPopup : Popup
     {
-        private readonly string? _imagePath;
-        private readonly string _text;
+        private readonly string _imagePath;
+        private readonly string _tweetText;
 
-        public ImagePreviewPopup(string imagePath, string text)
+        public ImagePreviewPopup(string imagePath, string tweetText)
         {
-            _imagePath = imagePath;
-            _text = text ?? string.Empty;
+            _imagePath = imagePath ?? throw new ArgumentNullException(nameof(imagePath));
+            _tweetText = tweetText ?? string.Empty;
+
             InitializeComponent();
 
+            // Wire up UI events
             CancelButton.Clicked += OnCancelClicked;
             ShareButton.Clicked += OnShareClicked;
 
-            TweetLabel.Text = _text;
+            TweetLabel.Text = _tweetText;
 
             try
             {
-                if (!string.IsNullOrEmpty(_imagePath) && File.Exists(_imagePath))
+                if (File.Exists(_imagePath))
                 {
                     PreviewImage.Source = ImageSource.FromFile(_imagePath);
                 }
             }
             catch
             {
-                // fallback: no image
+                // ignore image load failures
             }
         }
 
-        private void OnCancelClicked(object? sender, EventArgs e) => Close(false);
-        private void OnShareClicked(object? sender, EventArgs e) => Close(true);
+        private void OnCancelClicked(object? sender, EventArgs e)
+        {
+            Close(false);
+        }
+
+        private void OnShareClicked(object? sender, EventArgs e)
+        {
+            Close(true);
+        }
     }
 }
