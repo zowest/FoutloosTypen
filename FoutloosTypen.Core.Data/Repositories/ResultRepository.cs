@@ -114,16 +114,21 @@ namespace FoutloosTypen.Core.Data.Repositories
 
         private static Result Map(DbDataReader reader)
         {
-            return new Result(
-                reader.GetInt32(0),
-                reader.GetInt32(1),
-                reader.GetInt32(2),
-                reader.GetDouble(3),
-                reader.GetDouble(4),
-                reader.GetInt32(5),
-                reader.GetInt32(6),
-                reader.GetInt32(7)
-            );
+            return new Result
+            {
+                // Assuming the order of columns in SELECT matches the properties
+                // and that all properties are settable
+                // Id is not present in Result, so skip index 0
+                StudentId = reader.GetInt32(1),
+                LessonId = reader.GetInt32(2),
+                StrokesPerMinute = reader.GetInt32(3),
+                WordsPerMinute = reader.GetInt32(4),
+                TotalMistakes = reader.GetInt32(5),
+                Score = reader.GetInt32(6),
+                // TimeRemaining is a double in the model, but int in the DB, so cast
+                TimeRemaining = Convert.ToDouble(reader.GetInt32(7))
+                // Add more property assignments here if needed and available in the Result class
+            };
         }
 
         private static void AddParam(DbCommand command, string name, object value)

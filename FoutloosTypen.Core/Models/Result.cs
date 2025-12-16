@@ -12,13 +12,15 @@ namespace FoutloosTypen.Core.Models
         public DateTime? EndTime { get; set; }
         public double ExpectedTime { get; set; } = 300;
         public bool TimerExpired { get; set; } = false;
-        
+        public int StudentId { get; set; }
+
         // Calculated properties
         public int Score { get; set; }
         public int StrokesPerMinute { get; set; }
         public int WordsPerMinute { get; set; }
         public double AccuracyPercent { get; set; }
-        
+        public double TimeRemaining { get; set; }
+
         public double TimeSpent 
         {
             get
@@ -30,6 +32,6 @@ namespace FoutloosTypen.Core.Models
             }
         }
             
-        public double TimeRemaining => Math.Max(0, ExpectedTime - TimeSpent);
+
     }
 }

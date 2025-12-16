@@ -159,7 +159,7 @@ namespace FoutloosTypen.Core.Services
                 progress.Score = (int)((accuracyScore + timeBonus) * 10);
                 Debug.WriteLine($"Score: {progress.Score}");
             }
-            
+            progress.TimeRemaining = Math.Max(0, progress.ExpectedTime - progress.TimeSpent);
             Debug.WriteLine("=========================");
         }
 
