@@ -16,7 +16,6 @@ namespace FoutloosTypen.Core.Data.Repositories
         {
             XAuthSettings? settings = null;
 
-            // 1) Try app package (Maui asset / Content)
             try
             {
                 var openTask = FileSystem.OpenAppPackageFileAsync("appsettings.Development.json");
@@ -38,7 +37,6 @@ namespace FoutloosTypen.Core.Data.Repositories
                 Debug.WriteLine($"XAuthRepository: package read failed: {ex.Message}");
             }
 
-            // 2) Try AppContext.BaseDirectory (output folder)
             if (settings == null)
             {
                 try
@@ -54,6 +52,20 @@ namespace FoutloosTypen.Core.Data.Repositories
                             Debug.WriteLine($"XAuthRepository: loaded settings from {candidate}");
                         }
                     }
+                    if (settings == null)
+                    {
+                        var outputResourceCandidate = Path.Combine(AppContext.BaseDirectory, "Resources", "appsettings.Development.json");
+                        if (File.Exists(outputResourceCandidate))
+                        {
+                            var json = File.ReadAllText(outputResourceCandidate);
+                            using var doc = JsonDocument.Parse(json);
+                            if (doc.RootElement.TryGetProperty("X", out var xElem))
+                            {
+                                settings = JsonSerializer.Deserialize<XAuthSettings>(xElem.GetRawText());
+                                Debug.WriteLine($"XAuthRepository: loaded settings from {outputResourceCandidate}");
+                            }
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -61,7 +73,6 @@ namespace FoutloosTypen.Core.Data.Repositories
                 }
             }
 
-            // 3) Try dev path fallback
             if (settings == null)
             {
                 try
@@ -85,7 +96,6 @@ namespace FoutloosTypen.Core.Data.Repositories
                 }
             }
 
-            // 4) Try assembly embedded resources
             if (settings == null)
             {
                 try
@@ -124,7 +134,6 @@ namespace FoutloosTypen.Core.Data.Repositories
                 settings = new XAuthSettings();
             }
 
-            // Normalize
             settings.ClientId = (settings.ClientId ?? string.Empty).Trim();
             settings.RedirectUri = (settings.RedirectUri ?? string.Empty).Trim();
 

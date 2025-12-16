@@ -78,11 +78,5 @@
 	</ItemGroup>
 
 	<!-- Copy appsettings.Development.json from Core.Data resources into the App output -->
-	<ItemGroup>
-	  <Content Include="..\FoutloosTypen.Core.Data\Resources\appsettings.Development.json">
-	    <Link>appsettings.Development.json</Link>
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	</ItemGroup>
 
 </Project>
