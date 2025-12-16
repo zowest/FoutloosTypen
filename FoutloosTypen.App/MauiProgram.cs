@@ -6,6 +6,7 @@ using FoutloosTypen.Core.Services;
 using FoutloosTypen.ViewModels;
 using FoutloosTypen.Views;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Microsoft.Maui.LifecycleEvents;
 using System.Diagnostics;
 using CommunityToolkit.Maui;
@@ -15,6 +16,7 @@ using System.IO;
 using System.Text.Json;
 using Microsoft.Maui.Storage;
 using FoutloosTypen.Core;
+using SkiaSharp.Views.Maui.Controls.Hosting;
 
 #if WINDOWS
 using Windows.System;
@@ -31,11 +33,15 @@ namespace FoutloosTypen
 #endif
 
             var builder = MauiApp.CreateBuilder();
-            builder.UseMauiApp<App>().ConfigureFonts(fonts =>
+            builder
+                .UseMauiApp<App>()
+                .UseMauiCommunityToolkit()
+                .UseSkiaSharp()
+                .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
-            }).UseMauiCommunityToolkit();
+            });
 
             // Repositories
             builder.Services.AddSingleton<ILessonRepository, LessonRepository>();
