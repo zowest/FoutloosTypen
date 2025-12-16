@@ -28,6 +28,20 @@ namespace FoutloosTypen.Core.Data.Repositories
         {
             try
             {
+                // Check of er al data in de tabel staat
+                OpenConnection();
+                using var checkCmd = Connection.CreateCommand();
+                checkCmd.CommandText = "SELECT COUNT(*) FROM Assignments";
+                var count = Convert.ToInt32(checkCmd.ExecuteScalar());
+                CloseConnection();
+
+                // Als er al data is, skip de seeding
+                if (count > 0)
+                {
+                    Debug.WriteLine($"Assignments already seeded ({count} records), skipping...");
+                    return;
+                }
+
                 using var stream = FileSystem
                     .OpenAppPackageFileAsync("Assignment.json")
                     .GetAwaiter()
@@ -65,7 +79,10 @@ namespace FoutloosTypen.Core.Data.Repositories
                 }
 
                 if (statements.Count > 0)
+                {
                     InsertMultipleWithTransaction(statements);
+                    Debug.WriteLine($"Seeded {statements.Count} assignments");
+                }
             }
             catch (Exception ex)
             {
