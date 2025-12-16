@@ -1,9 +1,9 @@
 ﻿using FoutloosTypen.Core.Interfaces.Repositories;
 using FoutloosTypen.Core.Models;
-using Microsoft.Data.Sqlite;
 using Microsoft.Maui.Storage;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Data.Common;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
@@ -13,150 +13,135 @@ namespace FoutloosTypen.Core.Data.Repositories
 
         public LessonRepository()
         {
-            Debug.WriteLine("LessonRepository: Starting initialization...");
-            
-            CreateTable(@"CREATE TABLE IF NOT EXISTS Lessons (
-                        [Id] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                        [Name] NVARCHAR(80) NOT NULL,
-                        [Description] NVARCHAR(250),
-                        [IsTest] BOOL,
-                        [IsDone] BOOL,
-                        [CourseId] INTEGER NOT NULL,
-                        UNIQUE(Name, CourseId)
-                )");
-
-            Debug.WriteLine("LessonRepository: Table created");
+            CreateTable("""
+                CREATE TABLE IF NOT EXISTS Lessons (
+                    Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    Name VARCHAR(80) NOT NULL,
+                    Description VARCHAR(250),
+                    IsTest TINYINT(1),
+                    IsDone TINYINT(1),
+                    CourseId INT NOT NULL,
+                    UNIQUE(Name, CourseId)
+                );
+            """);
 
             LoadLessonsFromJsonSync();
-
-            GetAll();
-            
-            Debug.WriteLine("LessonRepository: Initialization complete");
         }
 
         private void LoadLessonsFromJsonSync()
         {
-            var stopwatch = Stopwatch.StartNew();
-            List<string> insertQueries = new();
+            var statements = new List<string>();
 
             try
             {
-                Debug.WriteLine("Loading Lessons.json...");
+                using var stream = FileSystem.OpenAppPackageFileAsync("Lessons.json")
+                    .GetAwaiter().GetResult();
 
-                Task.Run(async () =>
+                using var reader = new StreamReader(stream);
+                using var doc = JsonDocument.Parse(reader.ReadToEnd());
+
+                var root = doc.RootElement;
+                if (root.ValueKind == JsonValueKind.Object &&
+                    root.TryGetProperty("Lessons", out var l))
                 {
-                    using var stream = await FileSystem.OpenAppPackageFileAsync("Lessons.json");
-                    using var reader = new StreamReader(stream);
-                    var json = await reader.ReadToEndAsync();
-
-                    using var jsonDoc = JsonDocument.Parse(json);
-                    var root = jsonDoc.RootElement;
-
-                    JsonElement lessonsElement = root;
-                    if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("Lessons", out var le))
-                        lessonsElement = le;
-
-                    if (lessonsElement.ValueKind != JsonValueKind.Array)
-                        throw new Exception("Invalid JSON structure for lessons");
-
-                    foreach (var item in lessonsElement.EnumerateArray())
-                    {
-                        int id = item.TryGetProperty("Id", out var idProp) ? idProp.GetInt32() : 0;
-                        string name = item.GetProperty("Name").GetString() ?? string.Empty;
-                        string description = item.TryGetProperty("Description", out var descProp) ? (descProp.GetString() ?? string.Empty) : string.Empty;
-                        bool isTest = item.TryGetProperty("IsTest", out var isTestProp) && isTestProp.GetBoolean();
-                        bool isDone = item.TryGetProperty("IsDone", out var isDoneProp) && isDoneProp.GetBoolean();
-                        int courseId = item.GetProperty("CourseId").GetInt32();
-
-                        name = name.Replace("'", "''");
-                        description = description.Replace("'", "''");
-
-                        if (id > 0)
-                        {
-                            insertQueries.Add($@"INSERT OR IGNORE INTO Lessons(Id, Name, Description, IsTest, IsDone, CourseId)
-                            VALUES({id}, '{name}', '{description}', {(isTest ? 1 : 0)}, {(isDone ? 1 : 0)}, {courseId})");
-                        }
-                        else
-                        {
-                            insertQueries.Add($@"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('{name}', '{description}', {(isTest ? 1 : 0)}, {(isDone ? 1 : 0)}, {courseId})");
-                        }
-                    }
-                }).GetAwaiter().GetResult();
-
-                if (insertQueries.Any())
-                {
-                    InsertMultipleWithTransaction(insertQueries);
-                    stopwatch.Stop();
-                    Debug.WriteLine($"SUCCESS: Loaded {insertQueries.Count} lessons from JSON in {stopwatch.ElapsedMilliseconds}ms");
+                    root = l;
                 }
-            }
-            catch (FileNotFoundException)
-            {
-                Debug.WriteLine("Lessons.json not found; skipping JSON seed for lessons");
+
+                if (root.ValueKind != JsonValueKind.Array)
+                    return;
+
+                foreach (var item in root.EnumerateArray())
+                {
+                    string name = item.GetProperty("Name").GetString() ?? "";
+                    if (string.IsNullOrWhiteSpace(name))
+                        continue;
+
+                    string description = item.TryGetProperty("Description", out var d)
+                        ? d.GetString() ?? ""
+                        : "";
+
+                    bool isTest = item.TryGetProperty("IsTest", out var it) && it.GetBoolean();
+                    bool isDone = item.TryGetProperty("IsDone", out var id) && id.GetBoolean();
+                    int courseId = item.GetProperty("CourseId").GetInt32();
+
+                    name = name.Replace("'", "''");
+                    description = description.Replace("'", "''");
+
+                    statements.Add($"""
+                        INSERT IGNORE INTO Lessons
+                        (Name, Description, IsTest, IsDone, CourseId)
+                        VALUES
+                        ('{name}', '{description}', {(isTest ? 1 : 0)}, {(isDone ? 1 : 0)}, {courseId});
+                    """);
+                }
+
+                if (statements.Count > 0)
+                    InsertMultipleWithTransaction(statements);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"ERROR loading Lessons.json: {ex.Message}");
+                Debug.WriteLine($"Lesson seed error: {ex.Message}");
             }
         }
 
         public List<Lesson> GetAll()
         {
             lessons.Clear();
-
-            string selectQuery = "SELECT Id, Name, Description, IsTest, IsDone, CourseId FROM Lessons";
             OpenConnection();
 
-            using (SqliteCommand command = new(selectQuery, Connection))
+            using var command = Connection.CreateCommand();
+            command.CommandText =
+                "SELECT Id, Name, Description, IsTest, IsDone, CourseId FROM Lessons";
+
+            using DbDataReader reader = command.ExecuteReader();
+            while (reader.Read())
             {
-                SqliteDataReader reader = command.ExecuteReader();
-
-                while (reader.Read())
-                {
-                    int id = reader.GetInt32(0);
-                    string name = reader.GetString(1);
-                    string description = reader.GetString(2);
-                    bool isTest = reader.GetBoolean(3);
-                    bool isDone = reader.GetBoolean(4);
-                    int courseId = reader.GetInt32(5);
-                    double totalTime = 60;
-
-                    lessons.Add(new Lesson(id, name, description, isTest, isDone, courseId, totalTime));
-                }
+                lessons.Add(new Lesson(
+                    reader.GetInt32(0),
+                    reader.GetString(1),
+                    reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    reader.GetInt32(3) == 1,
+                    reader.GetInt32(4) == 1,
+                    reader.GetInt32(5),
+                    totalTime: 60
+                ));
             }
 
             CloseConnection();
-            Debug.WriteLine($"LessonRepository: Retrieved {lessons.Count} lessons");
             return lessons;
         }
 
-        public Lesson Get(int id)
+        public Lesson? Get(int id)
         {
-            string selectQuery = $"SELECT Id, Name, Description, IsTest, IsDone, CourseId FROM Lessons WHERE Id = {id}";
-            Lesson tmpLesson = null;
-
             OpenConnection();
 
-            using (SqliteCommand command = new(selectQuery, Connection))
+            using var command = Connection.CreateCommand();
+            command.CommandText =
+                "SELECT Id, Name, Description, IsTest, IsDone, CourseId FROM Lessons WHERE Id = @id";
+
+            var p = command.CreateParameter();
+            p.ParameterName = "@id";
+            p.Value = id;
+            command.Parameters.Add(p);
+
+            using DbDataReader reader = command.ExecuteReader();
+            Lesson? result = null;
+
+            if (reader.Read())
             {
-                SqliteDataReader reader = command.ExecuteReader();
-
-                if (reader.Read())
-                {
-                    int Id = reader.GetInt32(0);
-                    string name = reader.GetString(1);
-                    string description = reader.GetString(2);
-                    bool isTest = reader.GetBoolean(3);
-                    bool isDone = reader.GetBoolean(4);
-                    int courseId = reader.GetInt32(5);
-                    double totalTime = 60;
-
-                    tmpLesson = new Lesson(Id, name, description, isTest, isDone, courseId, totalTime);
-                }
+                result = new Lesson(
+                    reader.GetInt32(0),
+                    reader.GetString(1),
+                    reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    reader.GetInt32(3) == 1,
+                    reader.GetInt32(4) == 1,
+                    reader.GetInt32(5),
+                    totalTime: 60
+                );
             }
 
             CloseConnection();
-            return tmpLesson;
+            return result;
         }
     }
 }

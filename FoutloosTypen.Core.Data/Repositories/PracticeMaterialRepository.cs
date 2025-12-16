@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Diagnostics;
 using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.Data.Sqlite;
 using Microsoft.Maui.Storage;
+using System.Data.Common;
 using FoutloosTypen.Core.Models;
 using FoutloosTypen.Core.Interfaces.Repositories;
-using System.Diagnostics;
-using System.Linq;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
@@ -16,167 +11,122 @@ namespace FoutloosTypen.Core.Data.Repositories
     {
         public PracticeMaterialRepository()
         {
-            try
-            {
-                Debug.WriteLine("PracticeMaterialRepository: Starting initialization...");
+            CreateTable("""
+                CREATE TABLE IF NOT EXISTS PracticeMaterials (
+                    Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    Sentence VARCHAR(500) NOT NULL,
+                    AssignmentId INT NOT NULL
+                );
+            """);
 
-                CreateTable(@"
-                    CREATE TABLE IF NOT EXISTS PracticeMaterials (
-                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                        Sentence NVARCHAR(500) NOT NULL,
-                        AssignmentId INTEGER NOT NULL
-                    );
-                ");
-
-                Debug.WriteLine("PracticeMaterialRepository: Table created");
-
-                LoadPracticeMaterialsFromJsonSync();
-
-                Debug.WriteLine("PracticeMaterialRepository initialized successfully");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"PracticeMaterialRepository initialization error: {ex.Message}");
-                Debug.WriteLine($"Stack trace: {ex.StackTrace}");
-                throw;
-            }
+            //LoadPracticeMaterialsFromJsonSync();
         }
 
-        private void LoadPracticeMaterialsFromJsonSync()
-        {
-            var stopwatch = Stopwatch.StartNew();
-            List<string> insertQueries = new();
+        //private void LoadPracticeMaterialsFromJsonSync()
+        //{
+        //    var stopwatch = Stopwatch.StartNew();
+        //    var statements = new List<string>();
 
-            try
-            {
-                Debug.WriteLine("Loading PracticeMaterial.json...");
+        //    try
+        //    {
+        //        using var stream = FileSystem
+        //            .OpenAppPackageFileAsync("PracticeMaterial.json")
+        //            .GetAwaiter()
+        //            .GetResult();
 
-                using var stream = FileSystem.OpenAppPackageFileAsync("PracticeMaterial.json").GetAwaiter().GetResult();
-                using var reader = new StreamReader(stream);
-                var json = reader.ReadToEnd();
+        //        using var reader = new StreamReader(stream);
+        //        using var doc = JsonDocument.Parse(reader.ReadToEnd());
+        //        var root = doc.RootElement;
 
-                using var jsonDoc = JsonDocument.Parse(json);
-                var root = jsonDoc.RootElement;
+        //        if (root.ValueKind == JsonValueKind.Object &&
+        //            root.TryGetProperty("PracticeMaterials", out var p))
+        //        {
+        //            root = p;
+        //        }
 
-                // Accept multiple shapes: array root, or object with common property names
-                JsonElement materialsElement = root;
-                if (root.ValueKind == JsonValueKind.Object)
-                {
-                    if (root.TryGetProperty("PracticeMaterials", out var pmPlural))
-                        materialsElement = pmPlural;
-                    else if (root.TryGetProperty("PracticeMaterial", out var pmSingular))
-                        materialsElement = pmSingular;
-                    else if (root.TryGetProperty("Items", out var items))
-                        materialsElement = items;
-                    else if (root.TryGetProperty("Data", out var data))
-                        materialsElement = data;
-                }
+        //        if (root.ValueKind != JsonValueKind.Array)
+        //            return;
 
-                if (materialsElement.ValueKind != JsonValueKind.Array)
-                    throw new Exception("Invalid JSON structure: expected array or object with 'PracticeMaterials' or 'PracticeMaterial'");
+        //        foreach (var item in root.EnumerateArray())
+        //        {
+        //            int assignmentId = item.GetProperty("AssignmentId").GetInt32();
+        //            string sentence = item.GetProperty("Sentence").GetString() ?? "";
 
-                foreach (var item in materialsElement.EnumerateArray())
-                {
-                   
-                    int assignmentId = item.TryGetProperty("AssignmentId", out var aid) ? aid.GetInt32() : 0;
-                    string sentence = item.TryGetProperty("Sentence", out var s) ? (s.GetString() ?? "") : "";
+        //            if (assignmentId == 0 || string.IsNullOrWhiteSpace(sentence))
+        //                continue;
 
-                    if (assignmentId == 0 || string.IsNullOrWhiteSpace(sentence))
-                        continue;
+        //            sentence = sentence.Replace("'", "''");
 
-                    sentence = sentence.Replace("'", "''");
+        //            statements.Add($"""
+        //                INSERT IGNORE INTO PracticeMaterials
+        //                (Sentence, AssignmentId)
+        //                VALUES('{sentence}', {assignmentId});
+        //            """);
+        //        }
 
-                    insertQueries.Add($@"INSERT OR IGNORE INTO PracticeMaterials(Sentence, AssignmentId) VALUES('{sentence}', {assignmentId})");
-                }
-
-                if (insertQueries.Any())
-                {
-                    InsertMultipleWithTransaction(insertQueries);
-                    stopwatch.Stop();
-                    Debug.WriteLine($"SUCCESS: Loaded {insertQueries.Count} practice materials from JSON in {stopwatch.ElapsedMilliseconds}ms");
-                }
-            }
-            catch (FileNotFoundException)
-            {
-                Debug.WriteLine("PracticeMaterial.json not found; skipping JSON seed");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"ERROR loading PracticeMaterial.json: {ex.Message}");
-                Debug.WriteLine("Using fallback data");
-            }
-        }
+        //        if (statements.Count > 0)
+        //        {
+        //            InsertMultipleWithTransaction(statements);
+        //            stopwatch.Stop();
+        //            Debug.WriteLine($"Seeded {statements.Count} practice materials in {stopwatch.ElapsedMilliseconds}ms");
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine($"PracticeMaterial seed error: {ex.Message}");
+        //    }
+        //}
 
         public List<PracticeMaterial> GetAll()
         {
-            List<PracticeMaterial> practiceMaterials = new();
+            var result = new List<PracticeMaterial>();
+            OpenConnection();
 
-            try
+            using var command = Connection.CreateCommand();
+            command.CommandText =
+                "SELECT Id, Sentence, AssignmentId FROM PracticeMaterials";
+
+            using DbDataReader reader = command.ExecuteReader();
+            while (reader.Read())
             {
-                OpenConnection();
-
-                using var command = Connection.CreateCommand();
-                command.CommandText = "SELECT Id, Sentence, AssignmentId FROM PracticeMaterials";
-
-                using var reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    int id = reader.GetInt32(0);
-                    string sentence = reader.GetString(1);
-                    int assignmentId = reader.GetInt32(2);
-
-                    practiceMaterials.Add(new PracticeMaterial(id, sentence, assignmentId));
-                }
-
-                Debug.WriteLine($"Retrieved {practiceMaterials.Count} practice materials from database");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error retrieving practice materials: {ex.Message}");
-                throw;
-            }
-            finally
-            {
-                CloseConnection();
+                result.Add(new PracticeMaterial(
+                    reader.GetInt32(0),
+                    reader.GetString(1),
+                    reader.GetInt32(2)
+                ));
             }
 
-            return practiceMaterials;
+            CloseConnection();
+            return result;
         }
 
         public PracticeMaterial? Get(int id)
         {
-            PracticeMaterial? practiceMaterial = null;
+            OpenConnection();
 
-            try
+            using var command = Connection.CreateCommand();
+            command.CommandText =
+                "SELECT Id, Sentence, AssignmentId FROM PracticeMaterials WHERE Id = @id";
+
+            var p = command.CreateParameter();
+            p.ParameterName = "@id";
+            p.Value = id;
+            command.Parameters.Add(p);
+
+            using DbDataReader reader = command.ExecuteReader();
+            PracticeMaterial? result = null;
+
+            if (reader.Read())
             {
-                string query = "SELECT Id, Sentence, AssignmentId FROM PracticeMaterials WHERE Id = @Id";
-
-                OpenConnection();
-                using (SqliteCommand command = new(query, Connection))
-                {
-                    command.Parameters.AddWithValue("@Id", id);
-                    SqliteDataReader reader = command.ExecuteReader();
-
-                    if (reader.Read())
-                    {
-                        string sentence = reader.GetString(1);
-                        int assignmentId = reader.GetInt32(2);
-
-                        practiceMaterial = new PracticeMaterial(id, sentence, assignmentId);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error retrieving practice material with Id {id}: {ex.Message}");
-                throw;
-            }
-            finally
-            {
-                CloseConnection();
+                result = new PracticeMaterial(
+                    reader.GetInt32(0),
+                    reader.GetString(1),
+                    reader.GetInt32(2)
+                );
             }
 
-            return practiceMaterial;
+            CloseConnection();
+            return result;
         }
     }
 }

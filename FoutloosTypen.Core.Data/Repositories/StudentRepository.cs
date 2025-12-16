@@ -1,44 +1,110 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Data.Common;
 using FoutloosTypen.Core.Interfaces.Repositories;
 using FoutloosTypen.Core.Models;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
-    public class StudentRepository : IStudentRepository
+    public class StudentRepository : DatabaseConnection, IStudentRepository
     {
-        private readonly List<Student> studentList;
-
-        public StudentRepository()
-        {
-            studentList = [
-                new Student(1, "co2mott", "Matthijs", "bHbXpFGYmI/YjrZvIVvu0Q==.kf5UUcO9kF5t9hSplOjbDUX2u2vle52Y4FHj4cFgE+s=", 1),
-                new Student(2, "meesvz123", "Mees", "bHbXpFGYmI/YjrZvIVvu0Q==.kf5UUcO9kF5t9hSplOjbDUX2u2vle52Y4FHj4cFgE+s=", 1),
-                new Student(3, "danial", "Danial", "bHbXpFGYmI/YjrZvIVvu0Q==.kf5UUcO9kF5t9hSplOjbDUX2u2vle52Y4FHj4cFgE+s=", 1),
-                new Student(4, "sowiaelys", "Zoe", "bHbXpFGYmI/YjrZvIVvu0Q==.kf5UUcO9kF5t9hSplOjbDUX2u2vle52Y4FHj4cFgE+s=", 1),
-                new Student(5, "ikweetgeennaam", "Anne Dirk", "bHbXpFGYmI/YjrZvIVvu0Q==.kf5UUcO9kF5t9hSplOjbDUX2u2vle52Y4FHj4cFgE+s=", 1),
-                new Student(6, "Boedha", "Jackie", "bHbXpFGYmI/YjrZvIVvu0Q==.kf5UUcO9kF5t9hSplOjbDUX2u2vle52Y4FHj4cFgE+s=", 1)
-            ];
-        }
-         
         public Student? Get(string username)
         {
-            Student? student = studentList.FirstOrDefault(c => c.Username.Equals(username));
-            return student;
+            OpenConnection();
+
+            using var command = Connection.CreateCommand();
+            command.CommandText = """
+                SELECT id, username, name, password, level, avgSpeed, avgPrecision
+                FROM students
+                WHERE username = @username
+            """;
+
+            var p = command.CreateParameter();
+            p.ParameterName = "@username";
+            p.Value = username;
+            command.Parameters.Add(p);
+
+            using DbDataReader reader = command.ExecuteReader();
+            Student? result = null;
+
+            if (reader.Read())
+            {
+                result = new Student(
+                    reader.GetInt32(0),
+                    reader.GetString(1),
+                    reader.GetString(2),
+                    reader.GetString(3),
+                    reader.GetInt32(4),
+                    reader.GetDouble(5),
+                    reader.GetDouble(6)
+                );
+            }
+
+            CloseConnection();
+            return result;
         }
 
         public Student? Get(int id)
         {
-            Student? student = studentList.FirstOrDefault(c => c.Id == id);
-            return student;
+            OpenConnection();
+
+            using var command = Connection.CreateCommand();
+            command.CommandText = """
+                SELECT id, username, name, password, level, avgSpeed, avgPrecision
+                FROM students
+                WHERE id = @id
+            """;
+
+            var p = command.CreateParameter();
+            p.ParameterName = "@id";
+            p.Value = id;
+            command.Parameters.Add(p);
+
+            using DbDataReader reader = command.ExecuteReader();
+            Student? result = null;
+
+            if (reader.Read())
+            {
+                result = new Student(
+                    reader.GetInt32(0),
+                    reader.GetString(1),
+                    reader.GetString(2),
+                    reader.GetString(3),
+                    reader.GetInt32(4),
+                    reader.GetDouble(5),
+                    reader.GetDouble(6)
+                );
+            }
+
+            CloseConnection();
+            return result;
         }
 
         public List<Student> GetAll()
         {
-            return studentList;
+            var result = new List<Student>();
+            OpenConnection();
+
+            using var command = Connection.CreateCommand();
+            command.CommandText = """
+                SELECT id, username, name, password, level, avgSpeed, avgPrecision
+                FROM students
+            """;
+
+            using DbDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                result.Add(new Student(
+                    reader.GetInt32(0),
+                    reader.GetString(1),
+                    reader.GetString(2),
+                    reader.GetString(3),
+                    reader.GetInt32(4),
+                    reader.GetDouble(5),
+                    reader.GetDouble(6)
+                ));
+            }
+
+            CloseConnection();
+            return result;
         }
     }
 }

@@ -8,5 +8,6 @@ namespace FoutloosTypen.Core.Interfaces.Services
         public IEnumerable<Lesson> GetAll();
         public Lesson? Get(int id);
         public double CalculateTotalTime(int lessonId);
+
     }
 }
