@@ -12,11 +12,6 @@
     </Shell.FlyoutHeader>
 
     <TabBar>
-        <!---
-        <Tab Title="Inloggen" Icon="dotnet_bot.png">
-            <ShellContent Title="Login" ContentTemplate="{DataTemplate views:LoginView}" />
-        </Tab>
-        -->
         <Tab Title="Lessen" Icon="dotnet_bot.png">
             <ShellContent Title="Lessen" ContentTemplate="{DataTemplate views:LessonView}" />
         </Tab>

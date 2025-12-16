@@ -25,27 +25,26 @@
                            FontAttributes="Bold" 
                            HorizontalOptions="Center"
                            TextColor="Black"/>
-                    <CollectionView ItemsSource="{Binding Courses}" 
-                                    SelectionMode="Single"
-                                    SelectedItem="{Binding SelectedCourse}">
+                    <CollectionView ItemsSource="{Binding CoursesVM.Courses}" 
+                            SelectionMode="Single"
+                            SelectedItem="{Binding CoursesVM.SelectedCourse}">
                         <CollectionView.ItemsLayout>
                             <LinearItemsLayout Orientation="Vertical" ItemSpacing="20" />
                         </CollectionView.ItemsLayout>
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
                                 <Button Text="{Binding Name}"
-                                        x:Name="HoverButton"
                                     MinimumHeightRequest="100"
                                         FontSize="30"
                                         BackgroundColor="White"
                                         BorderColor="Black"
+                                        TextColor="Black"
                                         BorderWidth="2"
-                                        Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectCourseCommand}"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.CoursesVM.SelectCourseCommand}"
                                         CommandParameter="{Binding}">
                                     <Button.GestureRecognizers>
-                                        <PointerGestureRecognizer
-                                                    PointerEntered="OnHoverEnter"
-                                                    PointerExited="OnHoverExit"/>
+                                        <PointerGestureRecognizer PointerEntered="OnHoverEnter"
+                                              PointerExited="OnHoverExit" />
                                     </Button.GestureRecognizers>
                                 </Button>
                             </DataTemplate>
@@ -60,51 +59,52 @@
                      VerticalOptions="FillAndExpand"/>
 
 
-        <!-- Lessons kolom -->
-        <VerticalStackLayout 
-                Grid.Column="2"
-                HorizontalOptions="Center" 
-                VerticalOptions="FillAndExpand"
-                Spacing="40">
-                <CollectionView ItemsSource="{Binding Lessons}" 
-                                SelectionMode="Single" 
-                                SelectedItem="{Binding SelectedLesson}"
-                                VerticalOptions="CenterAndExpand">
-                <CollectionView.ItemsLayout>
-                        <LinearItemsLayout Orientation="Vertical" 
-                                           ItemSpacing="40" />
-                    </CollectionView.ItemsLayout>
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate>
-                            <!-- Border moet voor SelectedLesson-->
-                            <Border WidthRequest="100" 
-                                    HeightRequest="60" Padding="0" 
-                                    HorizontalOptions="Center" 
-                                    StrokeShape="RoundRectangle 25">
-                                <Label x:Name="HoverButton" 
-                                    Text="{Binding Name}" 
-                                       VerticalOptions="Center" 
-                                       HorizontalOptions="Center" WidthRequest="75" 
-                                       HorizontalTextAlignment="Center" 
-                                       FontSize="25"
-                                       TextColor="Black"/>
-                                <Border.GestureRecognizers>
-                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type CollectionView}}, 
-                                            Path=BindingContext.SelectLessonCommand}" 
-                                            CommandParameter="{Binding}"/>
-                                    <PointerGestureRecognizer
-                                        PointerEntered="OnHoverEnter"
-                                        PointerExited="OnHoverExit"></PointerGestureRecognizer>
-                                </Border.GestureRecognizers>
-                            </Border>
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
-                </CollectionView>
-                <Label Text="Start"
-                       HorizontalOptions="Center"
-                       FontSize="40"
-                       TextColor="Black"/>
-            </VerticalStackLayout>
+        <!-- Lessons kolom - NU MET SCROLLVIEW -->
+        <ScrollView Grid.Column="2">
+            <VerticalStackLayout 
+                    HorizontalOptions="Center" 
+                    VerticalOptions="Start"
+                    Spacing="20"
+                    Padding="0,40,0,40">
+                    <CollectionView ItemsSource="{Binding LessonsVM.Lessons}" 
+                                    SelectionMode="Single" 
+                                    SelectedItem="{Binding LessonsVM.SelectedLesson}">
+                    <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" 
+                                               ItemSpacing="40" />
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border WidthRequest="100" 
+                                        HeightRequest="60" Padding="0" 
+                                        HorizontalOptions="Center" 
+                                        StrokeShape="RoundRectangle 25">
+                                    <Label x:Name="HoverButton" 
+                                        Text="{Binding Name}" 
+                                           VerticalOptions="Center" 
+                                           HorizontalOptions="Center" WidthRequest="75" 
+                                           HorizontalTextAlignment="Center" 
+                                           FontSize="25"
+                                           TextColor="Black"/>
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type CollectionView}}, 
+                                                Path=BindingContext.LessonsVM.SelectLessonCommand}" 
+                                                CommandParameter="{Binding}"/>
+                                        <PointerGestureRecognizer
+                                            PointerEntered="OnHoverEnter"
+                                            PointerExited="OnHoverExit"></PointerGestureRecognizer>
+                                    </Border.GestureRecognizers>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                    <Label Text="Start"
+                           HorizontalOptions="Center"
+                           FontSize="40"
+                           TextColor="Black"
+                           Margin="0,20,0,0"/>
+                </VerticalStackLayout>
+            </ScrollView>
 
             <BoxView Grid.Column="3" 
                      WidthRequest="2" 
@@ -117,7 +117,7 @@
                 HorizontalOptions="Center" 
                 VerticalOptions="Center" 
                 Spacing="20">
-                <Label Text="{Binding SelectedLesson.Name}" 
+                <Label Text="{Binding LessonsVM.SelectedLesson.Name}" 
                         FontSize="40" 
                         WidthRequest="500" 
                         HorizontalTextAlignment="Center" 
@@ -136,7 +136,7 @@
                        FontAttributes="Bold" 
                        HorizontalOptions="Center"
                        TextColor="Black"/>
-                <Label Text="{Binding SelectedLesson.Description}" 
+                <Label Text="{Binding LessonsVM.SelectedLesson.Description}" 
                        FontSize="18" 
                        WidthRequest="500" 
                        HorizontalTextAlignment="Center" 
@@ -146,7 +146,9 @@
                 <Button Text="▶"
                        HorizontalOptions="Center"
                        FontSize="100"
-                       TextColor="Black">
+                       TextColor="Black"
+                       Clicked="OnPlayClicked"
+                       BackgroundColor="White">
                     <Button.GestureRecognizers>
                         <PointerGestureRecognizer
                         PointerEntered="OnHoverEnter"

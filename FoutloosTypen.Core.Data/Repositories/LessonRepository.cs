@@ -1,6 +1,9 @@
 ﻿using FoutloosTypen.Core.Interfaces.Repositories;
 using FoutloosTypen.Core.Models;
 using Microsoft.Data.Sqlite;
+using Microsoft.Maui.Storage;
+using System.Diagnostics;
+using System.Text.Json;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
@@ -10,28 +13,92 @@ namespace FoutloosTypen.Core.Data.Repositories
 
         public LessonRepository()
         {
+            Debug.WriteLine("LessonRepository: Starting initialization...");
+            
             CreateTable(@"CREATE TABLE IF NOT EXISTS Lessons (
                         [Id] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                        [Name] NVARCHAR(80) UNIQUE NOT NULL,
+                        [Name] NVARCHAR(80) NOT NULL,
                         [Description] NVARCHAR(250),
                         [IsTest] BOOL,
                         [IsDone] BOOL,
-                        [CourseId] INTEGER NOT NULL
+                        [CourseId] INTEGER NOT NULL,
+                        UNIQUE(Name, CourseId)
                 )");
 
-            List<string> insertQueries = new()
-        {
-            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 1', 'Dit is de allereerste les', False, False, 1)",
-            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 2', 'Dit is de tweede les', False, False, 1)",
-            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 3', 'Dit is de derde les', False, False, 1)",
-            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 4', 'Dit is de vierde les', False, False, 1)",
-            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 5', 'Dit is de vijfde les', False, False, 1)"
-        };
+            Debug.WriteLine("LessonRepository: Table created");
 
-            InsertMultipleWithTransaction(insertQueries);
+            LoadLessonsFromJsonSync();
+
             GetAll();
+            
+            Debug.WriteLine("LessonRepository: Initialization complete");
         }
 
+        private void LoadLessonsFromJsonSync()
+        {
+            var stopwatch = Stopwatch.StartNew();
+            List<string> insertQueries = new();
+
+            try
+            {
+                Debug.WriteLine("Loading Lessons.json...");
+
+                Task.Run(async () =>
+                {
+                    using var stream = await FileSystem.OpenAppPackageFileAsync("Lessons.json");
+                    using var reader = new StreamReader(stream);
+                    var json = await reader.ReadToEndAsync();
+
+                    using var jsonDoc = JsonDocument.Parse(json);
+                    var root = jsonDoc.RootElement;
+
+                    JsonElement lessonsElement = root;
+                    if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("Lessons", out var le))
+                        lessonsElement = le;
+
+                    if (lessonsElement.ValueKind != JsonValueKind.Array)
+                        throw new Exception("Invalid JSON structure for lessons");
+
+                    foreach (var item in lessonsElement.EnumerateArray())
+                    {
+                        int id = item.TryGetProperty("Id", out var idProp) ? idProp.GetInt32() : 0;
+                        string name = item.GetProperty("Name").GetString() ?? string.Empty;
+                        string description = item.TryGetProperty("Description", out var descProp) ? (descProp.GetString() ?? string.Empty) : string.Empty;
+                        bool isTest = item.TryGetProperty("IsTest", out var isTestProp) && isTestProp.GetBoolean();
+                        bool isDone = item.TryGetProperty("IsDone", out var isDoneProp) && isDoneProp.GetBoolean();
+                        int courseId = item.GetProperty("CourseId").GetInt32();
+
+                        name = name.Replace("'", "''");
+                        description = description.Replace("'", "''");
+
+                        if (id > 0)
+                        {
+                            insertQueries.Add($@"INSERT OR IGNORE INTO Lessons(Id, Name, Description, IsTest, IsDone, CourseId)
+                            VALUES({id}, '{name}', '{description}', {(isTest ? 1 : 0)}, {(isDone ? 1 : 0)}, {courseId})");
+                        }
+                        else
+                        {
+                            insertQueries.Add($@"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('{name}', '{description}', {(isTest ? 1 : 0)}, {(isDone ? 1 : 0)}, {courseId})");
+                        }
+                    }
+                }).GetAwaiter().GetResult();
+
+                if (insertQueries.Any())
+                {
+                    InsertMultipleWithTransaction(insertQueries);
+                    stopwatch.Stop();
+                    Debug.WriteLine($"SUCCESS: Loaded {insertQueries.Count} lessons from JSON in {stopwatch.ElapsedMilliseconds}ms");
+                }
+            }
+            catch (FileNotFoundException)
+            {
+                Debug.WriteLine("Lessons.json not found; skipping JSON seed for lessons");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"ERROR loading Lessons.json: {ex.Message}");
+            }
+        }
 
         public List<Lesson> GetAll()
         {
@@ -52,15 +119,16 @@ namespace FoutloosTypen.Core.Data.Repositories
                     bool isTest = reader.GetBoolean(3);
                     bool isDone = reader.GetBoolean(4);
                     int courseId = reader.GetInt32(5);
+                    double totalTime = 60;
 
-                    lessons.Add(new Lesson(id, name, description, isTest, isDone, courseId));
+                    lessons.Add(new Lesson(id, name, description, isTest, isDone, courseId, totalTime));
                 }
             }
 
             CloseConnection();
+            Debug.WriteLine($"LessonRepository: Retrieved {lessons.Count} lessons");
             return lessons;
         }
-
 
         public Lesson Get(int id)
         {
@@ -81,8 +149,9 @@ namespace FoutloosTypen.Core.Data.Repositories
                     bool isTest = reader.GetBoolean(3);
                     bool isDone = reader.GetBoolean(4);
                     int courseId = reader.GetInt32(5);
+                    double totalTime = 60;
 
-                    tmpLesson = new Lesson(Id, name, description, isTest, isDone, courseId);
+                    tmpLesson = new Lesson(Id, name, description, isTest, isDone, courseId, totalTime);
                 }
             }
 
