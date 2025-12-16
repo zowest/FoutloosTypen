@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Net.Http.Headers;
+using System.Diagnostics;
 
 namespace FoutloosTypen.Services
 {
@@ -46,7 +47,13 @@ namespace FoutloosTypen.Services
             {
                 Content = new FormUrlEncodedContent(initParams)
             };
-            initRequest.Headers.TryAddWithoutValidation("Authorization", "OAuth " + BuildOAuth1Header(MediaUploadV11, HttpMethod.Post, initParams, consumerKey, consumerSecret, oauthToken, oauthTokenSecret));
+
+            var header = "OAuth " + BuildOAuth1Header(MediaUploadV11, HttpMethod.Post, initParams, consumerKey, consumerSecret, oauthToken, oauthTokenSecret);
+#if DEBUG
+            Debug.WriteLine("[MediaUploadService] INIT header: " + header);
+            Debug.WriteLine("[MediaUploadService] INIT params: " + string.Join(",", initParams.Select(kv => kv.Key + "=" + kv.Value)));
+#endif
+            initRequest.Headers.TryAddWithoutValidation("Authorization", header);
             var initResp = await client.SendAsync(initRequest);
             var initJson = await initResp.Content.ReadAsStringAsync();
             if (!initResp.IsSuccessStatusCode)
@@ -88,52 +95,6 @@ namespace FoutloosTypen.Services
             var finalizeJson = await finalizeResp.Content.ReadAsStringAsync();
             if (!finalizeResp.IsSuccessStatusCode)
                 throw new HttpRequestException($"v1.1 FINALIZE failed: {(int)finalizeResp.StatusCode} {finalizeResp.ReasonPhrase} - {finalizeJson}");
-
-            // If processing_info is present, poll STATUS until succeeded or failed
-            using var finalizeDoc = JsonDocument.Parse(finalizeJson);
-            if (finalizeDoc.RootElement.TryGetProperty("processing_info", out var proc))
-            {
-                var state = proc.GetProperty("state").GetString();
-                var maxAttempts = 10;
-                var attempts = 0;
-                while (!string.Equals(state, "succeeded", StringComparison.OrdinalIgnoreCase) &&
-                       !string.Equals(state, "failed", StringComparison.OrdinalIgnoreCase) &&
-                       attempts < maxAttempts)
-                {
-                    attempts++;
-                    var wait = proc.TryGetProperty("check_after_secs", out var cas) ? cas.GetInt32() : 2;
-                    await Task.Delay(TimeSpan.FromSeconds(wait));
-
-                    var statusParams = new List<KeyValuePair<string, string>>
-                    {
-                        new("command", "STATUS"),
-                        new("media_id", mediaId!)
-                    };
-                    var query = string.Join('&', statusParams.Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
-                    var statusUrl = MediaUploadV11 + "?" + query;
-                    var statusRequest = new HttpRequestMessage(HttpMethod.Get, statusUrl);
-                    statusRequest.Headers.TryAddWithoutValidation("Authorization", "OAuth " + BuildOAuth1Header(MediaUploadV11, HttpMethod.Get, statusParams, consumerKey, consumerSecret, oauthToken, oauthTokenSecret));
-
-                    var statusResp = await client.SendAsync(statusRequest);
-                    var statusJson = await statusResp.Content.ReadAsStringAsync();
-                    if (!statusResp.IsSuccessStatusCode)
-                        throw new HttpRequestException($"v1.1 STATUS failed: {(int)statusResp.StatusCode} {statusResp.ReasonPhrase} - {statusJson}");
-
-                    using var statusDoc = JsonDocument.Parse(statusJson);
-                    if (statusDoc.RootElement.TryGetProperty("processing_info", out var newProc))
-                    {
-                        proc = newProc;
-                        state = proc.GetProperty("state").GetString();
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-
-                if (!string.Equals(proc.GetProperty("state").GetString(), "succeeded", StringComparison.OrdinalIgnoreCase))
-                    throw new HttpRequestException($"Media processing did not succeed. State: {proc.GetProperty("state").GetString()}");
-            }
 
             return mediaId!;
         }
@@ -194,7 +155,9 @@ namespace FoutloosTypen.Services
             var json = JsonSerializer.Serialize(payload);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var header = "OAuth " + BuildOAuth1Header(TweetEndpoint, HttpMethod.Post, Enumerable.Empty<KeyValuePair<string, string>>(), consumerKey, consumerSecret, oauthToken, oauthTokenSecret);
+            var header = "OAuth " + BuildOAuth1Header(TweetEndpoint, HttpMethod.Post,
+                         Enumerable.Empty<KeyValuePair<string, string>>(), consumerKey,
+                         consumerSecret, oauthToken, oauthTokenSecret);
             var request = new HttpRequestMessage(HttpMethod.Post, TweetEndpoint)
             {
                 Content = content

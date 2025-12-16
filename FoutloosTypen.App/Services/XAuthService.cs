@@ -25,6 +25,10 @@ namespace FoutloosTypen.Services
         Task<string?> GetStoredRefreshTokenAsync();
         Task<string?> GetAuthenticatedHandleAsync();
         Task SignOutAsync();
+
+        // OAuth1 helpers: store/retrieve OAuth1 user token + secret (used for v1.1 endpoints)
+        Task<string?> GetStoredOAuth1TokenAsync();
+        Task<string?> GetStoredOAuth1SecretAsync();
     }
 
     public class XAuthService : IXAuthService
@@ -40,6 +44,13 @@ namespace FoutloosTypen.Services
         {
             try
             {
+                // Validate inputs early to avoid "Invalid URI: The URI is empty." from WebAuthenticator
+                if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(redirectUri))
+                {
+                    Debug.WriteLine($"X OAuth authenticate error: Missing clientId or redirectUri. clientId set: {!string.IsNullOrWhiteSpace(clientId)}, redirectUri set: {!string.IsNullOrWhiteSpace(redirectUri)}");
+                    return null;
+                }
+
                 var (verifier, challenge) = CreatePkcePair();
                 await SecureStorage.SetAsync("x_pkce_verifier", verifier);
 
@@ -186,6 +197,20 @@ namespace FoutloosTypen.Services
 
         public async Task<string> UploadMediaV11Async(string filePath, string contentType, string consumerKey, string consumerSecret, string accessToken, string accessTokenSecret)
         {
+            // Debug: mask tokens to confirm correct OAuth1 credentials are used (do not log full secrets)
+#if DEBUG
+            try
+            {
+                var maskedToken = string.IsNullOrEmpty(accessToken) ? "(empty)" : (accessToken.Length > 8 ? accessToken.Substring(0, 4) + "..." + accessToken.Substring(accessToken.Length - 4) : accessToken);
+                var maskedSecret = string.IsNullOrEmpty(accessTokenSecret) ? "(empty)" : (accessTokenSecret.Length > 8 ? accessTokenSecret.Substring(0, 4) + "..." + accessTokenSecret.Substring(accessTokenSecret.Length - 4) : accessTokenSecret);
+                Debug.WriteLine($"UploadMediaV11Async using OAuth1 token={maskedToken} secret={maskedSecret}");
+            }
+            catch
+            {
+                // ignore logging errors
+            }
+#endif
+
             var fileBytes = await File.ReadAllBytesAsync(filePath);
             var totalBytes = fileBytes.Length;
 
@@ -320,6 +345,40 @@ namespace FoutloosTypen.Services
                 throw new HttpRequestException($"Tweet create failed: {(int)resp.StatusCode} {resp.ReasonPhrase} - {body}");
         }
 
+        // Implemented: create tweet using OAuth1 (signed header) - equivalent to referenced JS example
+        public async Task CreateTweetWithOAuth1Async(string text, string? mediaId, string consumerKey, string consumerSecret, string accessToken, string accessTokenSecret)
+        {
+            if (string.IsNullOrWhiteSpace(consumerKey) || string.IsNullOrWhiteSpace(consumerSecret) ||
+                string.IsNullOrWhiteSpace(accessToken) || string.IsNullOrWhiteSpace(accessTokenSecret))
+            {
+                throw new ArgumentException("OAuth1 credentials (consumer key/secret and oauth token/secret) must be provided to post with user context.");
+            }
+
+            using var http = new HttpClient();
+
+            object payload = mediaId is not null
+                ? new { text = text, media = new { media_ids = new[] { mediaId } } }
+                : new { text = text };
+
+            var json = JsonSerializer.Serialize(payload);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var header = "OAuth " + BuildOAuth1Header(TweetEndpoint, HttpMethod.Post, Enumerable.Empty<KeyValuePair<string, string>>(), consumerKey, consumerSecret, accessToken, accessTokenSecret);
+            var request = new HttpRequestMessage(HttpMethod.Post, TweetEndpoint)
+            {
+                Content = content
+            };
+            request.Headers.TryAddWithoutValidation("Authorization", header);
+            request.Headers.TryAddWithoutValidation("user-agent", "v2CreateTweetCSharp");
+            request.Headers.TryAddWithoutValidation("accept", "application/json");
+            request.Headers.TryAddWithoutValidation("content-type", "application/json");
+
+            var resp = await http.SendAsync(request);
+            var body = await resp.Content.ReadAsStringAsync();
+            if (!resp.IsSuccessStatusCode)
+                throw new HttpRequestException($"Tweet create failed: {(int)resp.StatusCode} {resp.ReasonPhrase} - {body}");
+        }
+
         #endregion
 
         #region Storage
@@ -334,7 +393,14 @@ namespace FoutloosTypen.Services
             SecureStorage.Remove("x_refresh_token");
             SecureStorage.Remove("x_pkce_verifier");
             SecureStorage.Remove("x_handle");
+            // Clear OAuth1 stored tokens as well
+            SecureStorage.Remove("x_oauth_token");
+            SecureStorage.Remove("x_oauth_token_secret");
         }
+
+        // OAuth1 helpers
+        public Task<string?> GetStoredOAuth1TokenAsync() => SecureStorage.GetAsync("x_oauth_token");
+        public Task<string?> GetStoredOAuth1SecretAsync() => SecureStorage.GetAsync("x_oauth_token_secret");
 
         #endregion
 
