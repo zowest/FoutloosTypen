@@ -14,6 +14,7 @@ using Microsoft.Extensions.Configuration;
 using System.IO;
 using System.Text.Json;
 using Microsoft.Maui.Storage;
+using FoutloosTypen.Core;
 
 #if WINDOWS
 using Windows.System;
@@ -43,6 +44,12 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IPracticeMaterialRepository, PracticeMaterialRepository>();
             builder.Services.AddSingleton<IStudentRepository, StudentRepository>();
 
+            // XAuth repository
+            builder.Services.AddSingleton<IXAuthRepository, XAuthRepository>();
+
+            // Image repository
+            builder.Services.AddSingleton<IImageRepository, ImageRepository>();
+
             // Services
             builder.Services.AddSingleton<ILessonService, LessonService>();
             builder.Services.AddSingleton<ICourseService, CourseService>();
@@ -58,48 +65,8 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IShareImageService,ShareImageService>();
             builder.Services.AddSingleton<ISocialShareService,SocialShareService>();
 
-            // Load configuration for XAuthSettings from appsettings.Development.json if available
-            var configBuilder = new ConfigurationBuilder()
-                .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-                .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: false);
-
-            // If not found in base dir, try relative path to Core.Data Resources (useful in dev)
-            var cfg = configBuilder.Build();
-            if (!cfg.GetSection("X").Exists())
-            {
-                var altPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "FoutloosTypen.Core.Data", "Resources", "appsettings.Development.json");
-                if (File.Exists(altPath))
-                {
-                    configBuilder = new ConfigurationBuilder().AddJsonFile(altPath, optional: true, reloadOnChange: false);
-                    cfg = configBuilder.Build();
-                }
-            }
-
-            var xSection = cfg.GetSection("X");
-            var xSettings = xSection.Get<FoutloosTypen.Core.XAuthSettings>();
-
-            // Fallback: try reading appsettings.Development.json from app package (useful on mobile platforms)
-            if (xSettings == null)
-            {
-                try
-                {
-                    using var stream = FileSystem.OpenAppPackageFileAsync("appsettings.Development.json").GetAwaiter().GetResult();
-                    using var reader = new StreamReader(stream);
-                    var json = reader.ReadToEnd();
-                    using var doc = JsonDocument.Parse(json);
-                    if (doc.RootElement.TryGetProperty("X", out var xElem))
-                    {
-                        xSettings = JsonSerializer.Deserialize<FoutloosTypen.Core.XAuthSettings>(xElem.GetRawText());
-                    }
-                }
-                catch
-                {
-                    // ignore; we'll fall back to defaults
-                }
-            }
-
-            xSettings ??= new FoutloosTypen.Core.XAuthSettings();
-            builder.Services.AddSingleton<FoutloosTypen.Core.XAuthSettings>(_ => xSettings);
+            // Use XAuthRepository to provide XAuthSettings in DI
+            builder.Services.AddSingleton<FoutloosTypen.Core.XAuthSettings>(provider => provider.GetRequiredService<IXAuthRepository>().GetSettings());
 
             // ViewModels
             builder.Services.AddTransient<LessonViewModel>();
@@ -156,7 +123,22 @@ namespace FoutloosTypen
             builder.Logging.AddDebug();
 #endif
 
-            return builder.Build();
+            var app = builder.Build();
+
+            // Debug: log loaded XAuthSettings to confirm values at startup
+            try
+            {
+                var settings = app.Services.GetRequiredService<FoutloosTypen.Core.XAuthSettings>();
+                Debug.WriteLine($"Startup: XAuthSettings.ClientId set: {!string.IsNullOrEmpty(settings.ClientId)}");
+                Debug.WriteLine($"Startup: XAuthSettings.RedirectUri set: {!string.IsNullOrEmpty(settings.RedirectUri)}");
+                Debug.WriteLine($"Startup: XAuthSettings.Scopes count: {settings.Scopes?.Length ?? 0}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Startup: failed to read XAuthSettings from DI: {ex.Message}");
+            }
+
+            return app;
         }
 
     }
