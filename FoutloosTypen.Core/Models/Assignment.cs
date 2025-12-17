@@ -1,39 +1,33 @@
-﻿namespace FoutloosTypen.Core.Models
-{
-    public enum AssignmentTypeEnum
-    {
-        Text = 1,
-        Audio = 2
-    }
+﻿using FoutloosTypen.Core.Enums;
 
+namespace FoutloosTypen.Core.Models
+{
     public partial class Assignment : Model
     {
         public double TimeLimit { get; set; }
         public int LessonId { get; set; }
 
-        public AssignmentTypeEnum AssignmentType { get; set; }
+        // Use the shared enum and allow derived classes to set the value
+        public AssignmentType AssignmentType { get; protected set; }
 
         public int AssignmentTypeId
         {
             get => (int)AssignmentType;
-            set
-            {
-                AssignmentType = System.Enum.IsDefined(typeof(AssignmentTypeEnum), value)
-                    ? (AssignmentTypeEnum)value
-                    : AssignmentTypeEnum.Text;
-            }
+            set => AssignmentType = System.Enum.IsDefined(typeof(AssignmentType), value)
+                ? (AssignmentType)value
+                : AssignmentType.Normal;
         }
 
         public Assignment(int id, double timelimit, int lessonId) : base(id)
         {
             TimeLimit = timelimit;
             LessonId = lessonId;
-            AssignmentType = AssignmentTypeEnum.Text;
+            AssignmentType = AssignmentType.Normal;
         }
 
         public Assignment() : base(0)
         {
-            AssignmentType = AssignmentTypeEnum.Text;
+            AssignmentType = AssignmentType.Normal;
         }
     }
 }
