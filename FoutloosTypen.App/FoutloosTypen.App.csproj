@@ -45,8 +45,14 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.1" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.8" />
+		<PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="3.119.2-preview.1" />
+		<PackageReference Include="SkiaSharp" Version="3.119.2-preview.1" />
 		<PackageReference Include="MySqlConnector" Version="2.5.0" />
 	</ItemGroup>
 
@@ -59,6 +65,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\FoutloosTypen.Core\FoutloosTypen.Core.csproj" />
 		<ProjectReference Include="..\FoutloosTypen.Core.Data\FoutloosTypen.Core.Data.csproj" />
+		
 	</ItemGroup>
 
 	<ItemGroup>
@@ -77,6 +84,7 @@
 		<MauiXaml Update="Views\AssignmentView.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
+		<MauiXaml Update="Views\ImagePreviewPopup.xaml">
 		<MauiXaml Update="Views\ProfileView.xaml">
 		  <Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
@@ -84,5 +92,11 @@
 		  <Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Converters\" />
+	</ItemGroup>
+
+	<!-- Copy appsettings.Development.json from Core.Data resources into the App output -->
 
 </Project>
