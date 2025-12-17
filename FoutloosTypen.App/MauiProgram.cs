@@ -8,7 +8,6 @@ using FoutloosTypen.Views;
 using Grocery.Core.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.LifecycleEvents;
-using System.Diagnostics;
 
 #if WINDOWS
 using Windows.System;
@@ -36,6 +35,7 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IAssignmentRepository, AssignmentRepository>();
             builder.Services.AddSingleton<IPracticeMaterialRepository, PracticeMaterialRepository>();
             builder.Services.AddSingleton<IStudentRepository, StudentRepository>();
+            builder.Services.AddSingleton<ITtsService, TtsService>();
 
 
             // Services
@@ -48,6 +48,7 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<ITimerService, TimerService>();
             builder.Services.AddSingleton<ITypingComparisonService, TypingComparisonService>();
             builder.Services.AddSingleton<IResultService, ResultService>();
+            builder.Services.AddSingleton<IAudioAssignmentService, AudioAssignmentService>();
 
             // ViewModels
             builder.Services.AddTransient<LessonViewModel>();
