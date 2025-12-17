@@ -478,13 +478,6 @@ namespace FoutloosTypen.ViewModels
             UserInput = typedText;
             UpdateFormattedText();
 
-            // Check if sentence is complete and correct
-            if (typedText == CurrentMaterial.Sentence)
-            {
-                Debug.WriteLine("Sentence completed correctly!");
-                
-                // Move to next sentence or assignment
-                MoveToNextMaterial();
             // Update current progress (including incomplete sentences)
             if (SelectedLesson != null)
             {
@@ -503,26 +496,6 @@ namespace FoutloosTypen.ViewModels
                 
                 // Move to next sentence or assignment
                 MoveToNextMaterial();
-            }
-        }
-
-        private void MoveToNextMaterial()
-        {
-            if (_materials == null || !_materials.Any())
-                return;
-
-            _materialIndex++;
-
-            if (_materialIndex < _materials.Count)
-            {
-                CurrentMaterial = _materials[_materialIndex];
-                Debug.WriteLine($"Moved to next material: {_materialIndex + 1}/{_materials.Count}");
-            }
-            else
-            {
-                // All materials in current assignment completed, move to next assignment
-                Debug.WriteLine("All materials completed in this assignment");
-                MoveToNextAssignment();
             }
         }
 
@@ -574,9 +547,6 @@ namespace FoutloosTypen.ViewModels
             FormattedText = formatted;
         }
 
-        public override void OnDisappearing()
-        {
-            base.OnDisappearing();
         private void ResetTyping()
         {
             UserInput = string.Empty;

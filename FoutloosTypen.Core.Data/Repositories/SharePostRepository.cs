@@ -1,6 +1,6 @@
 using FoutloosTypen.Core.Models;
-using Microsoft.Data.Sqlite;
 using System.Collections.Generic;
+using System.Data.Common;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
@@ -9,26 +9,44 @@ namespace FoutloosTypen.Core.Data.Repositories
         public SharePostRepository()
         {
             CreateTable(@"CREATE TABLE IF NOT EXISTS SharePosts (
-                        [Id] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                        [LessonId] INTEGER NOT NULL,
-                        [Text] NVARCHAR(280) NOT NULL,
-                        [ImagePath] NVARCHAR(260) NOT NULL,
-                        [CreatedAt] NVARCHAR(50) NOT NULL
+                        Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                        LessonId INT NOT NULL,
+                        Text VARCHAR(280) NOT NULL,
+                        ImagePath VARCHAR(260) NOT NULL,
+                        CreatedAt VARCHAR(50) NOT NULL
                 )");
         }
 
         public SharePost Add(SharePost post)
         {
             OpenConnection();
-            using var cmd = new SqliteCommand(@"INSERT INTO SharePosts(LessonId, Text, ImagePath, CreatedAt)
-                                                VALUES($lessonId, $text, $imagePath, $createdAt);
-                                                SELECT last_insert_rowid();", Connection);
-            cmd.Parameters.AddWithValue("$lessonId", post.LessonId);
-            cmd.Parameters.AddWithValue("$text", post.Text);
-            cmd.Parameters.AddWithValue("$imagePath", post.ImagePath);
-            cmd.Parameters.AddWithValue("$createdAt", post.CreatedAt.ToString("o"));
-            var id = (long)cmd.ExecuteScalar();
-            post.Id = (int)id;
+            using var cmd = Connection.CreateCommand();
+            cmd.CommandText = @"INSERT INTO SharePosts(LessonId, Text, ImagePath, CreatedAt)
+                                VALUES(@lessonId, @text, @imagePath, @createdAt);
+                                SELECT LAST_INSERT_ID();";
+            
+            var p1 = cmd.CreateParameter();
+            p1.ParameterName = "@lessonId";
+            p1.Value = post.LessonId;
+            cmd.Parameters.Add(p1);
+            
+            var p2 = cmd.CreateParameter();
+            p2.ParameterName = "@text";
+            p2.Value = post.Text;
+            cmd.Parameters.Add(p2);
+            
+            var p3 = cmd.CreateParameter();
+            p3.ParameterName = "@imagePath";
+            p3.Value = post.ImagePath;
+            cmd.Parameters.Add(p3);
+            
+            var p4 = cmd.CreateParameter();
+            p4.ParameterName = "@createdAt";
+            p4.Value = post.CreatedAt.ToString("o");
+            cmd.Parameters.Add(p4);
+            
+            var id = Convert.ToInt32(cmd.ExecuteScalar());
+            post.Id = id;
             CloseConnection();
             return post;
         }
@@ -37,8 +55,9 @@ namespace FoutloosTypen.Core.Data.Repositories
         {
             var list = new List<SharePost>();
             OpenConnection();
-            using var cmd = new SqliteCommand("SELECT Id, LessonId, Text, ImagePath, CreatedAt FROM SharePosts", Connection);
-            using var reader = cmd.ExecuteReader();
+            using var cmd = Connection.CreateCommand();
+            cmd.CommandText = "SELECT Id, LessonId, Text, ImagePath, CreatedAt FROM SharePosts";
+            using DbDataReader reader = cmd.ExecuteReader();
             while (reader.Read())
             {
                 list.Add(new SharePost
