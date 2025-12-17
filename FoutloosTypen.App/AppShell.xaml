@@ -13,7 +13,19 @@
 
     <TabBar>
         <Tab Title="Lessen" Icon="dotnet_bot.png">
-            <ShellContent Title="Lessen" ContentTemplate="{DataTemplate views:LessonView}" />
+            <ShellContent Title="Lessen" 
+                         ContentTemplate="{DataTemplate views:LessonView}" 
+                         Route="LessonView" />
+        </Tab>
+        <Tab Title="Klassement" Icon="dotnet_bot.png">
+            <ShellContent Title="Klassement" 
+                         ContentTemplate="{DataTemplate views:LeaderboardView}" 
+                         Route="LeaderboardView" />
+        </Tab>
+        <Tab Title="Profiel" Icon="dotnet_bot.png">
+            <ShellContent Title="Profiel" 
+                         ContentTemplate="{DataTemplate views:ProfileView}" 
+                         Route="ProfileView" />
         </Tab>
     </TabBar>
 </Shell>

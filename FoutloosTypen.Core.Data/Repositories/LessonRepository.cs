@@ -1,8 +1,6 @@
 ﻿using FoutloosTypen.Core.Interfaces.Repositories;
 using FoutloosTypen.Core.Models;
-using Microsoft.Maui.Storage;
 using System.Diagnostics;
-using System.Text.Json;
 using System.Data.Common;
 
 namespace FoutloosTypen.Core.Data.Repositories
@@ -24,64 +22,9 @@ namespace FoutloosTypen.Core.Data.Repositories
                     UNIQUE(Name, CourseId)
                 );
             """);
-
-            LoadLessonsFromJsonSync();
-        }
-
-        private void LoadLessonsFromJsonSync()
-        {
-            var statements = new List<string>();
-
-            try
-            {
-                using var stream = FileSystem.OpenAppPackageFileAsync("Lessons.json")
-                    .GetAwaiter().GetResult();
-
-                using var reader = new StreamReader(stream);
-                using var doc = JsonDocument.Parse(reader.ReadToEnd());
-
-                var root = doc.RootElement;
-                if (root.ValueKind == JsonValueKind.Object &&
-                    root.TryGetProperty("Lessons", out var l))
-                {
-                    root = l;
-                }
-
-                if (root.ValueKind != JsonValueKind.Array)
-                    return;
-
-                foreach (var item in root.EnumerateArray())
-                {
-                    string name = item.GetProperty("Name").GetString() ?? "";
-                    if (string.IsNullOrWhiteSpace(name))
-                        continue;
-
-                    string description = item.TryGetProperty("Description", out var d)
-                        ? d.GetString() ?? ""
-                        : "";
-
-                    bool isTest = item.TryGetProperty("IsTest", out var it) && it.GetBoolean();
-                    bool isDone = item.TryGetProperty("IsDone", out var id) && id.GetBoolean();
-                    int courseId = item.GetProperty("CourseId").GetInt32();
-
-                    name = name.Replace("'", "''");
-                    description = description.Replace("'", "''");
-
-                    statements.Add($"""
-                        INSERT IGNORE INTO Lessons
-                        (Name, Description, IsTest, IsDone, CourseId)
-                        VALUES
-                        ('{name}', '{description}', {(isTest ? 1 : 0)}, {(isDone ? 1 : 0)}, {courseId});
-                    """);
-                }
-
-                if (statements.Count > 0)
-                    InsertMultipleWithTransaction(statements);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Lesson seed error: {ex.Message}");
-            }
+            
+            // JSON loading removed - data komt nu uit de database
+            Debug.WriteLine("[LessonRepository] Table created, using database data");
         }
 
         public List<Lesson> GetAll()

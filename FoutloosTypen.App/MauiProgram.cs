@@ -35,7 +35,9 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IAssignmentRepository, AssignmentRepository>();
             builder.Services.AddSingleton<IPracticeMaterialRepository, PracticeMaterialRepository>();
             builder.Services.AddSingleton<IStudentRepository, StudentRepository>();
+            builder.Services.AddSingleton<ILeaderboardRepository, LeaderboardRepository>();
             builder.Services.AddSingleton<ITtsService, TtsService>();
+            builder.Services.AddSingleton<IResultRepository, ResultRepository>();
 
 
             // Services
@@ -49,6 +51,7 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<ITypingComparisonService, TypingComparisonService>();
             builder.Services.AddSingleton<IResultService, ResultService>();
             builder.Services.AddSingleton<IAudioAssignmentService, AudioAssignmentService>();
+            builder.Services.AddSingleton<ILeaderboardService, LeaderboardService>();
 
             // ViewModels
             builder.Services.AddTransient<LessonViewModel>();
@@ -60,6 +63,7 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<GlobalViewModel>();
             builder.Services.AddTransient<LoginView>().AddTransient<LoginViewModel>();
             builder.Services.AddTransient<ProfileView>().AddTransient<ProfileViewModel>();
+            builder.Services.AddTransient<LeaderboardView>().AddTransient<LeaderboardViewModel>();
 #if WINDOWS
             builder.ConfigureLifecycleEvents(events =>
             {

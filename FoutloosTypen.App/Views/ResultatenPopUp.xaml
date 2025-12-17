@@ -7,100 +7,211 @@
            BorderColor="Black"
            CornerRadius="20"
            Padding="40"
-           WidthRequest="1000"
-           HeightRequest="500"
+           WidthRequest="1200"
+           HeightRequest="700"
            HorizontalOptions="Center"
            VerticalOptions="Center">
-        <VerticalStackLayout Spacing="80" 
-                             HorizontalOptions="Center" 
-                             VerticalOptions="Center">
+        <ScrollView>
+            <VerticalStackLayout Spacing="30" 
+                                 HorizontalOptions="Center" 
+                                 VerticalOptions="Center">
 
-            <Label Text="{Binding ResultTitle}"
-                   FontSize="48"
-                   FontAttributes="Bold"
-                   TextColor="Black"
-                   HorizontalOptions="Center"/>
-            <VerticalStackLayout
-                HorizontalOptions="Start">
-                <Label Text="Resultaten: "
+                <Label Text="{Binding ResultTitle}"
+                       FontSize="48"
+                       FontAttributes="Bold"
                        TextColor="Black"
-                       FontSize="24"
-                       FontAttributes="Bold"/>
-                <HorizontalStackLayout>
-                    <Label Text="Score: "
-                        TextColor="Black"/>
-                    <Label Text="{Binding Score}"
-                           TextColor="Black"/>
-                </HorizontalStackLayout>
-                <HorizontalStackLayout>
-                    <Label Text="APM:"
-                       TextColor="Black"/>
-                    <Label Text="{Binding StrokesPerMinute}"
-                        TextColor="Black"/>
-                </HorizontalStackLayout>
-                <HorizontalStackLayout>
-                    <Label Text="WPM:"
-                       TextColor="Black"/>
-                    <Label Text="{Binding WordsPerMinute}"
-                        TextColor="Black"/>
-                </HorizontalStackLayout>
-                <HorizontalStackLayout>
-                    <Label Text="Nauwkeurigheid:"
-                       TextColor="Black"/>
-                    <Label Text="{Binding Accuracy}"
-                         TextColor="Black"/>
-                </HorizontalStackLayout>
-                <HorizontalStackLayout>
-                    <Label Text="Fouten:"
-                        TextColor="Black"/>
-                    <Label Text="{Binding TotalMistakes}"
-                         TextColor="Black"/>
-                </HorizontalStackLayout>
-                <HorizontalStackLayout>
-                    <Label Text="Tijd over: "
-                       TextColor="Black"/>
-                    <Label Text="{Binding TimeRemaining}"
-                        TextColor="Black"/>
+                       HorizontalOptions="Center"/>
+
+                <!-- Comparison Badge -->
+                <Border IsVisible="{Binding IsNewPersonalBest}"
+                        BackgroundColor="#4CAF50"
+                        Stroke="#2E7D32"
+                        StrokeThickness="2"
+                        Padding="15,10"
+                        HorizontalOptions="Center">
+                    <Label Text="{Binding ComparisonTitle}"
+                           TextColor="White"
+                           FontSize="24"
+                           FontAttributes="Bold"/>
+                </Border>
+
+                <Border IsVisible="{Binding IsFirstAttempt}"
+                        BackgroundColor="#2196F3"
+                        Stroke="#1565C0"
+                        StrokeThickness="2"
+                        Padding="15,10"
+                        HorizontalOptions="Center">
+                    <Label Text="Eerste poging! 🎯"
+                           TextColor="White"
+                           FontSize="24"
+                           FontAttributes="Bold"/>
+                </Border>
+
+                <Grid ColumnSpacing="40">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Current Results -->
+                    <VerticalStackLayout Grid.Column="0">
+                        <Label Text="Huidige Poging"
+                               TextColor="Black"
+                               FontSize="24"
+                               FontAttributes="Bold"
+                               Margin="0,0,0,10"/>
+                        <HorizontalStackLayout>
+                            <Label Text="Score: "
+                                   TextColor="Black"
+                                   FontSize="20"/>
+                            <Label Text="{Binding Score}"
+                                   TextColor="Black"
+                                   FontSize="20"
+                                   FontAttributes="Bold"/>
+                        </HorizontalStackLayout>
+                        <HorizontalStackLayout>
+                            <Label Text="WPM: "
+                                   TextColor="Black"
+                                   FontSize="20"/>
+                            <Label Text="{Binding WordsPerMinute}"
+                                   TextColor="Black"
+                                   FontSize="20"
+                                   FontAttributes="Bold"/>
+                        </HorizontalStackLayout>
+                        <HorizontalStackLayout>
+                            <Label Text="Nauwkeurigheid: "
+                                   TextColor="Black"
+                                   FontSize="20"/>
+                            <Label Text="{Binding Accuracy}"
+                                   TextColor="Black"
+                                   FontSize="20"
+                                   FontAttributes="Bold"/>
+                        </HorizontalStackLayout>
+                        <HorizontalStackLayout>
+                            <Label Text="APM: "
+                                   TextColor="Black"
+                                   FontSize="20"/>
+                            <Label Text="{Binding StrokesPerMinute}"
+                                   TextColor="Black"
+                                   FontSize="20"/>
+                        </HorizontalStackLayout>
+                        <HorizontalStackLayout>
+                            <Label Text="Fouten: "
+                                   TextColor="Black"
+                                   FontSize="20"/>
+                            <Label Text="{Binding TotalMistakes}"
+                                   TextColor="Black"
+                                   FontSize="20"/>
+                        </HorizontalStackLayout>
+                        <HorizontalStackLayout>
+                            <Label Text="Tijd over: "
+                                   TextColor="Black"
+                                   FontSize="20"/>
+                            <Label Text="{Binding TimeRemaining}"
+                                   TextColor="Black"
+                                   FontSize="20"/>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+
+                    <!-- Comparison Arrow/Divider -->
+                    <BoxView Grid.Column="1"
+                             WidthRequest="2"
+                             BackgroundColor="LightGray"
+                             IsVisible="{Binding HasPreviousAttempt}"/>
+
+                    <!-- Previous Best & Comparison -->
+                    <VerticalStackLayout Grid.Column="2" IsVisible="{Binding HasPreviousAttempt}">
+                        <Label Text="Vorige Beste"
+                               TextColor="Gray"
+                               FontSize="24"
+                               FontAttributes="Bold"
+                               Margin="0,0,0,10"/>
+                        
+                        <HorizontalStackLayout>
+                            <Label Text="Score: "
+                                   TextColor="Gray"
+                                   FontSize="18"/>
+                            <Label Text="{Binding PreviousBestScore}"
+                                   TextColor="Gray"
+                                   FontSize="18"/>
+                            <Label Text="{Binding ScoreDifferenceText}"
+                                   TextColor="{Binding IsNewPersonalBest, Converter={StaticResource BoolToColorConverter}}"
+                                   FontSize="16"
+                                   FontAttributes="Italic"
+                                   Margin="10,0,0,0"/>
+                        </HorizontalStackLayout>
+                        
+                        <HorizontalStackLayout>
+                            <Label Text="WPM: "
+                                   TextColor="Gray"
+                                   FontSize="18"/>
+                            <Label Text="{Binding PreviousBestWPM}"
+                                   TextColor="Gray"
+                                   FontSize="18"/>
+                            <Label Text="{Binding SpeedDifferenceText}"
+                                   TextColor="DarkGreen"
+                                   FontSize="16"
+                                   FontAttributes="Italic"
+                                   Margin="10,0,0,0"/>
+                        </HorizontalStackLayout>
+                        
+                        <HorizontalStackLayout>
+                            <Label Text="Nauwkeurigheid: "
+                                   TextColor="Gray"
+                                   FontSize="18"/>
+                            <Label Text="{Binding PreviousBestAccuracy}"
+                                   TextColor="Gray"
+                                   FontSize="18"/>
+                            <Label Text="{Binding AccuracyDifferenceText}"
+                                   TextColor="DarkGreen"
+                                   FontSize="16"
+                                   FontAttributes="Italic"
+                                   Margin="10,0,0,0"/>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+                </Grid>
+
+                <HorizontalStackLayout Spacing="100"
+                                       VerticalOptions="End"
+                                       HorizontalOptions="Center"
+                                       Margin="0,30,0,0">
+                    
+                    <ImageButton Source="herstart.png"
+                                 BackgroundColor="Transparent"
+                                 BorderColor="Transparent"
+                                 BorderWidth="0"
+                                 CornerRadius="0"
+                                 Padding="0"
+                                 WidthRequest="48"
+                                 HeightRequest="48"
+                                 Aspect="AspectFit"
+                                 Clicked="OnRestartClicked">
+                        <ImageButton.GestureRecognizers>
+                            <PointerGestureRecognizer
+                                PointerEntered="OnHoverEnter"
+                                PointerExited="OnHoverExit"/>
+                        </ImageButton.GestureRecognizers>
+                    </ImageButton>
+                    
+                    <ImageButton Source="home.png"
+                                 Clicked="OnContinueClicked"
+                                 BackgroundColor="Transparent"
+                                 BorderColor="Transparent"
+                                 BorderWidth="0"
+                                 CornerRadius="0"
+                                 Padding="0"
+                                 WidthRequest="48"
+                                 HeightRequest="48"
+                                 Aspect="AspectFit">
+                        <ImageButton.GestureRecognizers>
+                            <PointerGestureRecognizer
+                                PointerEntered="OnHoverEnter"
+                                PointerExited="OnHoverExit"/>
+                        </ImageButton.GestureRecognizers>
+                    </ImageButton>
                 </HorizontalStackLayout>
             </VerticalStackLayout>
-            <HorizontalStackLayout
-                Spacing="300"
-                VerticalOptions="End"
-                HorizontalOptions="Center">
-                
-                <ImageButton Source="herstart.png"
-             BackgroundColor="Transparent"
-             BorderColor="Transparent"
-             BorderWidth="0"
-             CornerRadius="0"
-             Padding="0"
-             WidthRequest="48"
-             HeightRequest="48"
-             Aspect="AspectFit"
-             Clicked="OnRestartClicked">
-                    <ImageButton.GestureRecognizers>
-                        <PointerGestureRecognizer
-            PointerEntered="OnHoverEnter"
-            PointerExited="OnHoverExit"/>
-                    </ImageButton.GestureRecognizers>
-                </ImageButton>
-                <ImageButton Source="home.png"
-                         Clicked="OnContinueClicked"
-                         BackgroundColor="Transparent"
-                         BorderColor="Transparent"
-                         BorderWidth="0"
-                         CornerRadius="0"
-                         Padding="0"
-                         WidthRequest="48"
-                         HeightRequest="48"
-                         Aspect="AspectFit" >
-                    <ImageButton.GestureRecognizers>
-                        <PointerGestureRecognizer
-            PointerEntered="OnHoverEnter"
-            PointerExited="OnHoverExit"/>
-                    </ImageButton.GestureRecognizers>
-                </ImageButton>
-            </HorizontalStackLayout>
-        </VerticalStackLayout>
+        </ScrollView>
     </Frame>
 </ContentPage>

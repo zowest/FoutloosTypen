@@ -1,3 +1,4 @@
+using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Models;
 using FoutloosTypen.ViewModels;
 using Microsoft.Maui.Controls;
@@ -8,11 +9,11 @@ namespace FoutloosTypen.Views
     {
         private TaskCompletionSource<bool> _userResponseTcs;
 
-        public ResultatenPopUp(Result progress)
+        public ResultatenPopUp(Result currentResult, ScoreComparison? comparison = null)
         {
             InitializeComponent();
             
-            BindingContext = new LessonResultViewModel(progress);
+            BindingContext = new LessonResultViewModel(currentResult, comparison);
             
             _userResponseTcs = new TaskCompletionSource<bool>();
         }
