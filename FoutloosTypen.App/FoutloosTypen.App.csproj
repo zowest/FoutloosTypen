@@ -76,22 +76,27 @@
 	    <DependentUpon>ResultatenPopUp.xaml</DependentUpon>
 	  </Compile>
 	</ItemGroup>
+<ItemGroup>
+	<MauiXaml Update="AppShell.xaml">
+		<Generator>MSBuild:Compile</Generator>
+	</MauiXaml>
 
-	<ItemGroup>
-		<MauiXaml Update="AppShell.xaml">
-			<Generator>MSBuild:Compile</Generator>
-		</MauiXaml>
-		<MauiXaml Update="Views\AssignmentView.xaml">
-			<Generator>MSBuild:Compile</Generator>
-		</MauiXaml>
-		<MauiXaml Update="Views\ImagePreviewPopup.xaml">
-		<MauiXaml Update="Views\ProfileView.xaml">
-		  <Generator>MSBuild:Compile</Generator>
-		</MauiXaml>
-		<MauiXaml Update="Views\ResultatenPopUp.xaml">
-		  <Generator>MSBuild:Compile</Generator>
-		</MauiXaml>
-	</ItemGroup>
+	<MauiXaml Update="Views\AssignmentView.xaml">
+		<Generator>MSBuild:Compile</Generator>
+	</MauiXaml>
+
+	<MauiXaml Update="Views\ImagePreviewPopup.xaml">
+		<Generator>MSBuild:Compile</Generator>
+	</MauiXaml>
+
+	<MauiXaml Update="Views\ProfileView.xaml">
+		<Generator>MSBuild:Compile</Generator>
+	</MauiXaml>
+
+	<MauiXaml Update="Views\ResultatenPopUp.xaml">
+		<Generator>MSBuild:Compile</Generator>
+	</MauiXaml>
+</ItemGroup>
 
 	<ItemGroup>
 	  <Folder Include="Converters\" />
