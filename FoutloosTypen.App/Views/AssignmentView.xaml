@@ -139,11 +139,16 @@
 
                 <VerticalStackLayout Spacing="0" Margin="20,12,20,12">
                     <BoxView HeightRequest="5" Color="Black"/>
-                    <ProgressBar Progress="{Binding Progress}" ProgressColor="LightGreen"/>
-                    <ProgressBar Progress="{Binding Progress}" ProgressColor="LightGreen"/>
-                    <ProgressBar Progress="{Binding Progress}" ProgressColor="LightGreen"/>
-                    <ProgressBar Progress="{Binding Progress}" ProgressColor="LightGreen"/>
-                    <ProgressBar Progress="{Binding Progress}" ProgressColor="LightGreen"/>
+                    <ProgressBar Progress="{Binding Progress}" 
+                                 ProgressColor="LightGreen"/>
+                    <ProgressBar Progress="{Binding Progress}" 
+                                 ProgressColor="LightGreen"/>
+                    <ProgressBar Progress="{Binding Progress}" 
+                                 ProgressColor="LightGreen"/>
+                    <ProgressBar Progress="{Binding Progress}" 
+                                 ProgressColor="LightGreen"/>
+                    <ProgressBar Progress="{Binding Progress}" 
+                                 ProgressColor="LightGreen"/>
                     <BoxView HeightRequest="5" Color="Black"/>
                     
                     <Label 

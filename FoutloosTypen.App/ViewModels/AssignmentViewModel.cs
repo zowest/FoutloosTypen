@@ -14,6 +14,7 @@ namespace FoutloosTypen.ViewModels
         private readonly ILessonService _lessonService;
         private readonly IPracticeMaterialService _practiceMaterialService;
         private readonly ITimerService _timerService;
+        private readonly ITypingComparisonService _typingComparisonService;
 
         private const double TIMER_DURATION = 60; // 60 seconden per opdracht
 
@@ -168,13 +169,15 @@ namespace FoutloosTypen.ViewModels
             IAssignmentService assignmentService,
             IPracticeMaterialService practiceMaterialService,
             ITimerService timerService,
-            ShareViewModel shareViewModel)
+            ShareViewModel shareViewModel,
+            ITypingComparisonService typingComparisonService)
         {
             _lessonService = lessonService;
             _assignmentService = assignmentService;
             _practiceMaterialService = practiceMaterialService;
             _timerService = timerService;
             ShareVM = shareViewModel;
+            _typingComparisonService = typingComparisonService;
 
             FormattedText = new FormattedString();
         }
@@ -262,24 +265,91 @@ namespace FoutloosTypen.ViewModels
                 CurrentMaterial = new PracticeMaterial { Sentence = "Geen zinnen gevonden." };
         }
 
-        private void MoveToNextAssignment()
+        private async void MoveToNextAssignment()
         {
-            // If current is the last assignment, do not advance or change the displayed count
-            if (_currentAssignmentIndex + 1 >= Assignments.Count)
-            {
-                Debug.WriteLine("All assignments completed. Staying on the last assignment and not incrementing count.");
-                OnPropertyChanged(nameof(AssignmentProgress));
-                OnPropertyChanged(nameof(ProgressText));
-                return;
-            }
-
             _currentAssignmentIndex++;
             OnPropertyChanged(nameof(AssignmentProgress));
             OnPropertyChanged(nameof(ProgressText));
 
-            _timerService.Restart();
+            if (_currentAssignmentIndex >= Assignments.Count)
+            {
+                // All assignments completed
+                Debug.WriteLine("All assignments completed!");
+                
+                await MainThread.InvokeOnMainThreadAsync(async () =>
+                {
+                    if (Application.Current?.MainPage != null)
+                    {
+                        var result = await Application.Current.MainPage.DisplayAlert(
+                            "Gefeliciteerd!",
+                            "Je hebt alle opdrachten voltooid!",
+                            "Ga verder",
+                            "Herstart");
+
+                        if (result)
+                        {
+                            await Shell.Current.GoToAsync("..");
+                        }
+                        else
+                        {
+                            RestartLesson();
+                        }
+                    }
+                });
+                return;
+            }
+
+            // Reset timer for next assignment
+            RestartTimer();
+            
+            // Move to next assignment
             SelectedAssignment = Assignments[_currentAssignmentIndex];
             Debug.WriteLine($"Moved to assignment {_currentAssignmentIndex + 1}/{Assignments.Count}");
+        }
+
+        private void MoveToNextMaterial()
+        {
+            if (_materials == null || !_materials.Any())
+                return;
+
+            _materialIndex++;
+
+            if (_materialIndex < _materials.Count)
+            {
+                CurrentMaterial = _materials[_materialIndex];
+                Debug.WriteLine($"Moved to next material: {_materialIndex + 1}/{_materials.Count}");
+            }
+            else
+            {
+                // All materials in current assignment completed, move to next assignment
+                Debug.WriteLine("All materials completed in this assignment");
+                MoveToNextAssignment();
+            }
+        }
+
+        /// <summary>
+        /// Herstart de huidige les vanaf het begin
+        /// </summary>
+        public void RestartLesson()
+        {
+            Debug.WriteLine("Restarting lesson...");
+            
+            // Reset naar de eerste opdracht
+            _currentAssignmentIndex = 0;
+            OnPropertyChanged(nameof(AssignmentProgress));
+            OnPropertyChanged(nameof(ProgressText));
+            
+            // Selecteer de eerste opdracht
+            if (Assignments.Any())
+            {
+                SelectedAssignment = Assignments.First();
+            }
+            
+            // Reset typing en timer
+            ResetTyping();
+            RestartTimer();
+            
+            Debug.WriteLine("Lesson restarted successfully");
         }
 
         private void UpdateTotalCharactersCount()
@@ -330,24 +400,13 @@ namespace FoutloosTypen.ViewModels
             UserInput = typedText;
             UpdateFormattedText();
 
-            // Check of de zin compleet en correct is
-            if (typedText.Length == CurrentMaterial.Sentence.Length)
+            // Check if sentence is complete and correct
+            if (typedText == CurrentMaterial.Sentence)
             {
-                bool allCorrect = true;
-                for (int i = 0; i < typedText.Length; i++)
-                {
-                    if (typedText[i] != CurrentMaterial.Sentence[i])
-                    {
-                        allCorrect = false;
-                        break;
-                    }
-                }
-
-                if (allCorrect)
-                {
-                    Debug.WriteLine("Sentence completed correctly! Moving to next assignment...");
-                    MoveToNextAssignment();
-                }
+                Debug.WriteLine("Sentence completed correctly!");
+                
+                // Move to next sentence or assignment
+                MoveToNextMaterial();
             }
         }
 
@@ -369,22 +428,26 @@ namespace FoutloosTypen.ViewModels
                 {
                     if (typedText[i] == targetText[i])
                     {
+                        // Correct character - show in black
                         span.TextColor = Colors.Black;
                         span.BackgroundColor = Colors.Transparent;
                     }
                     else
                     {
+                        // Incorrect character - show in red with background
                         span.TextColor = Colors.White;
                         span.BackgroundColor = Colors.Red;
                     }
                 }
                 else if (i == typedText.Length)
                 {
+                    // Current character cursor position
                     span.TextColor = Colors.Gray;
                     span.BackgroundColor = Colors.LightGray;
                 }
                 else
                 {
+                    // Not yet typed - show in light gray
                     span.TextColor = Colors.LightGray;
                     span.BackgroundColor = Colors.Transparent;
                 }
@@ -393,6 +456,12 @@ namespace FoutloosTypen.ViewModels
             }
 
             FormattedText = formatted;
+        }
+
+        public override void OnDisappearing()
+        {
+            base.OnDisappearing();
+            _timerService.Stop();
         }
 
         [RelayCommand]
@@ -417,7 +486,7 @@ namespace FoutloosTypen.ViewModels
             if (Assignments.Any())
                 SelectedAssignment = Assignments.First();
                 
-            _timerService.Restart();
+            RestartTimer();
         }
 
         [RelayCommand]
@@ -425,5 +494,25 @@ namespace FoutloosTypen.ViewModels
         {
             _timerService.Stop();
         }
+
+        [RelayCommand]
+        private void RestartTimer()
+        {
+            _timerService.Restart();
+        }
+
+        [RelayCommand]
+        private void Refresh()
+        {
+            ResetTyping();
+            RestartTimer();
+        }
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
     }
 }
