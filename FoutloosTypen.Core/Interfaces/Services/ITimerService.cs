@@ -18,5 +18,8 @@ namespace FoutloosTypen.Core.Interfaces.Services
         void Start();
         void Stop();
         void Restart();
+
+        void AddTime(double seconds);
+        void SubtractTime(double seconds);
     }
 }

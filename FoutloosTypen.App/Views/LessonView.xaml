@@ -50,6 +50,24 @@
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
+                    <Button Text="∞ Endless mode"
+        FontSize="24"
+        BackgroundColor="White"
+        BorderColor="Black"
+        BorderWidth="2"
+        TextColor="Black"
+        WidthRequest="220"
+        HeightRequest="70"
+        HorizontalOptions="Center"
+        Margin="0,20,0,0"
+        Clicked="OnEndlessModeClicked">
+                        <Button.GestureRecognizers>
+                            <PointerGestureRecognizer
+            PointerEntered="OnHoverEnter"
+            PointerExited="OnHoverExit"/>
+                        </Button.GestureRecognizers>
+                    </Button>
+
                 </VerticalStackLayout>
             </ScrollView>
 

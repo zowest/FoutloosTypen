@@ -75,5 +75,28 @@ namespace FoutloosTypen.Core.Services
                 TimerExpired?.Invoke(this, EventArgs.Empty);
             }
         }
+        public void AddTime(double seconds)
+        {
+            if (seconds <= 0)
+                return;
+
+            TimeRemaining = Math.Min(TimeRemaining + seconds, 3600);
+        }
+
+        public void SubtractTime(double seconds)
+        {
+            if (seconds <= 0)
+                return;
+
+            TimeRemaining = Math.Max(TimeRemaining - seconds, 0);
+
+            if (TimeRemaining <= 0)
+            {
+                Stop();
+                TimerExpired?.Invoke(this, EventArgs.Empty);
+            }
+        }
+
+
     }
 }
