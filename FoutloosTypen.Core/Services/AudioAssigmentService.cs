@@ -33,7 +33,7 @@ namespace FoutloosTypen.Core.Services
             var request = new TtsRequest
             {
                 Text = assignment.InstructionText,
-                Rate = assignment.S     peechRate,
+                Rate = assignment.SpeechRate,
                 Volume = assignment.Volume
             };
 
