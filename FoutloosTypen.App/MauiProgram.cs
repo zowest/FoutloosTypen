@@ -47,12 +47,10 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IStudentRepository, StudentRepository>();
             builder.Services.AddSingleton<ISharePostRepository, SharePostRepository>();
             builder.Services.AddSingleton<IMediaUploadRepository, MediaUploadRepository>();
-
-            // XAuth repository
             builder.Services.AddSingleton<IXAuthRepository, XAuthRepository>();
-
-            // Image repository
+            builder.Services.AddSingleton<IXAuthApiRepository, XAuthApiRepository>();
             builder.Services.AddSingleton<IImageRepository, ImageRepository>();
+            builder.Services.AddSingleton<IShareImageRepository, ShareImageRepository>();
 
             // Domain Services
             builder.Services.AddSingleton<ILessonService, LessonService>();

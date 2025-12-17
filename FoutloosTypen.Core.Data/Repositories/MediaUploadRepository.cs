@@ -1,10 +1,9 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 using FoutloosTypen.Core.Interfaces.Repositories;
 
@@ -12,182 +11,100 @@ namespace FoutloosTypen.Core.Data.Repositories
 {
     public class MediaUploadRepository : IMediaUploadRepository
     {
-        private const string MediaUploadV11 = "https://upload.twitter.com/1.1/media/upload.json";
-        private const string TweetEndpoint = "https://api.x.com/2/tweets";
+        private const string MediaUploadUrl = "https://upload.twitter.com/1.1/media/upload.json";
+        private const string TweetUrl = "https://api.twitter.com/2/tweets";
 
         public async Task<string> UploadMediaAsync(string filePath, string contentType, string consumerKey, string consumerSecret, string oauthToken, string oauthTokenSecret)
         {
-            ValidateCredentials(consumerKey, consumerSecret, oauthToken, oauthTokenSecret);
-
-            var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
-            var totalBytes = fileBytes.Length;
-
             using var client = new HttpClient();
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0");
+            using var content = new MultipartFormDataContent();
 
-            var mediaId = await InitMediaUploadAsync(client, totalBytes, contentType, consumerKey, consumerSecret, oauthToken, oauthTokenSecret);
-            await AppendMediaAsync(client, mediaId, fileBytes, consumerKey, consumerSecret, oauthToken, oauthTokenSecret);
-            await FinalizeMediaAsync(client, mediaId, consumerKey, consumerSecret, oauthToken, oauthTokenSecret);
+            var fileBytes = await File.ReadAllBytesAsync(filePath);
+            var fileContent = new ByteArrayContent(fileBytes);
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+            content.Add(fileContent, "media", Path.GetFileName(filePath));
 
+            var authHeader = GenerateOAuthHeader("POST", MediaUploadUrl, consumerKey, consumerSecret, oauthToken, oauthTokenSecret);
+            client.DefaultRequestHeaders.Add("Authorization", authHeader);
+
+            var response = await client.PostAsync(MediaUploadUrl, content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new HttpRequestException($"Media upload failed: {response.StatusCode} - {responseContent}");
+            }
+
+            var mediaId = ExtractMediaId(responseContent);
             return mediaId;
         }
 
         public async Task PostTweetAsync(string text, string? mediaId, string consumerKey, string consumerSecret, string oauthToken, string oauthTokenSecret)
         {
-            ValidateCredentials(consumerKey, consumerSecret, oauthToken, oauthTokenSecret);
+            using var client = new HttpClient();
 
-            using var http = new HttpClient();
+            var payload = string.IsNullOrEmpty(mediaId)
+                ? $"{{\"text\":\"{EscapeJson(text)}\"}}"
+                : $"{{\"text\":\"{EscapeJson(text)}\",\"media\":{{\"media_ids\":[\"{mediaId}\"]}}}}";
 
-            object payload = mediaId is not null
-                ? new { text, media = new { media_ids = new[] { mediaId } } }
-                : new { text };
+            var content = new StringContent(payload, Encoding.UTF8, "application/json");
 
-            var json = JsonSerializer.Serialize(payload);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var authHeader = GenerateOAuthHeader("POST", TweetUrl, consumerKey, consumerSecret, oauthToken, oauthTokenSecret);
+            client.DefaultRequestHeaders.Add("Authorization", authHeader);
 
-            var header = "OAuth " + BuildOAuth1Header(TweetEndpoint, HttpMethod.Post,
-                         Enumerable.Empty<KeyValuePair<string, string>>(), consumerKey,
-                         consumerSecret, oauthToken, oauthTokenSecret);
+            var response = await client.PostAsync(TweetUrl, content);
+            var responseContent = await response.Content.ReadAsStringAsync();
 
-            var request = new HttpRequestMessage(HttpMethod.Post, TweetEndpoint)
+            if (!response.IsSuccessStatusCode)
             {
-                Content = content
-            };
-            request.Headers.TryAddWithoutValidation("Authorization", header);
-            request.Headers.TryAddWithoutValidation("User-Agent", "v2CreateTweetCSharp");
-            request.Headers.TryAddWithoutValidation("Accept", "application/json");
-
-            var resp = await http.SendAsync(request);
-            var body = await resp.Content.ReadAsStringAsync();
-
-            if (!resp.IsSuccessStatusCode)
-                throw new HttpRequestException($"Tweet create failed: {(int)resp.StatusCode} {resp.ReasonPhrase} - {body}");
-        }
-
-        private static void ValidateCredentials(string consumerKey, string consumerSecret, string oauthToken, string oauthTokenSecret)
-        {
-            if (string.IsNullOrWhiteSpace(consumerKey) || string.IsNullOrWhiteSpace(consumerSecret) ||
-                string.IsNullOrWhiteSpace(oauthToken) || string.IsNullOrWhiteSpace(oauthTokenSecret))
-            {
-                throw new ArgumentException("OAuth1 credentials must be provided.");
+                throw new HttpRequestException($"Tweet post failed: {response.StatusCode} - {responseContent}");
             }
         }
 
-        private async Task<string> InitMediaUploadAsync(HttpClient client, int totalBytes, string contentType, 
-            string consumerKey, string consumerSecret, string oauthToken, string oauthTokenSecret)
+        private string GenerateOAuthHeader(string method, string url, string consumerKey, string consumerSecret, string oauthToken, string oauthTokenSecret)
         {
-            var initParams = new List<KeyValuePair<string, string>>
+            var nonce = Guid.NewGuid().ToString("N");
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+
+            var parameters = new[]
             {
-                new("command", "INIT"),
-                new("total_bytes", totalBytes.ToString()),
-                new("media_type", contentType)
+                new KeyValuePair<string, string>("oauth_consumer_key", consumerKey),
+                new KeyValuePair<string, string>("oauth_nonce", nonce),
+                new KeyValuePair<string, string>("oauth_signature_method", "HMAC-SHA1"),
+                new KeyValuePair<string, string>("oauth_timestamp", timestamp),
+                new KeyValuePair<string, string>("oauth_token", oauthToken),
+                new KeyValuePair<string, string>("oauth_version", "1.0")
             };
 
-            var initRequest = new HttpRequestMessage(HttpMethod.Post, MediaUploadV11)
-            {
-                Content = new FormUrlEncodedContent(initParams)
-            };
+            var sortedParams = parameters.OrderBy(p => p.Key).ThenBy(p => p.Value);
+            var paramString = string.Join("&", sortedParams.Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}"));
 
-            var header = "OAuth " + BuildOAuth1Header(MediaUploadV11, HttpMethod.Post, initParams, consumerKey, consumerSecret, oauthToken, oauthTokenSecret);
-            initRequest.Headers.TryAddWithoutValidation("Authorization", header);
-
-            var initResp = await client.SendAsync(initRequest);
-            var initJson = await initResp.Content.ReadAsStringAsync();
-
-            if (!initResp.IsSuccessStatusCode)
-                throw new HttpRequestException($"Media upload INIT failed: {(int)initResp.StatusCode} - {initJson}");
-
-            using var initDoc = JsonDocument.Parse(initJson);
-            return initDoc.RootElement.GetProperty("media_id_string").GetString()!;
-        }
-
-        private async Task AppendMediaAsync(HttpClient client, string mediaId, byte[] fileBytes, 
-            string consumerKey, string consumerSecret, string oauthToken, string oauthTokenSecret)
-        {
-            var base64 = Convert.ToBase64String(fileBytes);
-            var appendParams = new List<KeyValuePair<string, string>>
-            {
-                new("command", "APPEND"),
-                new("media_id", mediaId),
-                new("segment_index", "0"),
-                new("media_data", base64)
-            };
-
-            var appendRequest = new HttpRequestMessage(HttpMethod.Post, MediaUploadV11)
-            {
-                Content = new FormUrlEncodedContent(appendParams)
-            };
-
-            appendRequest.Headers.TryAddWithoutValidation("Authorization", 
-                "OAuth " + BuildOAuth1Header(MediaUploadV11, HttpMethod.Post, appendParams, consumerKey, consumerSecret, oauthToken, oauthTokenSecret));
-
-            var appendResp = await client.SendAsync(appendRequest);
-            if (!appendResp.IsSuccessStatusCode)
-                throw new HttpRequestException($"Media upload APPEND failed: {(int)appendResp.StatusCode}");
-        }
-
-        private async Task FinalizeMediaAsync(HttpClient client, string mediaId, 
-            string consumerKey, string consumerSecret, string oauthToken, string oauthTokenSecret)
-        {
-            var finalizeParams = new List<KeyValuePair<string, string>>
-            {
-                new("command", "FINALIZE"),
-                new("media_id", mediaId)
-            };
-
-            var finalizeRequest = new HttpRequestMessage(HttpMethod.Post, MediaUploadV11)
-            {
-                Content = new FormUrlEncodedContent(finalizeParams)
-            };
-
-            finalizeRequest.Headers.TryAddWithoutValidation("Authorization", 
-                "OAuth " + BuildOAuth1Header(MediaUploadV11, HttpMethod.Post, finalizeParams, consumerKey, consumerSecret, oauthToken, oauthTokenSecret));
-
-            var finalizeResp = await client.SendAsync(finalizeRequest);
-            var finalizeJson = await finalizeResp.Content.ReadAsStringAsync();
-
-            if (!finalizeResp.IsSuccessStatusCode)
-                throw new HttpRequestException($"Media upload FINALIZE failed: {(int)finalizeResp.StatusCode} - {finalizeJson}");
-        }
-
-        private static string BuildOAuth1Header(string url, HttpMethod method, IEnumerable<KeyValuePair<string, string>> requestParams, 
-            string consumerKey, string consumerSecret, string oauthToken, string oauthTokenSecret)
-        {
-            var oauthParams = new SortedDictionary<string, string>
-            {
-                { "oauth_consumer_key", consumerKey },
-                { "oauth_nonce", Guid.NewGuid().ToString("N") },
-                { "oauth_signature_method", "HMAC-SHA1" },
-                { "oauth_timestamp", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString() },
-                { "oauth_token", oauthToken },
-                { "oauth_version", "1.0" }
-            };
-
-            foreach (var kv in requestParams)
-                oauthParams[kv.Key] = kv.Value;
-
-            var uri = new Uri(url);
-            var normalizedUrl = uri.GetLeftPart(UriPartial.Path);
-
-            var paramString = string.Join('&', oauthParams.Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
-            var signatureBaseString = $"{method.Method.ToUpperInvariant()}&{Uri.EscapeDataString(normalizedUrl)}&{Uri.EscapeDataString(paramString)}";
+            var signatureBase = $"{method.ToUpper()}&{Uri.EscapeDataString(url)}&{Uri.EscapeDataString(paramString)}";
             var signingKey = $"{Uri.EscapeDataString(consumerSecret)}&{Uri.EscapeDataString(oauthTokenSecret)}";
 
             using var hasher = new HMACSHA1(Encoding.ASCII.GetBytes(signingKey));
-            var signature = Convert.ToBase64String(hasher.ComputeHash(Encoding.ASCII.GetBytes(signatureBaseString)));
+            var signatureBytes = hasher.ComputeHash(Encoding.ASCII.GetBytes(signatureBase));
+            var signature = Convert.ToBase64String(signatureBytes);
 
-            var headerParams = new Dictionary<string, string>
-            {
-                { "oauth_consumer_key", consumerKey },
-                { "oauth_nonce", oauthParams["oauth_nonce"] },
-                { "oauth_signature", signature },
-                { "oauth_signature_method", "HMAC-SHA1" },
-                { "oauth_timestamp", oauthParams["oauth_timestamp"] },
-                { "oauth_token", oauthToken },
-                { "oauth_version", "1.0" }
-            };
+            return $"OAuth oauth_consumer_key=\"{Uri.EscapeDataString(consumerKey)}\", " +
+                   $"oauth_nonce=\"{Uri.EscapeDataString(nonce)}\", " +
+                   $"oauth_signature=\"{Uri.EscapeDataString(signature)}\", " +
+                   $"oauth_signature_method=\"HMAC-SHA1\", " +
+                   $"oauth_timestamp=\"{timestamp}\", " +
+                   $"oauth_token=\"{Uri.EscapeDataString(oauthToken)}\", " +
+                   $"oauth_version=\"1.0\"";
+        }
 
-            return string.Join(", ", headerParams.Select(kv => $"{kv.Key}=\"{Uri.EscapeDataString(kv.Value)}\""));
+        private string ExtractMediaId(string responseContent)
+        {
+            var startIndex = responseContent.IndexOf("\"media_id_string\":\"") + 19;
+            var endIndex = responseContent.IndexOf("\"", startIndex);
+            return responseContent.Substring(startIndex, endIndex - startIndex);
+        }
+
+        private string EscapeJson(string text)
+        {
+            return text.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r");
         }
     }
 }
