@@ -62,6 +62,7 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<ITimerService, TimerService>();
             builder.Services.AddSingleton<IXAuthService, XAuthService>();
             builder.Services.AddSingleton<IShareImageService, ShareImageService>();
+            builder.Services.AddSingleton<ITypingComparisonService, TypingComparisonService>();
 
             // Use XAuthRepository to provide XAuthSettings in DI
             builder.Services.AddSingleton<FoutloosTypen.Core.Models.XAuthSettings>(provider => provider.GetRequiredService<IXAuthRepository>().GetSettings());
