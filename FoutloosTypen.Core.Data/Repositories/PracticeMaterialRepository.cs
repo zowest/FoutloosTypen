@@ -18,64 +18,7 @@ namespace FoutloosTypen.Core.Data.Repositories
                     AssignmentId INT NOT NULL
                 );
             """);
-
-            //LoadPracticeMaterialsFromJsonSync();
         }
-
-        //private void LoadPracticeMaterialsFromJsonSync()
-        //{
-        //    var stopwatch = Stopwatch.StartNew();
-        //    var statements = new List<string>();
-
-        //    try
-        //    {
-        //        using var stream = FileSystem
-        //            .OpenAppPackageFileAsync("PracticeMaterial.json")
-        //            .GetAwaiter()
-        //            .GetResult();
-
-        //        using var reader = new StreamReader(stream);
-        //        using var doc = JsonDocument.Parse(reader.ReadToEnd());
-        //        var root = doc.RootElement;
-
-        //        if (root.ValueKind == JsonValueKind.Object &&
-        //            root.TryGetProperty("PracticeMaterials", out var p))
-        //        {
-        //            root = p;
-        //        }
-
-        //        if (root.ValueKind != JsonValueKind.Array)
-        //            return;
-
-        //        foreach (var item in root.EnumerateArray())
-        //        {
-        //            int assignmentId = item.GetProperty("AssignmentId").GetInt32();
-        //            string sentence = item.GetProperty("Sentence").GetString() ?? "";
-
-        //            if (assignmentId == 0 || string.IsNullOrWhiteSpace(sentence))
-        //                continue;
-
-        //            sentence = sentence.Replace("'", "''");
-
-        //            statements.Add($"""
-        //                INSERT IGNORE INTO PracticeMaterials
-        //                (Sentence, AssignmentId)
-        //                VALUES('{sentence}', {assignmentId});
-        //            """);
-        //        }
-
-        //        if (statements.Count > 0)
-        //        {
-        //            InsertMultipleWithTransaction(statements);
-        //            stopwatch.Stop();
-        //            Debug.WriteLine($"Seeded {statements.Count} practice materials in {stopwatch.ElapsedMilliseconds}ms");
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine($"PracticeMaterial seed error: {ex.Message}");
-        //    }
-        //}
 
         public List<PracticeMaterial> GetAll()
         {

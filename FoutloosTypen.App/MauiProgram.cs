@@ -45,6 +45,7 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IAssignmentRepository, AssignmentRepository>();
             builder.Services.AddSingleton<IPracticeMaterialRepository, PracticeMaterialRepository>();
             builder.Services.AddSingleton<IStudentRepository, StudentRepository>();
+            builder.Services.AddSingleton<ITtsService, TtsService>();
             builder.Services.AddSingleton<ISharePostRepository, SharePostRepository>();
             builder.Services.AddSingleton<IMediaUploadRepository, MediaUploadRepository>();
             builder.Services.AddSingleton<IXAuthRepository, XAuthRepository>();
@@ -65,6 +66,7 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<ITypingComparisonService, TypingComparisonService>();
           
             builder.Services.AddSingleton<IResultService, ResultService>();
+            builder.Services.AddSingleton<IAudioAssignmentService, AudioAssignmentService>();
 
             // Use XAuthRepository to provide XAuthSettings in DI
             builder.Services.AddSingleton<FoutloosTypen.Core.Models.XAuthSettings>(provider => provider.GetRequiredService<IXAuthRepository>().GetSettings());
