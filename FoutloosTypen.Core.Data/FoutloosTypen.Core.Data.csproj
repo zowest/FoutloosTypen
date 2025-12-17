@@ -29,6 +29,7 @@
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="MySqlConnector" Version="2.5.0" />
 		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.2" />
+		<PackageReference Include="SkiaSharp" Version="3.119.2-preview.1" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -36,7 +37,14 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Resources\Raw\" />
+	  <Folder Include="Resources\" />
+	</ItemGroup>
+
+	<!-- Ensure appsettings.Development.json is copied to the build output so the App can load it at runtime -->
+	<ItemGroup>
+	  <Content Include="Resources\appsettings.Development.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
 	</ItemGroup>
 
 </Project>

@@ -28,6 +28,9 @@ namespace FoutloosTypen.ViewModels
         private int _currentAssignmentIndex = 0;
         private string _previousUserInput = string.Empty;
 
+        // Share functionality delegated to ShareViewModel
+        public ShareViewModel ShareVM { get; }
+
         private int _lessonId;
         public int LessonId 
         { 
@@ -167,6 +170,7 @@ namespace FoutloosTypen.ViewModels
             IAssignmentService assignmentService,
             IPracticeMaterialService practiceMaterialService,
             ITimerService timerService,
+            ShareViewModel shareViewModel,
             ITypingComparisonService typingComparisonService,
             IResultService ResultService)
         {
@@ -174,7 +178,9 @@ namespace FoutloosTypen.ViewModels
             _assignmentService = assignmentService;
             _practiceMaterialService = practiceMaterialService;
             _timerService = timerService;
+            ShareVM = shareViewModel;
             _typingComparisonService = typingComparisonService;
+
             _ResultService = ResultService;
 
             // Subscribe to timer expired event
@@ -316,7 +322,7 @@ namespace FoutloosTypen.ViewModels
                 CurrentMaterial = new PracticeMaterial { Sentence = "Geen zinnen gevonden." };
         }
 
-        private void MoveToNextAssignment()
+        private async void MoveToNextAssignment()
         {
             _currentAssignmentIndex++;
             OnPropertyChanged(nameof(AssignmentProgress));
@@ -342,6 +348,26 @@ namespace FoutloosTypen.ViewModels
             // Move to next assignment
             SelectedAssignment = Assignments[_currentAssignmentIndex];
             Debug.WriteLine($"Moved to assignment {_currentAssignmentIndex + 1}/{Assignments.Count}");
+        }
+
+        private void MoveToNextMaterial()
+        {
+            if (_materials == null || !_materials.Any())
+                return;
+
+            _materialIndex++;
+
+            if (_materialIndex < _materials.Count)
+            {
+                CurrentMaterial = _materials[_materialIndex];
+                Debug.WriteLine($"Moved to next material: {_materialIndex + 1}/{_materials.Count}");
+            }
+            else
+            {
+                // All materials in current assignment completed, move to next assignment
+                Debug.WriteLine("All materials completed in this assignment");
+                MoveToNextAssignment();
+            }
         }
 
         /// <summary>
@@ -452,6 +478,13 @@ namespace FoutloosTypen.ViewModels
             UserInput = typedText;
             UpdateFormattedText();
 
+            // Check if sentence is complete and correct
+            if (typedText == CurrentMaterial.Sentence)
+            {
+                Debug.WriteLine("Sentence completed correctly!");
+                
+                // Move to next sentence or assignment
+                MoveToNextMaterial();
             // Update current progress (including incomplete sentences)
             if (SelectedLesson != null)
             {
@@ -541,6 +574,9 @@ namespace FoutloosTypen.ViewModels
             FormattedText = formatted;
         }
 
+        public override void OnDisappearing()
+        {
+            base.OnDisappearing();
         private void ResetTyping()
         {
             UserInput = string.Empty;
