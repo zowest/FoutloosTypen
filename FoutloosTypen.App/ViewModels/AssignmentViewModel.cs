@@ -338,13 +338,6 @@ namespace FoutloosTypen.ViewModels
                 .Where(pm => pm.AssignmentId == SelectedAssignment.Id)
                 .ToList();
 
-            // TIJDELIJKE FIX: Voor les 1, toon slechts 1 zin
-            if (SelectedLesson?.Id == 1 && _materials.Any())
-            {
-                _materials = _materials.Take(1).ToList();
-                Debug.WriteLine($"[TEMP FIX] Limiting lesson 1 to 1 sentence only");
-            }
-
             _materialIndex = 0;
 
             if (_materials.Any())
@@ -353,7 +346,33 @@ namespace FoutloosTypen.ViewModels
                 CurrentMaterial = new PracticeMaterial { Sentence = "Geen zinnen gevonden." };
         }
 
- 
+        private async void MoveToNextAssignment()
+        {
+            _currentAssignmentIndex++;
+            OnPropertyChanged(nameof(AssignmentProgress));
+            OnPropertyChanged(nameof(ProgressText));
+
+            if (_currentAssignmentIndex >= Assignments.Count)
+            {
+                // All assignments completed - Show results popup
+                Debug.WriteLine("All assignments completed! Showing results...");
+
+                if (SelectedLesson != null)
+                {
+                    _ResultService.EndLesson(SelectedLesson.Id);
+                }
+
+                ShowLessonResults();
+                return;
+            }
+
+            // Reset timer for next assignment
+            RestartTimer();
+
+            // Move to next assignment
+            SelectedAssignment = Assignments[_currentAssignmentIndex];
+            Debug.WriteLine($"Moved to assignment {_currentAssignmentIndex + 1}/{Assignments.Count}");
+        }
 
         private void MoveToNextMaterial()
         {
@@ -362,18 +381,6 @@ namespace FoutloosTypen.ViewModels
 
             _materialIndex++;
 
-            // TIJDELIJKE TEST: Stop na 1 zin
-            Debug.WriteLine("[TEMP TEST] Forcing lesson end after first material/sentence");
-
-            if (SelectedLesson != null)
-            {
-                _ResultService.EndLesson(SelectedLesson.Id);
-            }
-
-            ShowLessonResults();
-            return;
-
-            /* Originele code:
             if (_materialIndex < _materials.Count)
             {
                 CurrentMaterial = _materials[_materialIndex];
@@ -381,11 +388,12 @@ namespace FoutloosTypen.ViewModels
             }
             else
             {
+                // All materials in current assignment completed, move to next assignment
                 Debug.WriteLine("All materials completed in this assignment");
                 MoveToNextAssignment();
             }
-            */
         }
+
 
         /// <summary>
         /// Herstart de huidige les vanaf het begin

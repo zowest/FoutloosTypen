@@ -150,7 +150,7 @@ namespace FoutloosTypen.ViewModels
                 _xAuthRepository == null || _shareImageRepository == null || _xSettings == null)
                 return;
 
-            var text = $"{_lessonName} voltooid! Score: {Score} - APM: {StrokesPerMinute} - Nauwkeurigheid: {Accuracy} #FoutloosTypen";
+            var text = $"{_lessonName} voltooid! Score: {Score} - APM: {StrokesPerMinute} - Nauwkeurigheid: {Accuracy} #BolType";
             
             // Load logo stream from app package
             System.IO.Stream? logoStream = null;

@@ -124,8 +124,8 @@ namespace FoutloosTypen.Helpers
             {
                 using (logoImage)
                 {
-                    // Draw logo inside circle (80% of circle size for better visibility)
-                    float innerSize = logoSize * 0.8f;
+                    // Draw logo inside circle
+                    float innerSize = logoSize * 0.7f;
                     float offset = (logoSize - innerSize) / 2;
                     var destRect = new SKRect(
                         logoX + offset, 
