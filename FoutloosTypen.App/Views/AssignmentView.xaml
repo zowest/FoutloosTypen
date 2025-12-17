@@ -18,13 +18,13 @@
                     Spacing="24"
                     VerticalOptions="Center"
                     HorizontalOptions="StartAndExpand">
-<Image 
-    Source="boltype.png"
-    HeightRequest="140"
-    WidthRequest="140"
-    HorizontalOptions="Center"
-    VerticalOptions="End" 
-    Margin="0,0,0,10" />
+                    <Image 
+                        Source="boltype.png"
+                        HeightRequest="140"
+                        WidthRequest="140"
+                        HorizontalOptions="Center"
+                        VerticalOptions="End" 
+                        Margin="0,0,0,10" />
                 </HorizontalStackLayout>
 
                 <HorizontalStackLayout 
@@ -70,18 +70,18 @@
                 </HorizontalStackLayout>
             </Grid>
 
-
-
             <VerticalStackLayout 
                 Grid.Row="1" 
                 Spacing="12" 
                 HorizontalOptions="FillAndExpand" 
                 VerticalOptions="CenterAndExpand">
+                
                 <Label Text="{Binding Timer.TimeRemainingFormatted}"
-                   FontSize="26"
-                   VerticalOptions="End"
+                       FontSize="26"
+                       VerticalOptions="End"
                        TextColor="MediumPurple"
-            HorizontalOptions="Center"/>
+                       HorizontalOptions="Center"/>
+                
                 <ScrollView 
                     HorizontalOptions="FillAndExpand"
                     VerticalOptions="CenterAndExpand">
@@ -91,17 +91,40 @@
                         HorizontalOptions="Center"
                         VerticalOptions="Center">
 
-                        <!-- Character-by-character display -->
                         <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
-                            <!-- Formatted text with colored characters -->
-                            <Label FormattedText="{Binding FormattedText}"
-                                   FontSize="32"
+                            
+                            <!-- FAST 4-part display with proper wrapping -->
+                            <Label FontSize="32"
                                    HorizontalTextAlignment="Center"
                                    VerticalTextAlignment="Center"
                                    LineBreakMode="WordWrap"
-                                   MaximumWidthRequest="800" />
+                                   MaximumWidthRequest="800"
+                                   HorizontalOptions="Center">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <!-- Part 1: Correct text (black) -->
+                                        <Span Text="{Binding CorrectText}" 
+                                              TextColor="Black" 
+                                              FontSize="32"/>
+                                        <!-- Part 2: Error text (red background) -->
+                                        <Span Text="{Binding ErrorText}" 
+                                              TextColor="White" 
+                                              BackgroundColor="Red"
+                                              FontSize="32"/>
+                                        <!-- Part 3: Cursor (underlined) -->
+                                        <Span Text="{Binding CursorChar}" 
+                                              TextColor="Gray" 
+                                              TextDecorations="Underline"
+                                              FontSize="32"/>
+                                        <!-- Part 4: Remaining (gray) -->
+                                        <Span Text="{Binding RemainingText}" 
+                                              TextColor="LightGray"
+                                              FontSize="32"/>
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
 
-                            <!-- Hidden Entry to capture keyboard input -->
+                            <!-- Hidden Entry -->
                             <Entry x:Name="HiddenEntry"
                                    Text="{Binding UserInput, Mode=TwoWay}"
                                    TextChanged="OnTextChanged"
@@ -109,7 +132,10 @@
                                    Unfocused="OnEntryUnfocused"
                                    Opacity="0"
                                    HeightRequest="0"
-                                   IsEnabled="True" />
+                                   IsEnabled="True"
+                                   ClearButtonVisibility="Never"
+                                   IsSpellCheckEnabled="False"
+                                   IsTextPredictionEnabled="False" />
 
                             <BoxView HeightRequest="100"
                                      WidthRequest="800"
