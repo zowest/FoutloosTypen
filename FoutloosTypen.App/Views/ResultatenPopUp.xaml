@@ -67,38 +67,39 @@
                 Spacing="300"
                 VerticalOptions="End"
                 HorizontalOptions="Center">
-                <Button Text="Herstart"
-                        FontSize="12"
-                        BackgroundColor="White"
-                        TextColor="Black"
-                        BorderColor="Black"
-                        BorderWidth="2"
-                        WidthRequest="100"
-                        HeightRequest="30"
-                        HorizontalOptions="Start"
-                        Clicked="OnRestartClicked">
-                    <Button.GestureRecognizers>
+                
+                <ImageButton Source="herstart.png"
+             BackgroundColor="Transparent"
+             BorderColor="Transparent"
+             BorderWidth="0"
+             CornerRadius="0"
+             Padding="0"
+             WidthRequest="48"
+             HeightRequest="48"
+             Aspect="AspectFit"
+             Clicked="OnRestartClicked">
+                    <ImageButton.GestureRecognizers>
                         <PointerGestureRecognizer
-                            PointerEntered="OnHoverEnter"
-                            PointerExited="OnHoverExit"/>
-                    </Button.GestureRecognizers>
-                </Button>
-                <Button Text="Ga verder"
-                        FontSize="12"
-                        BackgroundColor="White"
-                        TextColor="Black"
-                        BorderColor="Black"
-                        BorderWidth="2"
-                        WidthRequest="100"
-                        HeightRequest="30"
-                        HorizontalOptions="Center"
-                        Clicked="OnContinueClicked">
-                    <Button.GestureRecognizers>
+            PointerEntered="OnHoverEnter"
+            PointerExited="OnHoverExit"/>
+                    </ImageButton.GestureRecognizers>
+                </ImageButton>
+                <ImageButton Source="home.png"
+                         Clicked="OnContinueClicked"
+                         BackgroundColor="Transparent"
+                         BorderColor="Transparent"
+                         BorderWidth="0"
+                         CornerRadius="0"
+                         Padding="0"
+                         WidthRequest="48"
+                         HeightRequest="48"
+                         Aspect="AspectFit" >
+                    <ImageButton.GestureRecognizers>
                         <PointerGestureRecognizer
-                            PointerEntered="OnHoverEnter"
-                            PointerExited="OnHoverExit"/>
-                    </Button.GestureRecognizers>
-                </Button>
+            PointerEntered="OnHoverEnter"
+            PointerExited="OnHoverExit"/>
+                    </ImageButton.GestureRecognizers>
+                </ImageButton>
             </HorizontalStackLayout>
         </VerticalStackLayout>
     </Frame>
