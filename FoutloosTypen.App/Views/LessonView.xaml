@@ -117,6 +117,23 @@
                 HorizontalOptions="Center" 
                 VerticalOptions="Center" 
                 Spacing="20">
+                <ImageButton Source="person.png"
+                         Command="{Binding ProfileCommand}"
+                         BackgroundColor="Transparent"
+                         BorderColor="Transparent"
+                         BorderWidth="0"
+                         CornerRadius="0"
+                         Padding="0"
+                         WidthRequest="48"
+                         HeightRequest="48"
+                         Aspect="AspectFit"
+                         HorizontalOptions="End">
+                    <ImageButton.GestureRecognizers>
+                        <PointerGestureRecognizer
+                        PointerEntered="OnHoverEnter"
+                        PointerExited="OnHoverExit"/>
+                    </ImageButton.GestureRecognizers>
+                </ImageButton>
                 <Label Text="{Binding LessonsVM.SelectedLesson.Name}" 
                         FontSize="40" 
                         WidthRequest="500" 

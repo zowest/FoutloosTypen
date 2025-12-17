@@ -20,10 +20,6 @@ namespace FoutloosTypen
         public static MauiApp CreateMauiApp()
         {
 
-#if DEBUG
-            DebugDatabaseReset.Reset();
-#endif
-
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
@@ -50,6 +46,8 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IAuthService, AuthService>();
             builder.Services.AddSingleton<IStudentService, StudentService>();
             builder.Services.AddSingleton<ITimerService, TimerService>();
+            builder.Services.AddSingleton<ITypingComparisonService, TypingComparisonService>();
+            builder.Services.AddSingleton<IResultService, ResultService>();
             builder.Services.AddSingleton<IAudioAssignmentService, AudioAssignmentService>();
 
             // ViewModels
@@ -61,6 +59,7 @@ namespace FoutloosTypen
             builder.Services.AddTransient<AssignmentView>();
             builder.Services.AddSingleton<GlobalViewModel>();
             builder.Services.AddTransient<LoginView>().AddTransient<LoginViewModel>();
+            builder.Services.AddTransient<ProfileView>().AddTransient<ProfileViewModel>();
 #if WINDOWS
             builder.ConfigureLifecycleEvents(events =>
             {

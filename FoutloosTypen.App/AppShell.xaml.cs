@@ -11,6 +11,7 @@ namespace FoutloosTypen
             // Register routes for navigation
             Routing.RegisterRoute(nameof(AssignmentView), typeof(AssignmentView));
             Routing.RegisterRoute("Login", typeof(LoginView));
+            Routing.RegisterRoute(nameof(ProfileView), typeof(ProfileView));
         }
     }
 }
