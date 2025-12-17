@@ -18,7 +18,6 @@ namespace FoutloosTypen.ViewModels
         private readonly IXAuthRepository _xAuthRepository;
         private readonly IShareImageRepository _shareImageRepository;
         private readonly XAuthSettings _xSettings;
-        private readonly ISharePostRepository _sharePostRepository;
         private readonly IShareImageService _shareImageService;
 
         [ObservableProperty]
@@ -33,7 +32,6 @@ namespace FoutloosTypen.ViewModels
             IXAuthRepository xAuthRepository,
             IShareImageRepository shareImageRepository,
             XAuthSettings xSettings,
-            ISharePostRepository sharePostRepository,
             IShareImageService shareImageService)
         {
             _xAuthService = xAuthService;
@@ -41,7 +39,6 @@ namespace FoutloosTypen.ViewModels
             _xAuthRepository = xAuthRepository;
             _shareImageRepository = shareImageRepository;
             _xSettings = xSettings;
-            _sharePostRepository = sharePostRepository;
             _shareImageService = shareImageService;
         }
 
@@ -145,7 +142,6 @@ namespace FoutloosTypen.ViewModels
                 _xAuthRepository,
                 _shareImageRepository,
                 _xSettings,
-                _sharePostRepository,
                 lessonName,
                 progressText,
                 lessonId,

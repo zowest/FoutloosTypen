@@ -16,7 +16,6 @@ namespace FoutloosTypen.ViewModels
         private readonly IXAuthRepository _xAuthRepository;
         private readonly IShareImageRepository _shareImageRepository;
         private readonly XAuthSettings _xSettings;
-        private readonly ISharePostRepository _sharePostRepository;
 
         private readonly string _lessonName;
         private readonly string _progressText;
@@ -38,7 +37,6 @@ namespace FoutloosTypen.ViewModels
             IXAuthRepository xAuthRepository,
             IShareImageRepository shareImageRepository,
             XAuthSettings xSettings,
-            ISharePostRepository sharePostRepository,
             string lessonName,
             string progressText,
             int lessonId,
@@ -49,7 +47,6 @@ namespace FoutloosTypen.ViewModels
             _xAuthRepository = xAuthRepository;
             _shareImageRepository = shareImageRepository;
             _xSettings = xSettings;
-            _sharePostRepository = sharePostRepository;
             _lessonName = lessonName;
             _progressText = progressText;
             _lessonId = lessonId;
@@ -76,7 +73,6 @@ namespace FoutloosTypen.ViewModels
                 }
 
                 var imagePath = await SaveImageAsync();
-                SaveToRepository(imagePath);
                 
                 var mediaId = await UploadMediaAsync(imagePath);
                 await PostTweetAsync(mediaId);
@@ -106,16 +102,6 @@ namespace FoutloosTypen.ViewModels
         {
             StatusMessage = "Afbeelding opslaan...";
             return await _shareImageRepository.SaveImageToCacheAsync(_bitmap);
-        }
-
-        private void SaveToRepository(string imagePath)
-        {
-            _sharePostRepository.Add(new SharePost
-            {
-                LessonId = _lessonId,
-                Text = _tweetText,
-                ImagePath = imagePath,
-            });
         }
 
         private async Task<string> UploadMediaAsync(string imagePath)

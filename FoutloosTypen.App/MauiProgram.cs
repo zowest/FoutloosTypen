@@ -45,7 +45,6 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IAssignmentRepository, AssignmentRepository>();
             builder.Services.AddSingleton<IPracticeMaterialRepository, PracticeMaterialRepository>();
             builder.Services.AddSingleton<IStudentRepository, StudentRepository>();
-            builder.Services.AddSingleton<ISharePostRepository, SharePostRepository>();
             builder.Services.AddSingleton<IMediaUploadRepository, MediaUploadRepository>();
             builder.Services.AddSingleton<IXAuthRepository, XAuthRepository>();
             builder.Services.AddSingleton<IXAuthApiRepository, XAuthApiRepository>();
