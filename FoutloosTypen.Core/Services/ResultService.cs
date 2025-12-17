@@ -83,11 +83,7 @@ namespace FoutloosTypen.Core.Services
             if (!_activeLessons.TryGetValue(lessonId, out var progress))
                 return;
             
-            Debug.WriteLine($"=== Calculating Results ===");
-            Debug.WriteLine($"Characters: {progress.TotalCharactersTyped}");
-            Debug.WriteLine($"Mistakes: {progress.TotalMistakes}");
-            Debug.WriteLine($"Time Spent: {progress.TimeSpent}");
-            
+            progress.TimeRemaining = Math.Max(0, progress.ExpectedTime - progress.TimeSpent);
             // Calculate Accuracy
             if (progress.TotalCharactersTyped > 0)
             {
@@ -154,13 +150,11 @@ namespace FoutloosTypen.Core.Services
             }
             else
             {
-                double accuracyScore = progress.AccuracyPercent * 10;
-                double timeBonus = progress.TimeRemaining * 7;
+                double accuracyScore = progress.AccuracyPercent;
+                double timeBonus = progress.TimeRemaining * 2;
                 progress.Score = (int)((accuracyScore + timeBonus) * 10);
                 Debug.WriteLine($"Score: {progress.Score}");
             }
-            progress.TimeRemaining = Math.Max(0, progress.ExpectedTime - progress.TimeSpent);
-            Debug.WriteLine("=========================");
         }
 
         public Result? GetProgress(int lessonId)
