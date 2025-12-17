@@ -12,16 +12,11 @@ namespace FoutloosTypen.Views
         {
             InitializeComponent();
             
-            // Set the BindingContext to LessonResultViewModel
             BindingContext = new LessonResultViewModel(progress);
             
             _userResponseTcs = new TaskCompletionSource<bool>();
         }
 
-        /// <summary>
-        /// Wacht op gebruikersrespons.
-        /// Returns true als "Ga verder" wordt geklikt, false als "Herstart" wordt geklikt.
-        /// </summary>
         public Task<bool> WaitForUserResponseAsync()
         {
             return _userResponseTcs.Task;
@@ -29,14 +24,14 @@ namespace FoutloosTypen.Views
 
         private async void OnContinueClicked(object sender, EventArgs e)
         {
-            // Signal dat de gebruiker op "Ga verder" heeft geklikt (true)
             _userResponseTcs.TrySetResult(true);
             await Navigation.PopModalAsync();
+            
+            await Shell.Current.Navigation.PopToRootAsync();
         }
 
         private async void OnRestartClicked(object sender, EventArgs e)
         {
-            // Signal dat de gebruiker op "Herstart" heeft geklikt (false)
             _userResponseTcs.TrySetResult(false);
             await Navigation.PopModalAsync();
         }
@@ -59,7 +54,6 @@ namespace FoutloosTypen.Views
 
         protected override bool OnBackButtonPressed()
         {
-            // Voorkom dat de gebruiker de popup kan sluiten met back button
             return true;
         }
     }
