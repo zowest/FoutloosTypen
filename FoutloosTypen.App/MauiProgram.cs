@@ -60,6 +60,7 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<GlobalViewModel>();
             builder.Services.AddTransient<LoginView>().AddTransient<LoginViewModel>();
             builder.Services.AddTransient<ProfileView>().AddTransient<ProfileViewModel>();
+            builder.Services.AddTransient<SettingsView>().AddTransient<SettingsViewModel>();
 #if WINDOWS
             builder.ConfigureLifecycleEvents(events =>
             {
