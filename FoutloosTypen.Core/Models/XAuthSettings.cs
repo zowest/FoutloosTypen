@@ -1,4 +1,4 @@
-namespace FoutloosTypen.Core
+namespace FoutloosTypen.Core.Models
 {
     public class XAuthSettings
     {

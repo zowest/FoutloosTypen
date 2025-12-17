@@ -158,8 +158,8 @@
 
             <VerticalStackLayout Grid.Row="2" HorizontalOptions="Center" Spacing="10">
                 <Button Text="Delen" 
-                        IsVisible="{Binding ShowShareButton}"
-                        Command="{Binding ShareCommand}"
+                        IsVisible="{Binding ShareVM.ShowShareButton}"
+                        Command="{Binding ShareVM.ToggleShareOptionsCommand}"
                         BackgroundColor="#512BD4"
                         TextColor="White"
                         FontAttributes="Bold"
@@ -167,11 +167,12 @@
                         CornerRadius="8" />
 
                 <!-- Simplified share options -->
-                <HorizontalStackLayout IsVisible="{Binding IsShareOptionsVisible}"
+                <HorizontalStackLayout IsVisible="{Binding ShareVM.IsShareOptionsVisible}"
                                        Spacing="20"
                                        HorizontalOptions="Center">
                     <ImageButton Source="x.png"
-                                 Command="{Binding AuthenticateWithXCommand}"
+                                 Command="{Binding ShareVM.ShareToTwitterCommand}"
+                                 CommandParameter="{Binding}"
                                  BackgroundColor="Transparent"
                                  WidthRequest="64"
                                  HeightRequest="64"

@@ -4,7 +4,6 @@ using FoutloosTypen.Core.Interfaces.Services;
 using System.ComponentModel;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.Input;
-using FoutloosTypen.Core.Services;
 
 namespace FoutloosTypen.ViewModels
 {
@@ -15,7 +14,6 @@ namespace FoutloosTypen.ViewModels
         private readonly ILessonService _lessonService;
         private readonly IPracticeMaterialService _practiceMaterialService;
         private readonly ITimerService _timerService;
-        private readonly ISocialShareService _socialShareService;
 
         private const double TIMER_DURATION = 60; // 60 seconden per opdracht
 
@@ -25,6 +23,9 @@ namespace FoutloosTypen.ViewModels
         private List<PracticeMaterial> _materials = new();
         private int _materialIndex = 0;
         private int _currentAssignmentIndex = 0;
+
+        // Share functionality delegated to ShareViewModel
+        public ShareViewModel ShareVM { get; }
 
         private int _lessonId;
         public int LessonId 
@@ -162,41 +163,18 @@ namespace FoutloosTypen.ViewModels
 
         public ITimerService Timer => _timerService;
 
-        private bool _isShareOptionsVisible;
-        public bool IsShareOptionsVisible
-        {
-            get => _isShareOptionsVisible;
-            set
-            {
-                _isShareOptionsVisible = value;
-                ShowShareButton = !value;
-                OnPropertyChanged(nameof(IsShareOptionsVisible));
-            }
-        }
-
-        private bool _showShareButton = true;
-        public bool ShowShareButton
-        {
-            get => _showShareButton;
-            private set
-            {
-                _showShareButton = value;
-                OnPropertyChanged(nameof(ShowShareButton));
-            }
-        }
-
         public AssignmentViewModel(
             ILessonService lessonService,
             IAssignmentService assignmentService,
             IPracticeMaterialService practiceMaterialService,
             ITimerService timerService,
-            ISocialShareService socialShareService)
+            ShareViewModel shareViewModel)
         {
             _lessonService = lessonService;
             _assignmentService = assignmentService;
             _practiceMaterialService = practiceMaterialService;
             _timerService = timerService;
-            _socialShareService = socialShareService;
+            ShareVM = shareViewModel;
 
             FormattedText = new FormattedString();
         }
@@ -299,7 +277,7 @@ namespace FoutloosTypen.ViewModels
             OnPropertyChanged(nameof(AssignmentProgress));
             OnPropertyChanged(nameof(ProgressText));
 
-            RestartTimer();
+            _timerService.Restart();
             SelectedAssignment = Assignments[_currentAssignmentIndex];
             Debug.WriteLine($"Moved to assignment {_currentAssignmentIndex + 1}/{Assignments.Count}");
         }
@@ -439,88 +417,13 @@ namespace FoutloosTypen.ViewModels
             if (Assignments.Any())
                 SelectedAssignment = Assignments.First();
                 
-            RestartTimer();
+            _timerService.Restart();
         }
 
         [RelayCommand]
         private void StopTimer()
         {
             _timerService.Stop();
-            // SRP: No sharing triggered here. Share actions are handled by dedicated commands below.
-        }
-
-        [RelayCommand]
-        private void Share()
-        {
-            // Toggle the visibility of the icon options
-            IsShareOptionsVisible = !IsShareOptionsVisible;
-        }
-
-        [RelayCommand]
-        private async void ShareToTwitter()
-        {
-            var lessonName = SelectedLesson?.Name ?? "Onbekende les";
-            var text = $"{lessonName} - {ProgressText}";
-            var url = $"https://x.com/intent/tweet?text={Uri.EscapeDataString(text)}";
-
-            await Launcher.TryOpenAsync(new Uri(url));
-            IsShareOptionsVisible = false;
-        }
-
-        [RelayCommand]
-        private async void DownloadImage()
-        {
-            var lessonName = SelectedLesson?.Name ?? "Onbekende les";
-
-            // Provide a fallback or inform the user that this feature is not available.
-            await Application.Current?.MainPage?.DisplayAlert(
-                "Niet beschikbaar",
-                "Afbeelding opslaan is momenteel niet beschikbaar.",
-                "OK");
-
-            IsShareOptionsVisible = false;
-        }
-
-        [RelayCommand]
-        private void RestartTimer()
-        {
-            _timerService.Restart();
-        }
-
-        [RelayCommand]
-        private void Refresh()
-        {
-            ResetTyping();
-            RestartTimer();
-        }
-
-        [RelayCommand]
-        private async void AuthenticateWithX()
-        {
-            // Use the available ShareToXWithConfirmationAsync method instead
-            var lessonName = SelectedLesson?.Name ?? "Onbekende les";
-            var success = await _socialShareService.ShareToXWithConfirmationAsync(lessonName, ProgressText);
-            if (!success)
-            {
-                await Application.Current?.MainPage?.DisplayAlert("Authenticatie", "Inloggen bij X mislukt.", "OK");
-            }
-            else
-            {
-                await Application.Current?.MainPage?.DisplayAlert("Authenticatie", "Succesvol ingelogd bij X.", "OK");
-            }
-            IsShareOptionsVisible = false;
-        }
-
-        protected void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        ~AssignmentViewModel()
-        {
-            StopTimer();
         }
     }
 }

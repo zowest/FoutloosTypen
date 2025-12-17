@@ -6,7 +6,6 @@ using FoutloosTypen.Core.Services;
 using FoutloosTypen.ViewModels;
 using FoutloosTypen.Views;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging;
 using Microsoft.Maui.LifecycleEvents;
 using System.Diagnostics;
 using CommunityToolkit.Maui;
@@ -15,8 +14,6 @@ using Microsoft.Extensions.Configuration;
 using System.IO;
 using System.Text.Json;
 using Microsoft.Maui.Storage;
-using FoutloosTypen.Core;
-using SkiaSharp.Views.Maui.Controls.Hosting;
 
 #if WINDOWS
 using Windows.System;
@@ -36,7 +33,6 @@ namespace FoutloosTypen
             builder
                 .UseMauiApp<App>()
                 .UseMauiCommunityToolkit()
-                .UseSkiaSharp()
                 .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -49,6 +45,8 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IAssignmentRepository, AssignmentRepository>();
             builder.Services.AddSingleton<IPracticeMaterialRepository, PracticeMaterialRepository>();
             builder.Services.AddSingleton<IStudentRepository, StudentRepository>();
+            builder.Services.AddSingleton<ISharePostRepository, SharePostRepository>();
+            builder.Services.AddSingleton<IMediaUploadRepository, MediaUploadRepository>();
 
             // XAuth repository
             builder.Services.AddSingleton<IXAuthRepository, XAuthRepository>();
@@ -56,7 +54,7 @@ namespace FoutloosTypen
             // Image repository
             builder.Services.AddSingleton<IImageRepository, ImageRepository>();
 
-            // Services
+            // Domain Services
             builder.Services.AddSingleton<ILessonService, LessonService>();
             builder.Services.AddSingleton<ICourseService, CourseService>();
             builder.Services.AddSingleton<IAssignmentService, AssignmentService>();
@@ -65,20 +63,17 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IStudentService, StudentService>();
             builder.Services.AddSingleton<ITimerService, TimerService>();
             builder.Services.AddSingleton<IXAuthService, XAuthService>();
-            builder.Services.AddSingleton<IXMediaUploadService,MediaUploadService>();
-
-            builder.Services.AddSingleton<IShareUiService,ShareUiService>();
-            builder.Services.AddSingleton<IShareImageService,ShareImageService>();
-            builder.Services.AddSingleton<ISocialShareService,SocialShareService>();
+            builder.Services.AddSingleton<IShareImageService, ShareImageService>();
 
             // Use XAuthRepository to provide XAuthSettings in DI
-            builder.Services.AddSingleton<FoutloosTypen.Core.XAuthSettings>(provider => provider.GetRequiredService<IXAuthRepository>().GetSettings());
+            builder.Services.AddSingleton<FoutloosTypen.Core.Models.XAuthSettings>(provider => provider.GetRequiredService<IXAuthRepository>().GetSettings());
 
-            // ViewModels
+            // ViewModels & Views
             builder.Services.AddTransient<LessonViewModel>();
             builder.Services.AddTransient<CoursesViewModel>();
             builder.Services.AddTransient<LearnpathViewModel>();
             builder.Services.AddTransient<LessonView>();
+            builder.Services.AddSingleton<ShareViewModel>();
             builder.Services.AddTransient<AssignmentViewModel>();
             builder.Services.AddTransient<AssignmentView>();
             builder.Services.AddSingleton<GlobalViewModel>();
@@ -134,7 +129,7 @@ namespace FoutloosTypen
             // Debug: log loaded XAuthSettings to confirm values at startup
             try
             {
-                var settings = app.Services.GetRequiredService<FoutloosTypen.Core.XAuthSettings>();
+                var settings = app.Services.GetRequiredService<FoutloosTypen.Core.Models.XAuthSettings>();
                 Debug.WriteLine($"Startup: XAuthSettings.ClientId set: {!string.IsNullOrEmpty(settings.ClientId)}");
                 Debug.WriteLine($"Startup: XAuthSettings.RedirectUri set: {!string.IsNullOrEmpty(settings.RedirectUri)}");
                 Debug.WriteLine($"Startup: XAuthSettings.Scopes count: {settings.Scopes?.Length ?? 0}");
@@ -146,6 +141,5 @@ namespace FoutloosTypen
 
             return app;
         }
-
     }
 }

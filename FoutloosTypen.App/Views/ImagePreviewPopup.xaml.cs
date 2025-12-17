@@ -1,48 +1,54 @@
 using System;
 using System.IO;
+using System.ComponentModel;
 using CommunityToolkit.Maui.Views;
 using Microsoft.Maui.Controls;
+using FoutloosTypen.ViewModels;
 
 namespace FoutloosTypen.Views
 {
     public partial class ImagePreviewPopup : Popup
     {
-        private readonly string _imagePath;
-        private readonly string _tweetText;
+        private readonly SharePreviewViewModel _viewModel;
 
-        public ImagePreviewPopup(string imagePath, string tweetText)
+        public ImagePreviewPopup(SharePreviewViewModel viewModel)
         {
-            _imagePath = imagePath ?? throw new ArgumentNullException(nameof(imagePath));
-            _tweetText = tweetText ?? string.Empty;
-
+            _viewModel = viewModel;
             InitializeComponent();
 
-            // Wire up UI events
+            BindingContext = _viewModel;
+            _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+
             CancelButton.Clicked += OnCancelClicked;
             ShareButton.Clicked += OnShareClicked;
 
-            TweetLabel.Text = _tweetText;
+            TweetLabel.Text = _viewModel.TweetText;
 
-            try
+            if (_viewModel.ImageBytes != null && _viewModel.ImageBytes.Length > 0)
             {
-                if (File.Exists(_imagePath))
-                {
-                    PreviewImage.Source = ImageSource.FromFile(_imagePath);
-                }
+                PreviewImage.Source = ImageSource.FromStream(() => new MemoryStream(_viewModel.ImageBytes));
             }
-            catch
+        }
+
+        private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(SharePreviewViewModel.IsSharing))
             {
-                // ignore image load failures
+                CancelButton.IsEnabled = !_viewModel.IsSharing;
+                ShareButton.IsEnabled = !_viewModel.IsSharing;
             }
         }
 
         private void OnCancelClicked(object? sender, EventArgs e)
         {
+            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
             Close(false);
         }
-
-        private void OnShareClicked(object? sender, EventArgs e)
+        
+        private async void OnShareClicked(object? sender, EventArgs e)
         {
+            await _viewModel.ShareCommand.ExecuteAsync(null);
+            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
             Close(true);
         }
     }
