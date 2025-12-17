@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using FoutloosTypen.Core.Models;
 using FoutloosTypen.Core.Interfaces.Repositories;
 using FoutloosTypen.Core.Interfaces.Services;
+using FoutloosTypen.Helpers;
 using Microsoft.Maui.ApplicationModel;
 using SkiaSharp;
 
@@ -18,7 +19,6 @@ namespace FoutloosTypen.ViewModels
         private readonly IXAuthRepository _xAuthRepository;
         private readonly IShareImageRepository _shareImageRepository;
         private readonly XAuthSettings _xSettings;
-        private readonly IShareImageService _shareImageService;
 
         [ObservableProperty]
         private bool _isShareOptionsVisible;
@@ -31,15 +31,13 @@ namespace FoutloosTypen.ViewModels
             IMediaUploadRepository mediaUploadRepository,
             IXAuthRepository xAuthRepository,
             IShareImageRepository shareImageRepository,
-            XAuthSettings xSettings,
-            IShareImageService shareImageService)
+            XAuthSettings xSettings)
         {
             _xAuthService = xAuthService;
             _mediaUploadRepository = mediaUploadRepository;
             _xAuthRepository = xAuthRepository;
             _shareImageRepository = shareImageRepository;
             _xSettings = xSettings;
-            _shareImageService = shareImageService;
         }
 
         [RelayCommand]
@@ -111,7 +109,7 @@ namespace FoutloosTypen.ViewModels
             var progressText = assignmentVM.ProgressText;
             var lessonId = assignmentVM.SelectedLesson?.Id ?? 0;
 
-            var text = _shareImageService.BuildTweetText(lessonName, progressText);
+            var text = ShareImageGenerator.BuildTweetText(lessonName, progressText);
             
             // Load logo stream from app package
             System.IO.Stream? logoStream = null;
@@ -129,12 +127,12 @@ namespace FoutloosTypen.ViewModels
             {
                 using (logoStream)
                 {
-                    bitmap = _shareImageService.Generate(lessonName, progressText, logoStream);
+                    bitmap = ShareImageGenerator.Generate(lessonName, progressText, logoStream);
                 }
             }
             else
             {
-                bitmap = _shareImageService.Generate(lessonName, progressText);
+                bitmap = ShareImageGenerator.Generate(lessonName, progressText);
             }
 
             var sharePreviewViewModel = new SharePreviewViewModel(

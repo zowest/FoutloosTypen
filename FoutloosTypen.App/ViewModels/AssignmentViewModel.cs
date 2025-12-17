@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using FoutloosTypen.Core.Models;
 using FoutloosTypen.Core.Interfaces.Services;
+using FoutloosTypen.Core.Interfaces.Repositories;
 using System.ComponentModel;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.Input;
@@ -17,6 +18,11 @@ namespace FoutloosTypen.ViewModels
         private readonly ITimerService _timerService;
         private readonly ITypingComparisonService _typingComparisonService;
         private readonly IResultService _ResultService;
+        private readonly IXAuthService _xAuthService;
+        private readonly IMediaUploadRepository _mediaUploadRepository;
+        private readonly IXAuthRepository _xAuthRepository;
+        private readonly IShareImageRepository _shareImageRepository;
+        private readonly XAuthSettings _xSettings;
 
         private const double TIMER_DURATION = 60; // 60 seconden per opdracht
 
@@ -172,7 +178,12 @@ namespace FoutloosTypen.ViewModels
             ITimerService timerService,
             ShareViewModel shareViewModel,
             ITypingComparisonService typingComparisonService,
-            IResultService ResultService)
+            IResultService ResultService,
+            IXAuthService xAuthService,
+            IMediaUploadRepository mediaUploadRepository,
+            IXAuthRepository xAuthRepository,
+            IShareImageRepository shareImageRepository,
+            XAuthSettings xSettings)
         {
             _lessonService = lessonService;
             _assignmentService = assignmentService;
@@ -182,6 +193,11 @@ namespace FoutloosTypen.ViewModels
             _typingComparisonService = typingComparisonService;
 
             _ResultService = ResultService;
+            _xAuthService = xAuthService;
+            _mediaUploadRepository = mediaUploadRepository;
+            _xAuthRepository = xAuthRepository;
+            _shareImageRepository = shareImageRepository;
+            _xSettings = xSettings;
 
             // Subscribe to timer expired event
             _timerService.TimerExpired += OnTimerExpired;
@@ -216,8 +232,16 @@ namespace FoutloosTypen.ViewModels
             if (progress == null)
                 return;
 
-            // Show custom popup with progress data
-            var popup = new ResultatenPopUp(progress);
+            // Show custom popup with progress data and share functionality
+            var popup = new ResultatenPopUp(
+                progress,
+                SelectedLesson.Name,
+                _xAuthService,
+                _mediaUploadRepository,
+                _xAuthRepository,
+                _shareImageRepository,
+                _xSettings);
+            
             await Application.Current.MainPage.Navigation.PushModalAsync(popup);
             
             // Wait for user response
@@ -314,6 +338,13 @@ namespace FoutloosTypen.ViewModels
                 .Where(pm => pm.AssignmentId == SelectedAssignment.Id)
                 .ToList();
 
+            // TIJDELIJKE FIX: Voor les 1, toon slechts 1 zin
+            if (SelectedLesson?.Id == 1 && _materials.Any())
+            {
+                _materials = _materials.Take(1).ToList();
+                Debug.WriteLine($"[TEMP FIX] Limiting lesson 1 to 1 sentence only");
+            }
+
             _materialIndex = 0;
 
             if (_materials.Any())
@@ -322,33 +353,7 @@ namespace FoutloosTypen.ViewModels
                 CurrentMaterial = new PracticeMaterial { Sentence = "Geen zinnen gevonden." };
         }
 
-        private async void MoveToNextAssignment()
-        {
-            _currentAssignmentIndex++;
-            OnPropertyChanged(nameof(AssignmentProgress));
-            OnPropertyChanged(nameof(ProgressText));
-
-            if (_currentAssignmentIndex >= Assignments.Count)
-            {
-                // All assignments completed - Show results popup
-                Debug.WriteLine("All assignments completed! Showing results...");
-                
-                if (SelectedLesson != null)
-                {
-                    _ResultService.EndLesson(SelectedLesson.Id);
-                }
-                
-                ShowLessonResults();
-                return;
-            }
-
-            // Reset timer for next assignment
-            RestartTimer();
-            
-            // Move to next assignment
-            SelectedAssignment = Assignments[_currentAssignmentIndex];
-            Debug.WriteLine($"Moved to assignment {_currentAssignmentIndex + 1}/{Assignments.Count}");
-        }
+ 
 
         private void MoveToNextMaterial()
         {
@@ -357,6 +362,18 @@ namespace FoutloosTypen.ViewModels
 
             _materialIndex++;
 
+            // TIJDELIJKE TEST: Stop na 1 zin
+            Debug.WriteLine("[TEMP TEST] Forcing lesson end after first material/sentence");
+
+            if (SelectedLesson != null)
+            {
+                _ResultService.EndLesson(SelectedLesson.Id);
+            }
+
+            ShowLessonResults();
+            return;
+
+            /* Originele code:
             if (_materialIndex < _materials.Count)
             {
                 CurrentMaterial = _materials[_materialIndex];
@@ -364,10 +381,10 @@ namespace FoutloosTypen.ViewModels
             }
             else
             {
-                // All materials in current assignment completed, move to next assignment
                 Debug.WriteLine("All materials completed in this assignment");
                 MoveToNextAssignment();
             }
+            */
         }
 
         /// <summary>
@@ -403,7 +420,15 @@ namespace FoutloosTypen.ViewModels
             if (Application.Current?.MainPage != null && SelectedLesson != null)
             {
                 var progress = _ResultService.GetProgress(SelectedLesson.Id);
-                var popup = new Views.ResultatenPopUp(progress);
+                var popup = new ResultatenPopUp(
+                    progress,
+                    SelectedLesson.Name,
+                    _xAuthService,
+                    _mediaUploadRepository,
+                    _xAuthRepository,
+                    _shareImageRepository,
+                    _xSettings);
+                
                 await Application.Current.MainPage.Navigation.PushModalAsync(popup);
 
                 // Wacht tot de gebruiker op de knop klikt
