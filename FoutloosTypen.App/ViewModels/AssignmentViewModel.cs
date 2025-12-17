@@ -267,37 +267,18 @@ namespace FoutloosTypen.ViewModels
 
         private async void MoveToNextAssignment()
         {
+            // If current is the last assignment, do not advance or change the displayed count
+            if (_currentAssignmentIndex + 1 >= Assignments.Count)
+            {
+                Debug.WriteLine("All assignments completed. Staying on the last assignment and not incrementing count.");
+                OnPropertyChanged(nameof(AssignmentProgress));
+                OnPropertyChanged(nameof(ProgressText));
+                return;
+            }
+
             _currentAssignmentIndex++;
             OnPropertyChanged(nameof(AssignmentProgress));
             OnPropertyChanged(nameof(ProgressText));
-
-            if (_currentAssignmentIndex >= Assignments.Count)
-            {
-                // All assignments completed
-                Debug.WriteLine("All assignments completed!");
-                
-                await MainThread.InvokeOnMainThreadAsync(async () =>
-                {
-                    if (Application.Current?.MainPage != null)
-                    {
-                        var result = await Application.Current.MainPage.DisplayAlert(
-                            "Gefeliciteerd!",
-                            "Je hebt alle opdrachten voltooid!",
-                            "Ga verder",
-                            "Herstart");
-
-                        if (result)
-                        {
-                            await Shell.Current.GoToAsync("..");
-                        }
-                        else
-                        {
-                            RestartLesson();
-                        }
-                    }
-                });
-                return;
-            }
 
             // Reset timer for next assignment
             RestartTimer();
