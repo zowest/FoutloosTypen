@@ -66,6 +66,7 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<ITypingComparisonService, TypingComparisonService>();
           
             builder.Services.AddSingleton<IResultService, ResultService>();
+            builder.Services.AddSingleton<IAudioAssignmentService, AudioAssignmentService>();
 
             // Use XAuthRepository to provide XAuthSettings in DI
             builder.Services.AddSingleton<FoutloosTypen.Core.Models.XAuthSettings>(provider => provider.GetRequiredService<IXAuthRepository>().GetSettings());
