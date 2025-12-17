@@ -15,7 +15,7 @@ namespace FoutloosTypen.Core.Models
         public double AvgSpeed { get; set; }
         public double AvgPrecision { get; set; }
 
-        public Student(int id, string username,  string name, string password, int level)
+        public Student(int id, string username,  string name, string password, int level, double avgSpeed, double avgPrecision)
             : base(id)
         {
             Username = username;

@@ -53,6 +53,7 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.8" />
 		<PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="3.119.2-preview.1" />
 		<PackageReference Include="SkiaSharp" Version="3.119.2-preview.1" />
+		<PackageReference Include="MySqlConnector" Version="2.5.0" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -68,6 +69,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Update="Views\ProfileView.xaml.cs">
+	    <DependentUpon>ProfileView.xaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="Views\ResultatenPopUp.xaml.cs">
+	    <DependentUpon>ResultatenPopUp.xaml</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
 		<MauiXaml Update="AppShell.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
@@ -75,6 +85,10 @@
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 		<MauiXaml Update="Views\ImagePreviewPopup.xaml">
+		<MauiXaml Update="Views\ProfileView.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Views\ResultatenPopUp.xaml">
 		  <Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 	</ItemGroup>

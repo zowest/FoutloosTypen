@@ -63,6 +63,8 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IXAuthService, XAuthService>();
             builder.Services.AddSingleton<IShareImageService, ShareImageService>();
             builder.Services.AddSingleton<ITypingComparisonService, TypingComparisonService>();
+          
+            builder.Services.AddSingleton<IResultService, ResultService>();
 
             // Use XAuthRepository to provide XAuthSettings in DI
             builder.Services.AddSingleton<FoutloosTypen.Core.Models.XAuthSettings>(provider => provider.GetRequiredService<IXAuthRepository>().GetSettings());
@@ -77,6 +79,7 @@ namespace FoutloosTypen
             builder.Services.AddTransient<AssignmentView>();
             builder.Services.AddSingleton<GlobalViewModel>();
             builder.Services.AddTransient<LoginView>().AddTransient<LoginViewModel>();
+            builder.Services.AddTransient<ProfileView>().AddTransient<ProfileViewModel>();
 #if WINDOWS
             builder.ConfigureLifecycleEvents(events =>
             {

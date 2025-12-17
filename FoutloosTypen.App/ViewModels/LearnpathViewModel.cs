@@ -1,8 +1,10 @@
 ﻿using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.Input;
+using FoutloosTypen.Views;
 
 namespace FoutloosTypen.ViewModels
 {
-    public class LearnpathViewModel : BaseViewModel
+    public partial class LearnpathViewModel : BaseViewModel
     {
         public CoursesViewModel CoursesVM { get; }
         public LessonViewModel LessonsVM { get; }
@@ -21,6 +23,12 @@ namespace FoutloosTypen.ViewModels
         public async Task OnAppearingAsync()
         {
             await CoursesVM.LoadCoursesAsync();
+        }
+
+        [RelayCommand]
+        private async Task Profile()
+        {
+            await Shell.Current.GoToAsync(nameof(ProfileView));
         }
     }
 }
