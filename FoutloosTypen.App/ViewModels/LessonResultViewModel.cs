@@ -79,6 +79,9 @@ namespace FoutloosTypen.ViewModels
 
         public bool CanShare => _xAuthService != null;
 
+        // Method to get the result for download functionality
+        public Result GetResult() => _progress;
+
         [RelayCommand]
         private async Task ShareToTwitter()
         {

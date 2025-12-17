@@ -5,23 +5,39 @@ namespace FoutloosTypen.Helpers
 {
     public static class ShareImageGenerator
     {
+        // Color scheme
+        private static readonly SKColor PrimaryYellow = SKColor.Parse("#FFD700");
+        private static readonly SKColor LightYellow = SKColor.Parse("#FFF8DC");
+        private static readonly SKColor DarkGray = SKColor.Parse("#333333");
+        private static readonly SKColor MediumGray = SKColor.Parse("#666666");
+        private static readonly SKColor CardWhite = SKColors.White;
+        private static readonly SKColor AccentBlue = SKColor.Parse("#4A90E2");
+
         public static string BuildTweetText(string lessonName, string progressText)
-            => $"{lessonName} - {progressText} #FoutloosTypen";
+            => $"{lessonName} - {progressText} #BolType";
 
         public static SKBitmap Generate(string lessonName, string progressText, System.IO.Stream? logoStream = null)
         {
             var bitmap = new SKBitmap(1080, 1080);
             using var canvas = new SKCanvas(bitmap);
 
-            DrawBackground(canvas, bitmap);
-            DrawBorder(canvas, bitmap);
+            // Transparent background for PNG
+            canvas.Clear(SKColors.Transparent);
+
+            // Yellow header wave/blob
+            DrawYellowHeader(canvas, bitmap.Width);
 
             float margin = 60f;
-            float currentY = margin;
+            float currentY = margin + 40;
 
-            currentY = DrawHeader(canvas, bitmap, margin, currentY, logoStream);
-            currentY = DrawLessonSection(canvas, bitmap, margin, currentY, lessonName, progressText);
-            DrawFooter(canvas, bitmap, margin);
+            // Logo and title
+            currentY = DrawBranding(canvas, margin, currentY, logoStream);
+
+            // Main content card
+            currentY = DrawProgressCard(canvas, bitmap.Width, margin, currentY, lessonName, progressText);
+
+            // Footer
+            DrawFooter(canvas, bitmap.Width, bitmap.Height, margin);
 
             return bitmap;
         }
@@ -31,54 +47,69 @@ namespace FoutloosTypen.Helpers
             var bitmap = new SKBitmap(1080, 1080);
             using var canvas = new SKCanvas(bitmap);
 
-            DrawBackground(canvas, bitmap);
-            DrawBorder(canvas, bitmap);
+            // Transparent background for PNG
+            canvas.Clear(SKColors.Transparent);
+
+            // Yellow header wave blobs
+            DrawYellowHeader(canvas, bitmap.Width);
 
             float margin = 60f;
-            float currentY = margin;
+            float currentY = margin + 40;
 
-            currentY = DrawHeader(canvas, bitmap, margin, currentY, logoStream);
-            currentY = DrawResultSection(canvas, bitmap, margin, currentY, lessonName, result);
-            DrawFooter(canvas, bitmap, margin);
+            // Logo and title
+            currentY = DrawBranding(canvas, margin, currentY, logoStream);
+
+            // Main content card with results
+            currentY = DrawResultsCard(canvas, bitmap.Width, margin, currentY, lessonName, result);
+
+            // Footer
+            DrawFooter(canvas, bitmap.Width, bitmap.Height, margin);
 
             return bitmap;
         }
 
-        private static void DrawBackground(SKCanvas canvas, SKBitmap bitmap)
+        private static void DrawYellowHeader(SKCanvas canvas, int width)
         {
-            using var gradientPaint = new SKPaint();
-            gradientPaint.Shader = SKShader.CreateLinearGradient(
-                new SKPoint(0, 0),
-                new SKPoint(0, bitmap.Height),
-                new[] { SKColors.White, SKColor.Parse("#FFD700") },
-                new[] { 0f, 1f },
-                SKShaderTileMode.Clamp);
-            canvas.DrawRect(0, 0, bitmap.Width, bitmap.Height, gradientPaint);
-        }
+            using var path = new SKPath();
+            
+            // Create a smooth wave/blob shape at the top
+            path.MoveTo(0, 0);
+            path.LineTo(width, 0);
+            path.LineTo(width, 280);
+            
+            // Smooth curve at bottom of yellow section
+            path.CubicTo(
+                width * 0.75f, 320,
+                width * 0.25f, 240,
+                0, 280
+            );
+            path.Close();
 
-        private static void DrawBorder(SKCanvas canvas, SKBitmap bitmap)
-        {
-            using var borderPaint = new SKPaint
+            using var paint = new SKPaint
             {
-                Style = SKPaintStyle.Stroke,
-                Color = SKColor.Parse("#4A90E2"),
-                StrokeWidth = 8,
-                IsAntialias = true
-            };
-            canvas.DrawRect(15, 15, bitmap.Width - 30, bitmap.Height - 30, borderPaint);
-        }
-
-        private static float DrawHeader(SKCanvas canvas, SKBitmap bitmap, float margin, float currentY, System.IO.Stream? logoStream)
-        {
-            using var headerPaint = new SKPaint
-            {
-                Color = SKColors.Black,
-                TextSize = 64,
+                Color = PrimaryYellow,
                 IsAntialias = true,
-                Typeface = SKTypeface.FromFamilyName("Arial", SKFontStyle.Bold)
+                Style = SKPaintStyle.Fill
             };
+            canvas.DrawPath(path, paint);
+        }
 
-            // Load and draw the actual logo if stream is provided
+        private static float DrawBranding(SKCanvas canvas, float margin, float currentY, System.IO.Stream? logoStream)
+        {
+            // Logo in circle
+            float logoSize = 100;
+            float logoX = margin;
+            float logoY = currentY;
+            
+            // Circle background for logo
+            using var circlePaint = new SKPaint
+            {
+                Color = CardWhite,
+                IsAntialias = true,
+                Style = SKPaintStyle.Fill
+            };
+            canvas.DrawCircle(logoX + logoSize/2, logoY + logoSize/2, logoSize/2, circlePaint);
+
             SKBitmap? logoImage = null;
             if (logoStream != null)
             {
@@ -86,176 +117,337 @@ namespace FoutloosTypen.Helpers
                 {
                     logoImage = SKBitmap.Decode(logoStream);
                 }
-                catch
-                {
-                    // Will use fallback
-                }
+                catch { }
             }
 
             if (logoImage != null)
             {
                 using (logoImage)
                 {
-                    var destRect = new SKRect(margin, currentY, margin + 80, currentY + 80);
+                    // Draw logo inside circle (80% of circle size for better visibility)
+                    float innerSize = logoSize * 0.8f;
+                    float offset = (logoSize - innerSize) / 2;
+                    var destRect = new SKRect(
+                        logoX + offset, 
+                        logoY + offset, 
+                        logoX + offset + innerSize, 
+                        logoY + offset + innerSize);
                     canvas.DrawBitmap(logoImage, destRect, new SKPaint { IsAntialias = true, FilterQuality = SKFilterQuality.High });
                 }
             }
             else
             {
-                using var logoBackPaint = new SKPaint { Color = SKColor.Parse("#FFD700"), IsAntialias = true };
-                canvas.DrawRoundRect(margin, currentY, 80, 80, 8, 8, logoBackPaint);
-                
+                // Fallback "FT" text in circle
                 using var logoTextPaint = new SKPaint
                 {
-                    Color = SKColors.Black,
-                    TextSize = 36,
+                    Color = PrimaryYellow,
+                    TextSize = 40,
                     IsAntialias = true,
                     Typeface = SKTypeface.FromFamilyName("Arial", SKFontStyle.Bold),
                     TextAlign = SKTextAlign.Center
                 };
-                canvas.DrawText("FT", margin + 40, currentY + 52, logoTextPaint);
+                canvas.DrawText("FT", logoX + logoSize/2, logoY + logoSize/2 + 14, logoTextPaint);
             }
 
-            canvas.DrawText("Boltype", margin + 100, currentY + 60, headerPaint);
-
-            using var datePaint = new SKPaint
+            // Circle border
+            using var circleBorderPaint = new SKPaint
             {
-                Color = SKColors.Black,
+                Color = CardWhite,
+                IsAntialias = true,
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 3
+            };
+            canvas.DrawCircle(logoX + logoSize/2, logoY + logoSize/2, logoSize/2 - 1.5f, circleBorderPaint);
+
+            // BolType title next to circle
+            using var titlePaint = new SKPaint
+            {
+                Color = CardWhite,
+                TextSize = 56,
+                IsAntialias = true,
+                Typeface = SKTypeface.FromFamilyName("Arial", SKFontStyle.Bold)
+            };
+            canvas.DrawText("BolType", logoX + logoSize + 20, logoY + logoSize/2 + 18, titlePaint);
+
+            return currentY + logoSize + 40;
+        }
+
+        private static float DrawProgressCard(SKCanvas canvas, int width, float margin, float currentY, string lessonName, string progressText)
+        {
+            float cardWidth = width - (margin * 2);
+            float cardHeight = 480;
+            float cardX = margin;
+            float cardY = currentY;
+
+            // Card shadow
+            using var shadowPaint = new SKPaint
+            {
+                Color = SKColor.Parse("#20000000"),
+                IsAntialias = true,
+                MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 12)
+            };
+            canvas.DrawRoundRect(cardX + 8, cardY + 8, cardWidth, cardHeight, 20, 20, shadowPaint);
+
+            // Card background
+            using var cardPaint = new SKPaint
+            {
+                Color = CardWhite,
+                IsAntialias = true,
+                Style = SKPaintStyle.Fill
+            };
+            canvas.DrawRoundRect(cardX, cardY, cardWidth, cardHeight, 20, 20, cardPaint);
+
+            // Card border
+            using var borderPaint = new SKPaint
+            {
+                Color = LightYellow,
+                IsAntialias = true,
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 3
+            };
+            canvas.DrawRoundRect(cardX, cardY, cardWidth, cardHeight, 20, 20, borderPaint);
+
+            float contentY = cardY + 60;
+
+            // "Les" label
+            using var labelPaint = new SKPaint
+            {
+                Color = MediumGray,
                 TextSize = 32,
                 IsAntialias = true,
-                TextAlign = SKTextAlign.Right
+                Typeface = SKTypeface.FromFamilyName("Arial", SKFontStyle.Normal)
             };
-            var datum = System.DateTime.Now.ToString("dd/MM/yyyy");
-            canvas.DrawText(datum, bitmap.Width - margin, currentY + 60, datePaint);
+            canvas.DrawText("Les", cardX + 40, contentY, labelPaint);
+            contentY += 60;
 
-            return currentY + 150;
-        }
-
-        private static float DrawLessonSection(SKCanvas canvas, SKBitmap bitmap, float margin, float currentY, string lessonName, string progressText)
-        {
-            using var titlePaint = new SKPaint
+            // Lesson name
+            using var lessonNamePaint = new SKPaint
             {
-                Color = SKColors.Black,
-                TextSize = 96,
+                Color = DarkGray,
+                TextSize = 48,
                 IsAntialias = true,
                 Typeface = SKTypeface.FromFamilyName("Arial", SKFontStyle.Bold)
             };
-            canvas.DrawText("Les", margin, currentY, titlePaint);
-            currentY += 80;
+            canvas.DrawText(lessonName, cardX + 40, contentY, lessonNamePaint);
+            contentY += 80;
 
-            using var linePaint = new SKPaint
+            // Divider line
+            using var dividerPaint = new SKPaint
             {
-                Color = SKColor.Parse("#4A90E2"),
-                StrokeWidth = 3,
+                Color = LightYellow,
+                StrokeWidth = 2,
                 IsAntialias = true
             };
-            canvas.DrawLine(margin, currentY, bitmap.Width - margin, currentY, linePaint);
-            currentY += 60;
+            canvas.DrawLine(cardX + 40, contentY, cardX + cardWidth - 40, contentY, dividerPaint);
+            contentY += 60;
 
-            using var lessonPaint = new SKPaint
-            {
-                Color = SKColors.Black,
-                TextSize = 52,
-                IsAntialias = true,
-                Typeface = SKTypeface.FromFamilyName("Arial", SKFontStyle.Bold)
-            };
-            canvas.DrawText(lessonName, margin, currentY, lessonPaint);
-            currentY += 80;
-
+            // Progress text
             using var progressPaint = new SKPaint
             {
-                Color = SKColor.Parse("#333333"),
-                TextSize = 44,
-                IsAntialias = true
+                Color = AccentBlue,
+                TextSize = 40,
+                IsAntialias = true,
+                Typeface = SKTypeface.FromFamilyName("Arial", SKFontStyle.Bold)
             };
-            canvas.DrawText(progressText, margin, currentY, progressPaint);
+            canvas.DrawText(progressText, cardX + 40, contentY, progressPaint);
 
-            return currentY;
+            // Date badge (top-right corner of card)
+            DrawDateBadge(canvas, cardX + cardWidth - 160, cardY + 30);
+
+            return cardY + cardHeight + 40;
         }
 
-        private static float DrawResultSection(SKCanvas canvas, SKBitmap bitmap, float margin, float currentY, string lessonName, Result result)
+        private static float DrawResultsCard(SKCanvas canvas, int width, float margin, float currentY, string lessonName, Result result)
         {
-            using var titlePaint = new SKPaint
+            float cardWidth = width - (margin * 2);
+            float cardHeight = 600;
+            float cardX = margin;
+            float cardY = currentY;
+
+            // Card shadow
+            using var shadowPaint = new SKPaint
             {
-                Color = SKColors.Black,
-                TextSize = 96,
+                Color = SKColor.Parse("#20000000"),
+                IsAntialias = true,
+                MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 12)
+            };
+            canvas.DrawRoundRect(cardX + 8, cardY + 8, cardWidth, cardHeight, 20, 20, shadowPaint);
+
+            // Card background
+            using var cardPaint = new SKPaint
+            {
+                Color = CardWhite,
+                IsAntialias = true,
+                Style = SKPaintStyle.Fill
+            };
+            canvas.DrawRoundRect(cardX, cardY, cardWidth, cardHeight, 20, 20, cardPaint);
+
+            // Card border
+            using var borderPaint = new SKPaint
+            {
+                Color = LightYellow,
+                IsAntialias = true,
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 3
+            };
+            canvas.DrawRoundRect(cardX, cardY, cardWidth, cardHeight, 20, 20, borderPaint);
+
+            float contentY = cardY + 60;
+
+            // "Resultaat" label
+            using var labelPaint = new SKPaint
+            {
+                Color = MediumGray,
+                TextSize = 32,
+                IsAntialias = true,
+                Typeface = SKTypeface.FromFamilyName("Arial", SKFontStyle.Normal)
+            };
+            canvas.DrawText("Resultaat", cardX + 40, contentY, labelPaint);
+            contentY += 60;
+
+            // Lesson name
+            using var lessonNamePaint = new SKPaint
+            {
+                Color = DarkGray,
+                TextSize = 44,
                 IsAntialias = true,
                 Typeface = SKTypeface.FromFamilyName("Arial", SKFontStyle.Bold)
             };
-            canvas.DrawText("Resultaat", margin, currentY, titlePaint);
-            currentY += 80;
+            canvas.DrawText(lessonName, cardX + 40, contentY, lessonNamePaint);
+            contentY += 70;
 
-            using var linePaint = new SKPaint
+            // Score highlight
+            DrawScoreBadge(canvas, cardX + cardWidth - 200, contentY - 40, result.Score);
+
+            // Stats grid
+            contentY = DrawStatsGrid(canvas, cardX, contentY, cardWidth, result);
+
+            // Date badge
+            DrawDateBadge(canvas, cardX + cardWidth - 160, cardY + 30);
+
+            return cardY + cardHeight + 40;
+        }
+
+        private static float DrawStatsGrid(SKCanvas canvas, float cardX, float startY, float cardWidth, Result result)
+        {
+            float currentY = startY;
+            float leftCol = cardX + 40;
+            float rightCol = cardX + cardWidth / 2 + 20;
+            float spacing = 70;
+
+            var stats = new[]
             {
-                Color = SKColor.Parse("#4A90E2"),
-                StrokeWidth = 3,
-                IsAntialias = true
+                ("Nauwkeurigheid", $"{result.AccuracyPercent:F1}%"),
+                ("Woorden/min", $"{result.WordsPerMinute}"),
+                ("Aanslagen/min", $"{result.StrokesPerMinute}"),
+                ("Fouten", $"{result.TotalMistakes}"),
+                ("Zinnen", $"{result.SentencesCompleted}")
             };
-            canvas.DrawLine(margin, currentY, bitmap.Width - margin, currentY, linePaint);
-            currentY += 60;
 
-            using var lessonPaint = new SKPaint
+            using var labelPaint = new SKPaint
             {
-                Color = SKColors.Black,
-                TextSize = 52,
+                Color = MediumGray,
+                TextSize = 32,
+                IsAntialias = true,
+                Typeface = SKTypeface.FromFamilyName("Arial", SKFontStyle.Normal)
+            };
+
+            using var valuePaint = new SKPaint
+            {
+                Color = AccentBlue,
+                TextSize = 36,
                 IsAntialias = true,
                 Typeface = SKTypeface.FromFamilyName("Arial", SKFontStyle.Bold)
             };
-            canvas.DrawText(lessonName, margin, currentY, lessonPaint);
-            currentY += 80;
 
-            using var statLabelPaint = new SKPaint
+            int index = 0;
+            foreach (var (label, value) in stats)
             {
-                Color = SKColor.Parse("#333333"),
-                TextSize = 40,
+                float x = (index % 2 == 0) ? leftCol : rightCol;
+                
+                canvas.DrawText(label, x, currentY, labelPaint);
+                canvas.DrawText(value, x, currentY + 35, valuePaint);
+
+                if (index % 2 == 1)
+                    currentY += spacing;
+                
+                index++;
+            }
+
+            return currentY + 40;
+        }
+
+        private static void DrawScoreBadge(SKCanvas canvas, float x, float y, int score)
+        {
+            float badgeSize = 140;
+
+            // Badge background circle
+            using var badgePaint = new SKPaint
+            {
+                Color = PrimaryYellow,
                 IsAntialias = true,
-                Typeface = SKTypeface.FromFamilyName("Arial", SKFontStyle.Bold)
+                Style = SKPaintStyle.Fill
             };
+            canvas.DrawCircle(x + badgeSize / 2, y + badgeSize / 2, badgeSize / 2, badgePaint);
 
-            using var statValuePaint = new SKPaint
+            // Badge border
+            using var badgeBorderPaint = new SKPaint
             {
-                Color = SKColor.Parse("#4A90E2"),
-                TextSize = 40,
+                Color = CardWhite,
+                IsAntialias = true,
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 4
+            };
+            canvas.DrawCircle(x + badgeSize / 2, y + badgeSize / 2, badgeSize / 2 - 2, badgeBorderPaint);
+
+            // Score text
+            using var scorePaint = new SKPaint
+            {
+                Color = CardWhite,
+                TextSize = 48,
                 IsAntialias = true,
                 Typeface = SKTypeface.FromFamilyName("Arial", SKFontStyle.Bold),
-                TextAlign = SKTextAlign.Right
+                TextAlign = SKTextAlign.Center
             };
-
-            canvas.DrawText("Score:", margin, currentY, statLabelPaint);
-            canvas.DrawText($"{result.Score}", bitmap.Width - margin, currentY, statValuePaint);
-            currentY += 60;
-
-            canvas.DrawText("Nauwkeurigheid:", margin, currentY, statLabelPaint);
-            canvas.DrawText($"{result.AccuracyPercent:F1}%", bitmap.Width - margin, currentY, statValuePaint);
-            currentY += 60;
-
-            canvas.DrawText("Woorden/min:", margin, currentY, statLabelPaint);
-            canvas.DrawText($"{result.WordsPerMinute}", bitmap.Width - margin, currentY, statValuePaint);
-            currentY += 60;
-
-            canvas.DrawText("Aanslagen/min:", margin, currentY, statLabelPaint);
-            canvas.DrawText($"{result.StrokesPerMinute}", bitmap.Width - margin, currentY, statValuePaint);
-            currentY += 60;
-
-            canvas.DrawText("Fouten:", margin, currentY, statLabelPaint);
-            canvas.DrawText($"{result.TotalMistakes}", bitmap.Width - margin, currentY, statValuePaint);
-            currentY += 60;
-
-            canvas.DrawText("Zinnen voltooid:", margin, currentY, statLabelPaint);
-            canvas.DrawText($"{result.SentencesCompleted}", bitmap.Width - margin, currentY, statValuePaint);
-
-            return currentY;
+            canvas.DrawText(score.ToString(), x + badgeSize / 2, y + badgeSize / 2 + 16, scorePaint);
         }
 
-        private static void DrawFooter(SKCanvas canvas, SKBitmap bitmap, float margin)
+        private static void DrawDateBadge(SKCanvas canvas, float x, float y)
+        {
+            var date = System.DateTime.Now.ToString("dd/MM/yyyy");
+            
+            // Badge background
+            using var badgePaint = new SKPaint
+            {
+                Color = LightYellow,
+                IsAntialias = true,
+                Style = SKPaintStyle.Fill
+            };
+            canvas.DrawRoundRect(x, y, 150, 50, 25, 25, badgePaint);
+
+            // Date text
+            using var datePaint = new SKPaint
+            {
+                Color = DarkGray,
+                TextSize = 24,
+                IsAntialias = true,
+                Typeface = SKTypeface.FromFamilyName("Arial", SKFontStyle.Normal),
+                TextAlign = SKTextAlign.Center
+            };
+            canvas.DrawText(date, x + 75, y + 33, datePaint);
+        }
+
+        private static void DrawFooter(SKCanvas canvas, int width, int height, float margin)
         {
             using var footerPaint = new SKPaint
             {
-                Color = SKColor.Parse("#666666"),
+                Color = MediumGray,
                 TextSize = 28,
-                IsAntialias = true
+                IsAntialias = true,
+                Typeface = SKTypeface.FromFamilyName("Arial", SKFontStyle.Normal),
+                TextAlign = SKTextAlign.Center
             };
-            canvas.DrawText("Deel je voortgang! #FoutloosTypen", margin, bitmap.Height - margin + 10, footerPaint);
+            canvas.DrawText("Deel je voortgang! #BolType", width / 2, height - margin + 10, footerPaint);
         }
     }
 }
