@@ -9,6 +9,7 @@ namespace FoutloosTypen.Views;
 public partial class AssignmentView : ContentPage
 {
     private readonly AssignmentViewModel? _vm;
+
     private Button? HoverButton;
 
     public AssignmentView()
@@ -92,9 +93,8 @@ public partial class AssignmentView : ContentPage
 
     private void OnTextChanged(object sender, TextChangedEventArgs e)
     {
-        if (_vm != null && e.NewTextValue != null)
+        if (_vm != null)
         {
-            // Process the text change immediately without waiting for binding
             _vm.UpdateTypedText(e.NewTextValue);
         }
     }
@@ -112,14 +112,5 @@ public partial class AssignmentView : ContentPage
     private void OnEntryUnfocused(object sender, FocusEventArgs e)
     {
         Debug.WriteLine("Entry unfocused");
-        // Automatically refocus to keep capturing keyboard input
-        Task.Run(async () =>
-        {
-            await Task.Delay(50);
-            MainThread.BeginInvokeOnMainThread(() =>
-            {
-                HiddenEntry?.Focus();
-            });
-        });
     }
 }

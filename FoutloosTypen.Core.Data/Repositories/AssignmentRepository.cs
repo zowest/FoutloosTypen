@@ -1,6 +1,9 @@
-﻿using System.Data.Common;
-using FoutloosTypen.Core.Interfaces.Repositories;
+﻿using FoutloosTypen.Core.Interfaces.Repositories;
 using FoutloosTypen.Core.Models;
+using Microsoft.Maui.Storage;
+using System.Data.Common;
+using System.Diagnostics;
+using System.Text.Json;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
@@ -25,7 +28,8 @@ namespace FoutloosTypen.Core.Data.Repositories
             OpenConnection();
 
             using var command = Connection.CreateCommand();
-            command.CommandText = "SELECT Id, TimeLimit, LessonId FROM Assignments";
+            command.CommandText =
+                "SELECT Id, TimeLimit, LessonId FROM Assignments";
 
             using DbDataReader reader = command.ExecuteReader();
             while (reader.Read())
@@ -46,7 +50,8 @@ namespace FoutloosTypen.Core.Data.Repositories
             OpenConnection();
 
             using var command = Connection.CreateCommand();
-            command.CommandText = "SELECT Id, TimeLimit, LessonId FROM Assignments WHERE Id = @id";
+            command.CommandText =
+                "SELECT Id, TimeLimit, LessonId FROM Assignments WHERE Id = @id";
 
             var p = command.CreateParameter();
             p.ParameterName = "@id";

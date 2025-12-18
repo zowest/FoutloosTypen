@@ -18,8 +18,8 @@ namespace FoutloosTypen.Core.Models
             Difficulty = difficulty;
             Name = name;
         }
-
-        public Course(int id, string name) : base(id)
+        public Course(int id, string name)
+            : base(id)
         {
         }
 
