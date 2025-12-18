@@ -1,16 +1,22 @@
-using System.Diagnostics;
+using System;
 using FoutloosTypen.ViewModels;
+using Microsoft.Maui.Graphics;
+using Microsoft.Maui.Controls;
+using System.Diagnostics;
 
 namespace FoutloosTypen.Views;
 
 public partial class TTSAssignmentView : ContentPage
 {
-    private Button? HoverButton;
     private readonly TTSAssignmentViewModel? _vm;
+
+    private Button? HoverButton;
+
     public TTSAssignmentView()
-	{
-		InitializeComponent();
-	}
+    {
+        InitializeComponent();
+    }
+
     public TTSAssignmentView(TTSAssignmentViewModel vm) : this()
     {
         BindingContext = _vm = vm;
@@ -20,6 +26,20 @@ public partial class TTSAssignmentView : ContentPage
             IsEnabled = false
         });
     }
+
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+        if (_vm is not null)
+        {
+            await _vm.OnAppearingAsync();
+        }
+
+        // Auto-focus the hidden entry to capture keyboard input
+        await Task.Delay(100);
+        HiddenEntry?.Focus();
+    }
+
     public void SetHoverButton(Button button)
     {
         HoverButton = button;
@@ -61,6 +81,7 @@ public partial class TTSAssignmentView : ContentPage
     {
         try
         {
+            _vm?.Tts?.Cancel();
             await Shell.Current.GoToAsync("..");
         }
         catch
@@ -68,11 +89,12 @@ public partial class TTSAssignmentView : ContentPage
             await Navigation.PopAsync();
         }
     }
+
     private void OnTextChanged(object sender, TextChangedEventArgs e)
     {
         if (_vm != null)
         {
-            //_vm.UpdateTypedText(e.NewTextValue);
+            _vm.UpdateTypedText(e.NewTextValue);
         }
     }
 
