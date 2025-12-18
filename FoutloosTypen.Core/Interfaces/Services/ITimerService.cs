@@ -20,6 +20,5 @@ namespace FoutloosTypen.Core.Interfaces.Services
         void Restart();
 
         void AddTime(double seconds);
-        void SubtractTime(double seconds);
     }
 }

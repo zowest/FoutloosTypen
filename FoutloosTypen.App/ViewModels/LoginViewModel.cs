@@ -4,7 +4,7 @@ using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Models;
 
 namespace FoutloosTypen.ViewModels
-{
+{  
     public partial class LoginViewModel : BaseViewModel
     {
         private readonly IAuthService _authService;

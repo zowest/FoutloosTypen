@@ -77,25 +77,12 @@ namespace FoutloosTypen.Core.Services
         }
         public void AddTime(double seconds)
         {
-            if (seconds <= 0)
-                return;
-
-            TimeRemaining = Math.Min(TimeRemaining + seconds, 3600);
+            TimeRemaining = Math.Max(0, TimeRemaining + seconds);
+            OnPropertyChanged(nameof(TimeRemaining));
+            OnPropertyChanged(nameof(TimeRemainingFormatted));
         }
 
-        public void SubtractTime(double seconds)
-        {
-            if (seconds <= 0)
-                return;
 
-            TimeRemaining = Math.Max(TimeRemaining - seconds, 0);
-
-            if (TimeRemaining <= 0)
-            {
-                Stop();
-                TimerExpired?.Invoke(this, EventArgs.Empty);
-            }
-        }
 
 
     }

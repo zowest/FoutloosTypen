@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.Input;
 using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Models;
 using Microsoft.Maui.Controls;
+using Microsoft.Maui.Dispatching;
 using Microsoft.Maui.Graphics;
 
 namespace FoutloosTypen.ViewModels
@@ -17,58 +18,70 @@ namespace FoutloosTypen.ViewModels
         private const double START_TIME = 60;
         private const int BASE_SCORE = 10;
 
+        // Combo timer (altijd vaste duur)
+        private const double COMBO_TIME_MAX = 3.0;
+        private const double COMBO_TICK = 0.1;
+
         private readonly IEndlessModeService _endlessModeService;
         private readonly ITimerService _timerService;
         private readonly Random _random = new();
 
-        private List<EndlessMode> _words = new();
-        private string _previousUserInput = string.Empty;
-        private int _combo;
+        private readonly IDispatcherTimer _comboTimer;
 
+        private List<EndlessMode> _words = new();
+
+        private EndlessMode? _currentWord;
+        private string _userInput = string.Empty;
+        private string _previousUserInput = string.Empty;
+
+        private int _combo;
+        private int _score;
+        private double _comboTimeRemaining;
+        private bool _isGameOver;
+        public EndlessModeViewModel(
+            IEndlessModeService endlessModeService,
+            ITimerService timerService)
+        {
+            _endlessModeService = endlessModeService;
+            _timerService = timerService;
+
+            RefreshCommand = new RelayCommand(Restart);
+            HomeCommand = new RelayCommand(() => RequestHome?.Invoke());
+
+            _timerService.TimerExpired += OnTimerExpired;
+
+            _comboTimer = Application.Current!.Dispatcher.CreateTimer();
+            _comboTimer.Interval = TimeSpan.FromSeconds(COMBO_TICK);
+            _comboTimer.Tick += OnComboTick;
+        }
+
+        // =====================
+        // Navigation
+        // =====================
+        public event Action? RequestHome;
+
+        // =====================
+        // Bindings
+        // =====================
         public ITimerService Timer => _timerService;
 
-        // =====================
-        // UI feedback
-        // =====================
-        public string ComboText => _combo > 0 ? $"🔥 x{_combo}" : string.Empty;
+        public ICommand RefreshCommand { get; }
+        public ICommand HomeCommand { get; }
 
-        public Color TimerColor
+        public bool IsGameOver
         {
-            get
+            get => _isGameOver;
+            private set
             {
-                if (_combo >= 10) return Colors.Red;
-                if (_combo >= 5) return Colors.Orange;
-                return Colors.MediumPurple;
+                _isGameOver = value;
+                OnPropertyChanged(nameof(IsGameOver));
             }
         }
 
-        // =====================
-        // Adaptive difficulty
-        // =====================
-        private (int min, int max) GetAllowedWordLength()
-        {
-            if (_combo >= 10) return (7, 12);
-            if (_combo >= 6) return (5, 9);
-            if (_combo >= 3) return (4, 7);
-            return (3, 5);
-        }
-
-        private double GetDrainMultiplier()
-        {
-            if (_combo >= 10) return 1.6;
-            if (_combo >= 6) return 1.3;
-            if (_combo >= 3) return 1.1;
-            return 1.0;
-        }
-
-        // =====================
-        // Current word
-        // =====================
-        private EndlessMode? _currentWord;
         public EndlessMode? CurrentWord
         {
             get => _currentWord;
-            set
+            private set
             {
                 _currentWord = value;
                 OnPropertyChanged(nameof(CurrentWord));
@@ -76,24 +89,6 @@ namespace FoutloosTypen.ViewModels
             }
         }
 
-        // =====================
-        // Score
-        // =====================
-        private int _score;
-        public int Score
-        {
-            get => _score;
-            set
-            {
-                _score = value;
-                OnPropertyChanged(nameof(Score));
-            }
-        }
-
-        // =====================
-        // Typing
-        // =====================
-        private string _userInput = string.Empty;
         public string UserInput
         {
             get => _userInput;
@@ -108,43 +103,87 @@ namespace FoutloosTypen.ViewModels
         public FormattedString FormattedText
         {
             get => _formattedText;
-            set
+            private set
             {
                 _formattedText = value;
                 OnPropertyChanged(nameof(FormattedText));
             }
         }
 
-        public ICommand RefreshCommand { get; }
-
-        public EndlessModeViewModel(
-            IEndlessModeService endlessModeService,
-            ITimerService timerService)
+        public int Score
         {
-            _endlessModeService = endlessModeService;
-            _timerService = timerService;
-
-            RefreshCommand = new RelayCommand(Restart);
-            _timerService.TimerExpired += OnTimerExpired;
+            get => _score;
+            private set
+            {
+                _score = value;
+                OnPropertyChanged(nameof(Score));
+            }
         }
 
+        public string ComboText => _combo > 0 ? $"x{_combo}" : string.Empty;
+
+        public double ComboTimeRemaining
+        {
+            get => _comboTimeRemaining;
+            private set
+            {
+                _comboTimeRemaining = Math.Max(0, value);
+                OnPropertyChanged(nameof(ComboTimeRemaining));
+                OnPropertyChanged(nameof(ComboProgress));
+            }
+        }
+
+        public double ComboProgress =>
+            ComboTimeRemaining <= 0 ? 0 : ComboTimeRemaining / COMBO_TIME_MAX;
+
+        public Color TimerColor
+        {
+            get
+            {
+                double t = Timer.TimeRemaining;
+
+                if (t > 30)
+                    return Colors.Black;
+
+                if (t > 20)
+                    return Colors.Yellow;
+
+                if (t > 10)
+                    return Colors.Orange;
+
+                return Colors.Red;
+            }
+        }
         public async Task OnAppearingAsync()
         {
             Start();
             await Task.CompletedTask;
         }
 
-        // =====================
-        // Game flow
-        // =====================
+        public override void OnDisappearing()
+        {
+            base.OnDisappearing();
+            _timerService.Stop();
+            _comboTimer.Stop();
+            _timerService.TimerExpired -= OnTimerExpired;
+        }
         private void Start()
         {
+            IsGameOver = false;
             Score = 0;
-            _combo = 0;
+            ResetCombo();
 
             LoadWords();
+
             _timerService.Initialize(START_TIME);
             _timerService.Start();
+        }
+
+        private void Restart()
+        {
+            _timerService.Stop();
+            _comboTimer.Stop();
+            Start();
         }
 
         private void LoadWords()
@@ -159,7 +198,7 @@ namespace FoutloosTypen.ViewModels
 
         public void UpdateTypedText(string typedText)
         {
-            if (CurrentWord == null)
+            if (IsGameOver || CurrentWord == null)
                 return;
 
             DetectMistake(typedText);
@@ -180,26 +219,12 @@ namespace FoutloosTypen.ViewModels
         {
             _combo++;
 
-            double timeBonus =
-                _combo >= 10 ? 4 :
-                _combo >= 5 ? 3 : 2;
-
-            _timerService.AddTime(timeBonus);
-
+            StartComboTimer();
+            _timerService.AddTime(GetTimeBonus());
             AddScoreForWord();
-            OnComboChanged();
-        }
 
-        private void AddScoreForWord()
-        {
-            double comboMultiplier = 1 + (_combo * 0.25);
-            double drainMultiplier = GetDrainMultiplier();
-
-            int gained = (int)Math.Round(
-                BASE_SCORE * comboMultiplier * drainMultiplier
-            );
-
-            Score += gained;
+            OnPropertyChanged(nameof(ComboText));
+            OnPropertyChanged(nameof(TimerColor));
         }
 
         private void DetectMistake(string typedText)
@@ -208,13 +233,12 @@ namespace FoutloosTypen.ViewModels
                 return;
 
             int index = typedText.Length - 1;
-
             if (index >= CurrentWord!.Word.Length)
                 return;
 
             if (typedText[index] != CurrentWord.Word[index])
             {
-                _timerService.AddTime(-2 * GetDrainMultiplier());
+                _timerService.AddTime(-5);
                 ResetCombo();
             }
         }
@@ -222,7 +246,11 @@ namespace FoutloosTypen.ViewModels
         private void ResetCombo()
         {
             _combo = 0;
-            OnComboChanged();
+            ComboTimeRemaining = 0;
+            _comboTimer.Stop();
+
+            OnPropertyChanged(nameof(ComboText));
+            OnPropertyChanged(nameof(TimerColor));
         }
 
         private void MoveNext()
@@ -238,21 +266,63 @@ namespace FoutloosTypen.ViewModels
 
             CurrentWord = pool[_random.Next(pool.Count)];
         }
-
-        // =====================
-        // UI helpers
-        // =====================
-        private void OnComboChanged()
+        private void StartComboTimer()
         {
-            OnPropertyChanged(nameof(ComboText));
-            OnPropertyChanged(nameof(TimerColor));
+            ComboTimeRemaining = COMBO_TIME_MAX;
+
+            if (!_comboTimer.IsRunning)
+                _comboTimer.Start();
         }
 
+        private void OnComboTick(object? sender, EventArgs e)
+        {
+            if (_combo <= 0)
+            {
+                _comboTimer.Stop();
+                return;
+            }
+
+            ComboTimeRemaining -= COMBO_TICK;
+
+            if (ComboTimeRemaining <= 0)
+            {
+                ComboTimeRemaining = 0;
+                ResetCombo();
+            }
+        }
+
+        private void AddScoreForWord()
+        {
+            double comboMultiplier = 1 + (_combo * 0.25);
+            int gained = (int)Math.Round(BASE_SCORE * comboMultiplier);
+            Score += gained;
+        }
+
+        private double GetTimeBonus()
+        {
+            if (_combo >= 10) return 3;
+            if (_combo >= 5) return 2;
+            return 1;
+        }
+
+        private (int min, int max) GetAllowedWordLength()
+        {
+            if (_combo >= 10) return (11, 16);
+            if (_combo >= 9) return (9, 14);
+            if (_combo >= 7) return (7, 12);
+            if (_combo >= 5) return (5, 9);
+            if (_combo >= 3) return (4, 7);
+            return (3, 4);
+        }
+
+        // =====================
+        // Text rendering
+        // =====================
         private void UpdateFormattedText()
         {
             var formatted = new FormattedString();
             string target = CurrentWord?.Word ?? string.Empty;
-            string typed = UserInput ?? string.Empty;
+            string typed = UserInput;
 
             for (int i = 0; i < target.Length; i++)
             {
@@ -264,13 +334,9 @@ namespace FoutloosTypen.ViewModels
 
                 if (i < typed.Length)
                 {
-                    span.TextColor = typed[i] == target[i]
-                        ? Colors.Black
-                        : Colors.White;
-
-                    span.BackgroundColor = typed[i] == target[i]
-                        ? Colors.Transparent
-                        : Colors.Red;
+                    bool correct = typed[i] == target[i];
+                    span.TextColor = correct ? Colors.Black : Colors.White;
+                    span.BackgroundColor = correct ? Colors.Transparent : Colors.Red;
                 }
                 else if (i == typed.Length)
                 {
@@ -295,23 +361,14 @@ namespace FoutloosTypen.ViewModels
             UpdateFormattedText();
         }
 
-        private void Restart()
-        {
-            _timerService.Stop();
-            Start();
-        }
-
+        // =====================
+        // End
+        // =====================
         private void OnTimerExpired(object? sender, EventArgs e)
         {
-            Debug.WriteLine("Endless mode afgelopen");
             _timerService.Stop();
-        }
-
-        public override void OnDisappearing()
-        {
-            base.OnDisappearing();
-            _timerService.Stop();
-            _timerService.TimerExpired -= OnTimerExpired;
+            _comboTimer.Stop();
+            IsGameOver = true;
         }
     }
 }
