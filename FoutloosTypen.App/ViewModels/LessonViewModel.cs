@@ -1,8 +1,11 @@
 ﻿using System.Collections.ObjectModel;
-using System.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Models;
+using FoutloosTypen.Core.Interfaces.Services;
+using System.ComponentModel;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Diagnostics;
+using CommunityToolkit.Mvvm.Input;
 
 namespace FoutloosTypen.ViewModels
 {
@@ -30,7 +33,9 @@ namespace FoutloosTypen.ViewModels
 
         public async Task LoadLessonsForCourseAsync(int courseId)
         {
+
             var allLessons = _lessonService.GetAll();
+
             var filteredLessons = allLessons
                 .Where(l => l.CourseId == courseId)
                 .OrderByDescending(l => l.Id)
@@ -38,14 +43,19 @@ namespace FoutloosTypen.ViewModels
 
             Lessons.Clear();
             foreach (var lesson in filteredLessons)
+            {
                 Lessons.Add(lesson);
+            }
 
             if (Lessons.Any())
                 SelectedLesson = Lessons.Last();
         }
 
         [RelayCommand]
-        private void SelectLesson(Lesson lesson) => SelectedLesson = lesson;
+        private void SelectLesson(Lesson lesson)
+        {
+            SelectedLesson = lesson;
+        }
 
         protected void OnPropertyChanged(string propertyName)
         {
