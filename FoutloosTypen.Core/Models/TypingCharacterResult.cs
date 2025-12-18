@@ -1,6 +1,9 @@
-﻿public class TypingCharacterResult
+﻿namespace FoutloosTypen.Core.Models
 {
-    public char? Expected { get; set; }
-    public char? Typed { get; set; }
-    public bool IsCorrect => Expected == Typed;
+    public class TypingCharacterResult
+    {
+        public char? Expected { get; set; }
+        public char? Typed { get; set; }
+        public bool IsCorrect => Expected == Typed;
+    }
 }
