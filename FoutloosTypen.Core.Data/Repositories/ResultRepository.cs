@@ -10,23 +10,36 @@ namespace FoutloosTypen.Core.Data.Repositories
         public ResultRepository()
         {
             CreateTable("""
-                CREATE TABLE IF NOT EXISTS Results (
+                CREATE TABLE IF NOT EXISTS lessonresults (
                     Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
                     StudentId INT NOT NULL,
                     LessonId INT NOT NULL,
+                    Score INT NOT NULL,
                     StrokesPerMinute INT NOT NULL,
                     WordsPerMinute INT NOT NULL,
-                    TotalMistakes INT NOT NULL,
-                    Score INT NOT NULL,
-                    TimeRemaining DOUBLE NOT NULL,
                     AccuracyPercent DOUBLE NOT NULL,
+                    TotalMistakes INT NOT NULL,
                     SentencesCompleted INT NOT NULL DEFAULT 0,
-                    TotalCharactersTyped INT NOT NULL DEFAULT 0,
-                    StartTime DATETIME NOT NULL,
-                    EndTime DATETIME NULL,
-                    TimerExpired TINYINT(1) DEFAULT 0
+                    TimeSpent DOUBLE NOT NULL DEFAULT 0,
+                    CompletedAt DATETIME NOT NULL
                 );
             """);
+
+            // Verwijder oude UNIQUE constraint als die bestaat
+            try
+            {
+                OpenConnection();
+                using var command = Connection.CreateCommand();
+                command.CommandText = "ALTER TABLE lessonresults DROP INDEX unique_student_lesson";
+                command.ExecuteNonQuery();
+                CloseConnection();
+                Debug.WriteLine("[ResultRepository] Removed old unique_student_lesson constraint");
+            }
+            catch (MySqlConnector.MySqlException)
+            {
+                // Constraint bestaat niet, negeren
+                CloseConnection();
+            }
         }
 
         public void Save(Result result)
@@ -34,31 +47,25 @@ namespace FoutloosTypen.Core.Data.Repositories
             OpenConnection();
 
             using var command = Connection.CreateCommand();
-            // CHANGED: Simple INSERT without ON DUPLICATE KEY UPDATE
             command.CommandText = """
-                INSERT INTO Results
-                (StudentId, LessonId, StrokesPerMinute, WordsPerMinute,
-                 TotalMistakes, Score, TimeRemaining, AccuracyPercent,
-                 SentencesCompleted, TotalCharactersTyped, StartTime, EndTime, TimerExpired)
+                INSERT INTO lessonresults
+                (StudentId, LessonId, Score, StrokesPerMinute, WordsPerMinute,
+                 AccuracyPercent, TotalMistakes, SentencesCompleted, TimeSpent, CompletedAt)
                 VALUES
-                (@studentId, @lessonId, @spm, @wpm,
-                 @mistakes, @score, @timeRemaining, @accuracy,
-                 @sentences, @characters, @startTime, @endTime, @timerExpired)
+                (@studentId, @lessonId, @score, @spm, @wpm,
+                 @accuracy, @mistakes, @sentences, @timeSpent, @completedAt)
             """;
 
             AddParam(command, "@studentId", result.StudentId);
             AddParam(command, "@lessonId", result.LessonId);
+            AddParam(command, "@score", result.Score);
             AddParam(command, "@spm", result.StrokesPerMinute);
             AddParam(command, "@wpm", result.WordsPerMinute);
-            AddParam(command, "@mistakes", result.TotalMistakes);
-            AddParam(command, "@score", result.Score);
-            AddParam(command, "@timeRemaining", result.TimeRemaining);
             AddParam(command, "@accuracy", result.AccuracyPercent);
+            AddParam(command, "@mistakes", result.TotalMistakes);
             AddParam(command, "@sentences", result.SentencesCompleted);
-            AddParam(command, "@characters", result.TotalCharactersTyped);
-            AddParam(command, "@startTime", result.StartTime);
-            AddParam(command, "@endTime", result.EndTime ?? (object)DBNull.Value);
-            AddParam(command, "@timerExpired", result.TimerExpired ? 1 : 0);
+            AddParam(command, "@timeSpent", result.TimeSpent);
+            AddParam(command, "@completedAt", result.EndTime ?? DateTime.Now);
 
             command.ExecuteNonQuery();
             
@@ -67,19 +74,17 @@ namespace FoutloosTypen.Core.Data.Repositories
             CloseConnection();
         }
 
-        // CHANGED: Get BEST result (highest score) for leaderboard
         public Result? GetByStudentAndLesson(int studentId, int lessonId)
         {
             OpenConnection();
 
             using var command = Connection.CreateCommand();
             command.CommandText = """
-                SELECT Id, StudentId, LessonId, StrokesPerMinute, WordsPerMinute,
-                       TotalMistakes, Score, TimeRemaining, AccuracyPercent,
-                       SentencesCompleted, TotalCharactersTyped, StartTime, EndTime, TimerExpired
-                FROM Results
+                SELECT Id, StudentId, LessonId, Score, StrokesPerMinute, WordsPerMinute,
+                       AccuracyPercent, TotalMistakes, SentencesCompleted, TimeSpent, CompletedAt
+                FROM lessonresults
                 WHERE StudentId = @studentId AND LessonId = @lessonId
-                ORDER BY Score DESC, EndTime DESC
+                ORDER BY Score DESC, CompletedAt DESC
                 LIMIT 1
             """;
 
@@ -102,12 +107,11 @@ namespace FoutloosTypen.Core.Data.Repositories
 
             using var command = Connection.CreateCommand();
             command.CommandText = """
-                SELECT Id, StudentId, LessonId, StrokesPerMinute, WordsPerMinute,
-                       TotalMistakes, Score, TimeRemaining, AccuracyPercent,
-                       SentencesCompleted, TotalCharactersTyped, StartTime, EndTime, TimerExpired
-                FROM Results
+                SELECT Id, StudentId, LessonId, Score, StrokesPerMinute, WordsPerMinute,
+                       AccuracyPercent, TotalMistakes, SentencesCompleted, TimeSpent, CompletedAt
+                FROM lessonresults
                 WHERE StudentId = @studentId
-                ORDER BY EndTime DESC
+                ORDER BY CompletedAt DESC
             """;
 
             AddParam(command, "@studentId", studentId);
@@ -128,10 +132,9 @@ namespace FoutloosTypen.Core.Data.Repositories
 
             using var command = Connection.CreateCommand();
             command.CommandText = """
-                SELECT Id, StudentId, LessonId, StrokesPerMinute, WordsPerMinute,
-                       TotalMistakes, Score, TimeRemaining, AccuracyPercent,
-                       SentencesCompleted, TotalCharactersTyped, StartTime, EndTime, TimerExpired
-                FROM Results
+                SELECT Id, StudentId, LessonId, Score, StrokesPerMinute, WordsPerMinute,
+                       AccuracyPercent, TotalMistakes, SentencesCompleted, TimeSpent, CompletedAt
+                FROM lessonresults
                 WHERE LessonId = @lessonId
                 ORDER BY Score DESC, WordsPerMinute DESC
             """;
@@ -153,15 +156,13 @@ namespace FoutloosTypen.Core.Data.Repositories
             OpenConnection();
 
             using var command = Connection.CreateCommand();
-            // Get best score per student for this lesson
             command.CommandText = $"""
-                SELECT r.Id, r.StudentId, r.LessonId, r.StrokesPerMinute, r.WordsPerMinute,
-                       r.TotalMistakes, r.Score, r.TimeRemaining, r.AccuracyPercent,
-                       r.SentencesCompleted, r.TotalCharactersTyped, r.StartTime, r.EndTime, r.TimerExpired
-                FROM Results r
+                SELECT r.Id, r.StudentId, r.LessonId, r.Score, r.StrokesPerMinute, r.WordsPerMinute,
+                       r.AccuracyPercent, r.TotalMistakes, r.SentencesCompleted, r.TimeSpent, r.CompletedAt
+                FROM lessonresults r
                 INNER JOIN (
                     SELECT StudentId, MAX(Score) as BestScore
-                    FROM Results
+                    FROM lessonresults
                     WHERE LessonId = @lessonId
                     GROUP BY StudentId
                 ) best ON r.StudentId = best.StudentId AND r.Score = best.BestScore
@@ -188,10 +189,9 @@ namespace FoutloosTypen.Core.Data.Repositories
 
             using var command = Connection.CreateCommand();
             command.CommandText = $"""
-                SELECT Id, StudentId, LessonId, StrokesPerMinute, WordsPerMinute,
-                       TotalMistakes, Score, TimeRemaining, AccuracyPercent,
-                       SentencesCompleted, TotalCharactersTyped, StartTime, EndTime, TimerExpired
-                FROM Results
+                SELECT Id, StudentId, LessonId, Score, StrokesPerMinute, WordsPerMinute,
+                       AccuracyPercent, TotalMistakes, SentencesCompleted, TimeSpent, CompletedAt
+                FROM lessonresults
                 ORDER BY Score DESC, WordsPerMinute DESC
                 LIMIT {limit}
             """;
@@ -212,12 +212,11 @@ namespace FoutloosTypen.Core.Data.Repositories
 
             using var command = Connection.CreateCommand();
             command.CommandText = """
-                SELECT Id, StudentId, LessonId, StrokesPerMinute, WordsPerMinute,
-                       TotalMistakes, Score, TimeRemaining, AccuracyPercent,
-                       SentencesCompleted, TotalCharactersTyped, StartTime, EndTime, TimerExpired
-                FROM Results
+                SELECT Id, StudentId, LessonId, Score, StrokesPerMinute, WordsPerMinute,
+                       AccuracyPercent, TotalMistakes, SentencesCompleted, TimeSpent, CompletedAt
+                FROM lessonresults
                 WHERE StudentId = @studentId AND LessonId = @lessonId
-                ORDER BY EndTime DESC
+                ORDER BY CompletedAt DESC
             """;
 
             AddParam(command, "@studentId", studentId);
@@ -237,21 +236,26 @@ namespace FoutloosTypen.Core.Data.Repositories
 
         private static Result Map(DbDataReader reader)
         {
+            var completedAt = reader.GetDateTime(10);
+            var timeSpent = reader.GetDouble(9);
+
             return new Result
             {
                 StudentId = reader.GetInt32(1),
                 LessonId = reader.GetInt32(2),
-                StrokesPerMinute = reader.GetInt32(3),
-                WordsPerMinute = reader.GetInt32(4),
-                TotalMistakes = reader.GetInt32(5),
-                Score = reader.GetInt32(6),
-                TimeRemaining = reader.GetDouble(7),
-                AccuracyPercent = reader.GetDouble(8),
-                SentencesCompleted = reader.GetInt32(9),
-                TotalCharactersTyped = reader.GetInt32(10),
-                StartTime = reader.GetDateTime(11),
-                EndTime = reader.IsDBNull(12) ? null : reader.GetDateTime(12),
-                TimerExpired = reader.GetInt32(13) == 1
+                Score = reader.GetInt32(3),
+                StrokesPerMinute = reader.GetInt32(4),
+                WordsPerMinute = reader.GetInt32(5),
+                AccuracyPercent = reader.GetDouble(6),
+                TotalMistakes = reader.GetInt32(7),
+                SentencesCompleted = reader.GetInt32(8),
+                StartTime = completedAt.AddSeconds(-timeSpent),
+                EndTime = completedAt,
+                CompletedSentences = new List<string>(),
+                CurrentIncompleteText = string.Empty,
+                ExpectedTime = 300, // Default
+                TimerExpired = false,
+                TimeRemaining = 0
             };
         }
 

@@ -204,41 +204,93 @@ namespace FoutloosTypen.ViewModels
 
         private async Task ShowLessonResultsAsync()
         {
-            StopTimer();
-
-            if (SelectedLesson == null || Application.Current?.MainPage == null)
-                return;
-
-            var progress = _ResultService.GetProgress(SelectedLesson.Id);
-            if (progress == null)
-                return;
-
-            // **SAVE TO DATABASE**
-            if (_globalViewModel.Student != null)
+            try
             {
-                _ResultService.SaveResult(SelectedLesson.Id, _globalViewModel.Student.Id, progress);
-                Debug.WriteLine($"Result saved for student {_globalViewModel.Student.Id}, lesson {SelectedLesson.Id}");
+                Debug.WriteLine("=== ShowLessonResultsAsync START ===");
+                
+                StopTimer();
+
+                if (SelectedLesson == null)
+                {
+                    Debug.WriteLine("ERROR: SelectedLesson is null");
+                    return;
+                }
+
+                if (Application.Current?.MainPage == null)
+                {
+                    Debug.WriteLine("ERROR: Application.Current.MainPage is null");
+                    return;
+                }
+
+                var progress = _ResultService.GetProgress(SelectedLesson.Id);
+                if (progress == null)
+                {
+                    Debug.WriteLine("ERROR: Progress is null");
+                    return;
+                }
+
+                Debug.WriteLine($"Progress retrieved: Speed={progress.Speed}, Accuracy={progress.Accuracy}, Score={progress.Score}");
+
+                // **SAVE TO DATABASE**
+                if (_globalViewModel.Student != null)
+                {
+                    _ResultService.SaveResult(SelectedLesson.Id, _globalViewModel.Student.Id, progress);
+                    Debug.WriteLine($"Result saved for student {_globalViewModel.Student.Id}, lesson {SelectedLesson.Id}");
+                }
+                else
+                {
+                    Debug.WriteLine("WARNING: No student logged in, result not saved");
+                }
+
+                // Convert LessonProgress to Result
+                var result = ConvertProgressToResult(progress);
+                Debug.WriteLine($"Result converted: WPM={result.WordsPerMinute}, Score={result.Score}");
+
+                // Get score comparison
+                ScoreComparison? comparison = null;
+                if (_globalViewModel.Student != null)
+                {
+                    comparison = _ResultService.CompareWithPrevious(SelectedLesson.Id, _globalViewModel.Student.Id, result);
+                    Debug.WriteLine($"Comparison: IsNewBest={comparison?.IsNewPersonalBest}, IsFirst={comparison?.IsFirstAttempt}");
+                }
+
+                // Show custom popup with result data
+                Debug.WriteLine("Creating ResultatenPopUp...");
+                var popup = new ResultatenPopUp(result, comparison);
+                
+                Debug.WriteLine("Pushing modal...");
+                await Application.Current.MainPage.Navigation.PushModalAsync(popup);
+                Debug.WriteLine("Modal pushed successfully");
+
+                // Wait for user response
+                Debug.WriteLine("Waiting for user response...");
+                bool shouldContinue = await popup.WaitForUserResponseAsync();
+                Debug.WriteLine($"User response: shouldContinue={shouldContinue}");
+
+                if (shouldContinue)
+                {
+                    // User clicked "Ga verder" - navigate to lesson-specific leaderboard
+                    Debug.WriteLine($"Navigating to leaderboard for lesson {SelectedLesson.Id}");
+                    await Shell.Current.GoToAsync($"{nameof(LessonLeaderboardView)}?lessonId={SelectedLesson.Id}");
+                }
+                else
+                {
+                    // User clicked "Herstart" - restart the lesson
+                    Debug.WriteLine("Restarting lesson...");
+                    RestartLesson();
+                }
+
+                Debug.WriteLine("=== ShowLessonResultsAsync END ===");
             }
-
-            // Convert LessonProgress to Result
-            var result = ConvertProgressToResult(progress);
-
-            // Show custom popup with result data
-            var popup = new ResultatenPopUp(result);
-            await Application.Current.MainPage.Navigation.PushModalAsync(popup);
-
-            // Wait for user response
-            bool shouldContinue = await popup.WaitForUserResponseAsync();
-
-            if (shouldContinue)
+            catch (Exception ex)
             {
-                // User clicked "Ga verder" - navigate to lesson-specific leaderboard
-                await Shell.Current.GoToAsync($"LessonLeaderboardView?lessonId={SelectedLesson.Id}");
-            }
-            else
-            {
-                // User clicked "Herstart" - restart the lesson
-                RestartLesson();
+                Debug.WriteLine($"=== EXCEPTION in ShowLessonResultsAsync ===");
+                Debug.WriteLine($"Message: {ex.Message}");
+                Debug.WriteLine($"StackTrace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    Debug.WriteLine($"InnerException: {ex.InnerException.Message}");
+                }
             }
         }
 
@@ -369,8 +421,19 @@ namespace FoutloosTypen.ViewModels
                     _ResultService.EndLesson(SelectedLesson.Id);
                 }
 
-                // Call async method
-                _ = ShowLessonResultsAsync();
+                // Call async method properly on UI thread
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    try
+                    {
+                        await ShowLessonResultsAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"ERROR showing results: {ex.Message}");
+                        Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                    }
+                });
                 return;
             }
 
@@ -623,7 +686,6 @@ namespace FoutloosTypen.ViewModels
 
         ~AssignmentViewModel()
         {
-            // Unsubscribe from event
             _timerService.TimerExpired -= OnTimerExpired;
             _timerService.Stop();
         }

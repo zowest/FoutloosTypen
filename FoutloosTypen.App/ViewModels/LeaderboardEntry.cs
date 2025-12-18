@@ -1,4 +1,4 @@
-namespace FoutloosTypen.App.Models
+namespace FoutloosTypen.ViewModels
 {
     public class LeaderboardEntry
     {

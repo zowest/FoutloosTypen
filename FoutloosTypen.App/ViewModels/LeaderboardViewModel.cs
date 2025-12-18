@@ -4,7 +4,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Models;
-using FoutloosTypen.App.Models; // ADD THIS
 
 namespace FoutloosTypen.ViewModels
 {
@@ -221,6 +220,4 @@ namespace FoutloosTypen.ViewModels
 
         public event PropertyChangedEventHandler? PropertyChanged;
     }
-
-    // REMOVED: LeaderboardEntry class - now in separate file
 }
