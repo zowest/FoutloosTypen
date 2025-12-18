@@ -8,6 +8,7 @@ namespace FoutloosTypen.Views
     public partial class LessonView : ContentPage
     {
         private readonly LearnpathViewModel _vm;
+        private readonly GlobalViewModel _globalViewModel;
         private Button? HoverButton;
 
 
@@ -16,9 +17,10 @@ namespace FoutloosTypen.Views
             InitializeComponent();
         }
 
-        public LessonView(LearnpathViewModel vm) : this()
+        public LessonView(LearnpathViewModel vm, GlobalViewModel globalViewModel) : this()
         {
             BindingContext = _vm = vm;
+            _globalViewModel = globalViewModel;
             Shell.SetBackButtonBehavior(this, new BackButtonBehavior
             {
                 IsVisible = false,
@@ -81,15 +83,20 @@ namespace FoutloosTypen.Views
             {
                 // Get the selected lesson from the ViewModel
                 var selectedLesson = _vm?.LessonsVM?.SelectedLesson;
+                
+                // Check if TTS mode is enabled from the current user's profile
+                bool useTtsMode = _globalViewModel?.Student?.UseTtsMode ?? false;
+                string targetView = useTtsMode ? "TTSAssignmentView" : nameof(AssignmentView);
+                
                 if (selectedLesson != null)
                 {
-                    Debug.WriteLine($"Navigating to AssignmentView with lesson ID: {selectedLesson.Id}");
-                    await Shell.Current.GoToAsync($"{nameof(AssignmentView)}?lessonId={selectedLesson.Id}");
+                    Debug.WriteLine($"Navigating to {targetView} with lesson ID: {selectedLesson.Id}");
+                    await Shell.Current.GoToAsync($"{targetView}?lessonId={selectedLesson.Id}");
                 }
                 else
                 {
-                    Debug.WriteLine("No lesson selected, navigating without parameter");
-                    await Shell.Current.GoToAsync(nameof(AssignmentView));
+                    Debug.WriteLine($"No lesson selected, navigating to {targetView} without parameter");
+                    await Shell.Current.GoToAsync(targetView);
                 }
                 Debug.WriteLine("Navigation successful!");
             }

@@ -1,3 +1,4 @@
+using System;
 using FoutloosTypen.Core.Models;
 using FoutloosTypen.ViewModels;
 using FoutloosTypen.Core.Interfaces.Services;
@@ -8,8 +9,15 @@ namespace FoutloosTypen.Views
 {
     public partial class ResultatenPopUp : ContentPage
     {
-        private TaskCompletionSource<bool> _userResponseTcs;
+        private TaskCompletionSource<PopupResult> _userResponseTcs;
         private readonly LessonResultViewModel _viewModel;
+
+        public enum PopupResult
+        {
+            Home,
+            Restart,
+            NextLesson
+        }
 
         // Constructor met share functionaliteit
         public ResultatenPopUp(
@@ -33,7 +41,7 @@ namespace FoutloosTypen.Views
                 xSettings);
 
             BindingContext = _viewModel;
-            _userResponseTcs = new TaskCompletionSource<bool>();
+            _userResponseTcs = new TaskCompletionSource<PopupResult>();
         }
 
         // Constructor zonder share functionaliteit (backward compatibility)
@@ -43,26 +51,30 @@ namespace FoutloosTypen.Views
 
             _viewModel = new LessonResultViewModel(progress);
             BindingContext = _viewModel;
-
-            _userResponseTcs = new TaskCompletionSource<bool>();
+            
+            _userResponseTcs = new TaskCompletionSource<PopupResult>();
         }
 
-        public Task<bool> WaitForUserResponseAsync()
+        public Task<PopupResult> WaitForUserResponseAsync()
         {
             return _userResponseTcs.Task;
         }
 
         private async void OnContinueClicked(object sender, EventArgs e)
         {
-            _userResponseTcs.TrySetResult(true);
+            _userResponseTcs.TrySetResult(PopupResult.Home);
             await Navigation.PopModalAsync();
-
-            await Shell.Current.Navigation.PopToRootAsync();
         }
 
         private async void OnRestartClicked(object sender, EventArgs e)
         {
-            _userResponseTcs.TrySetResult(false);
+            _userResponseTcs.TrySetResult(PopupResult.Restart);
+            await Navigation.PopModalAsync();
+        }
+
+        private async void OnNextLessonClicked(object sender, EventArgs e)
+        {
+            _userResponseTcs.TrySetResult(PopupResult.NextLesson);
             await Navigation.PopModalAsync();
         }
 
@@ -102,5 +114,5 @@ namespace FoutloosTypen.Views
         {
             return true;
         }
-    }
+        }
 }
