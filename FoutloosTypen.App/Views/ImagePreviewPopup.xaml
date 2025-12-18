@@ -4,52 +4,70 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
     x:Class="FoutloosTypen.Views.ImagePreviewPopup"
-    Size="800,1000">
+    Size="700,850"
+    CanBeDismissedByTappingOutsideOfPopup="True">
 
 	<Frame
-		Padding="12"
+		Padding="18"
 		BackgroundColor="White"
+        BorderColor="Black"
 		CornerRadius="12"
 		HasShadow="True"
-		WidthRequest="800"
-		HeightRequest="1000">
+		WidthRequest="700"
+		HeightRequest="850"
+        HorizontalOptions="Center"
+        VerticalOptions="Center">
 
-		<Grid RowDefinitions="Auto,*,Auto,Auto" ColumnDefinitions="*">
-			<Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,8">
-				<Label Text="Preview" VerticalOptions="Center" FontAttributes="Bold" FontSize="20" />
+		<Grid RowDefinitions="Auto,*,Auto" ColumnDefinitions="*">
+			<Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,12">
+				<Label Text="Preview" 
+                       VerticalOptions="Center" 
+                       FontAttributes="Bold" 
+                       FontSize="22"
+                       TextColor="Black" />
 				<Button x:Name="CancelButton" 
-                        Text="Cancel" 
+                        Text="Annuleren" 
                         Grid.Column="1" 
-                        Margin="8,0" />
+                        Margin="8,0"
+                        BackgroundColor="LightGray"
+                        TextColor="Black" />
 				<Button x:Name="ShareButton" 
-                        Text="Share" 
+                        Text="Delen" 
                         Grid.Column="2" 
                         Margin="8,0"
-                        BackgroundColor="#1DA1F2"
-                        TextColor="White" />
+                        BackgroundColor="#FFD700"
+                        TextColor="White"
+                        FontAttributes="Bold" />
 			</Grid>
 
             <ScrollView Grid.Row="1">
-			    <VerticalStackLayout Spacing="8">
-                    <Image
-                        x:Name="PreviewImage"
-                        HorizontalOptions="Fill"
-                        VerticalOptions="Center"
-                        Aspect="AspectFit"
-                        HeightRequest="600" />
-                    <Label
-                        x:Name="TweetLabel"
-                        LineBreakMode="WordWrap"
-                        VerticalOptions="Center"
-                        FontSize="16"
-                        Margin="0,8,0,0" />
+			    <VerticalStackLayout Spacing="12" 
+                                     Padding="8"
+                                     HorizontalOptions="Center"
+                                     VerticalOptions="Center">
+                    <!-- Frame with shadow for preview image -->
+                    <Frame HasShadow="True"
+                           CornerRadius="12"
+                           Padding="0"
+                           BorderColor="LightGray"
+                           BackgroundColor="Transparent"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center">
+                        <Image
+                            x:Name="PreviewImage"
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center"
+                            Aspect="AspectFit"
+                            WidthRequest="500"
+                            HeightRequest="500" />
+                    </Frame>
                 </VerticalStackLayout>
             </ScrollView>
 
-            <!-- Status message area -->
             <VerticalStackLayout Grid.Row="2" 
                                  Spacing="8" 
-                                 Margin="0,8,0,8"
+                                 Margin="0,12,0,0"
+                                 HorizontalOptions="Center"
                                  IsVisible="{Binding IsSharing}">
                 <ActivityIndicator IsRunning="{Binding IsSharing}" 
                                    Color="#1DA1F2"
