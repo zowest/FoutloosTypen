@@ -122,6 +122,22 @@
                 PointerExited="OnHoverExit"/>
                         </ImageButton.GestureRecognizers>
                     </ImageButton>
+                    <ImageButton Source="arrowright.png"
+                             Clicked="OnNextLessonClicked"
+                             BackgroundColor="Transparent"
+                             BorderColor="Transparent"
+                             BorderWidth="0"
+                             CornerRadius="0"
+                             Padding="0"
+                             WidthRequest="48"
+                             HeightRequest="48"
+                             Aspect="AspectFit" >
+                        <ImageButton.GestureRecognizers>
+                            <PointerGestureRecognizer
+                                PointerEntered="OnHoverEnter"
+                                PointerExited="OnHoverExit"/>
+                        </ImageButton.GestureRecognizers>
+                    </ImageButton>
                 </HorizontalStackLayout>
             </VerticalStackLayout>
         </Grid>
