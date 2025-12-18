@@ -14,5 +14,7 @@ namespace FoutloosTypen.Core.Interfaces.Services
         public Student? Get(int id);
 
         public List<Student> GetAll();
+        
+        void UpdateTtsMode(int studentId, bool useTtsMode);
     }
 }
