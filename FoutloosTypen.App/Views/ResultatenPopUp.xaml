@@ -12,7 +12,6 @@
            HorizontalOptions="Center"
            VerticalOptions="Center">
         <Grid>
-            <!-- Share button rechtsboven -->
             <ImageButton Source="x.png"
                          BackgroundColor="Transparent"
                          BorderColor="Transparent"

@@ -334,13 +334,10 @@ namespace FoutloosTypen.ViewModels
             {
                 var progress = _ResultService.GetProgress(SelectedLesson.Id);
                 var popup = new Views.ResultatenPopUp(progress);
-                await Application.Current.MainPage.Navigation.PushModalAsync(popup);
+                var popupResult = await popup.WaitForUserResponseAsync();
 
-                // Wacht tot de gebruiker op de knop klikt
                 // true = Ga verder, false = Herstart
-                bool shouldContinue = await popup.WaitForUserResponseAsync();
-
-                if (shouldContinue)
+                if (popupResult == Views.ResultatenPopUp.PopupResult.NextLesson)
                 {
                     // Gebruiker klikte op "Ga verder" - navigeer terug
                     await Shell.Current.GoToAsync("..");

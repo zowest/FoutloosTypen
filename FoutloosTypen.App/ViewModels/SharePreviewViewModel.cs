@@ -137,7 +137,7 @@ namespace FoutloosTypen.ViewModels
                 {
                     await Application.Current.MainPage.DisplayAlert(
                         "Gelukt!",
-                        "Je bericht is succesvol gedeeld op X! Je wordt doorgestuurd naar je profiel.",
+                        "Je bericht is succesvol gedeeld op X! Je wordt doorgestuurd naar de hoofdpagina.",
                         "OK");
                 }
             });
