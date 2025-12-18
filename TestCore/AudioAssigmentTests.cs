@@ -19,7 +19,7 @@ namespace FoutloosTypen.Core.Tests
         public void SetUp()
         {
             _ttsMock = new Mock<ITtsService>();
-            _service = new AudioAssignmentService(_ttsMock.Object);
+            //_service = new AudioAssignmentService(_ttsMock.Object);
         }
 
         [Test]

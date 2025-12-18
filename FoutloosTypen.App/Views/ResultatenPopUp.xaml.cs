@@ -22,7 +22,7 @@ namespace FoutloosTypen.Views
             XAuthSettings xSettings)
         {
             InitializeComponent();
-            
+
             _viewModel = new LessonResultViewModel(
                 progress,
                 lessonName,
@@ -31,7 +31,7 @@ namespace FoutloosTypen.Views
                 xAuthRepository,
                 shareImageRepository,
                 xSettings);
-            
+
             BindingContext = _viewModel;
             _userResponseTcs = new TaskCompletionSource<bool>();
         }
@@ -40,10 +40,10 @@ namespace FoutloosTypen.Views
         public ResultatenPopUp(Result progress)
         {
             InitializeComponent();
-            
+
             _viewModel = new LessonResultViewModel(progress);
             BindingContext = _viewModel;
-            
+
             _userResponseTcs = new TaskCompletionSource<bool>();
         }
 
@@ -56,7 +56,7 @@ namespace FoutloosTypen.Views
         {
             _userResponseTcs.TrySetResult(true);
             await Navigation.PopModalAsync();
-            
+
             await Shell.Current.Navigation.PopToRootAsync();
         }
 

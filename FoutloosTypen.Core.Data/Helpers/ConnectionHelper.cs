@@ -6,7 +6,7 @@ namespace FoutloosTypen.Core.Data.Helpers
     {
         private static IConfigurationRoot BuildConfig()
         {
-            return new ConfigurationBuilder()
+            var builder = new ConfigurationBuilder()
                 .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
                 .AddJsonFile("appsettings.json", optional: true)
                 .Build();

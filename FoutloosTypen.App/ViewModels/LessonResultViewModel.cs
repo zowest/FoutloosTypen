@@ -25,7 +25,6 @@ namespace FoutloosTypen.ViewModels
         [ObservableProperty]
         private bool _isSharing;
 
-        // Constructor voor gebruik met share functionaliteit
         public LessonResultViewModel(
             Result progress,
             string lessonName,
@@ -76,10 +75,8 @@ namespace FoutloosTypen.ViewModels
             }
         }
         public string ResultTitle => _progress.Score > 0 ? "Les Voltooid!" : "Les Gefaald";
-
         public bool CanShare => _xAuthService != null;
 
-        // Method to get the result for download functionality
         public Result GetResult() => _progress;
 
         [RelayCommand]
@@ -95,6 +92,7 @@ namespace FoutloosTypen.ViewModels
                 var authCode = await AuthenticateUserAsync();
                 if (string.IsNullOrEmpty(authCode))
                 {
+                    await ShowErrorAsync("Authenticatie mislukt", "Geen toestemming verleend.");
                     IsSharing = false;
                     return;
                 }
@@ -150,7 +148,7 @@ namespace FoutloosTypen.ViewModels
                 _xAuthRepository == null || _shareImageRepository == null || _xSettings == null)
                 return;
 
-            var text = $"{_lessonName} voltooid! Score: {Score} - APM: {StrokesPerMinute} - Nauwkeurigheid: {Accuracy} #BolType";
+            var text = $"Net weer een typ-run gedaan…{_lessonName}! Score: {Score} - APM: {StrokesPerMinute} - Nauwkeurigheid: {Accuracy} #BolType";
             
             // Load logo stream from app package
             System.IO.Stream? logoStream = null;
