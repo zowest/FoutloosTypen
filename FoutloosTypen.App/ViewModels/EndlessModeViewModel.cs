@@ -55,14 +55,7 @@ namespace FoutloosTypen.ViewModels
             _comboTimer.Tick += OnComboTick;
         }
 
-        // =====================
-        // Navigation
-        // =====================
         public event Action? RequestHome;
-
-        // =====================
-        // Bindings
-        // =====================
         public ITimerService Timer => _timerService;
 
         public ICommand RefreshCommand { get; }
@@ -136,24 +129,8 @@ namespace FoutloosTypen.ViewModels
         public double ComboProgress =>
             ComboTimeRemaining <= 0 ? 0 : ComboTimeRemaining / COMBO_TIME_MAX;
 
-        public Color TimerColor
-        {
-            get
-            {
-                double t = Timer.TimeRemaining;
+        public Color TimerColor => Colors.Black;
 
-                if (t > 30)
-                    return Colors.Black;
-
-                if (t > 20)
-                    return Colors.Yellow;
-
-                if (t > 10)
-                    return Colors.Orange;
-
-                return Colors.Red;
-            }
-        }
         public async Task OnAppearingAsync()
         {
             Start();
