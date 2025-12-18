@@ -37,9 +37,7 @@
 	  <ProjectReference Include="..\FoutloosTypen.Core\FoutloosTypen.Core.csproj" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <EmbeddedResource Include="Resources\XApi.env" LogicalName="Resources/XApi.env" />
+	<ItemGroup Condition="Exists('Resources/XApi.env')">
+		<EmbeddedResource Include="Resources\XApi.env" LogicalName="Resources/XApi.env" />
 	</ItemGroup>
-
-
 </Project>
