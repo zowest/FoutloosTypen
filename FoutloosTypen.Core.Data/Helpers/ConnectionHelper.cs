@@ -8,8 +8,8 @@ namespace FoutloosTypen.Core.Data.Helpers
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-                .AddJsonFile("appsettings.json", optional: true)
-                .Build();
+                .AddJsonFile("appsettings.json", optional: true);
+            return builder.Build();
         }
 
         public static string GetProvider()
