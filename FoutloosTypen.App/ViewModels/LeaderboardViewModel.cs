@@ -1,17 +1,52 @@
 ﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Models;
+using FoutloosTypen.App.Models; // ADD THIS
 
 namespace FoutloosTypen.ViewModels
 {
-    public partial class LeaderboardViewModel : BaseViewModel
+    [QueryProperty(nameof(LessonId), "lessonId")]
+    public partial class LeaderboardViewModel : BaseViewModel, INotifyPropertyChanged
     {
         private readonly ILeaderboardService _leaderboardService;
+        private readonly IResultService _resultService;
+        private readonly ILessonService _lessonService;
+        private readonly IStudentService _studentService;
         private readonly GlobalViewModel _global;
 
-        public ObservableCollection<LeaderboardEntry> TopStudents { get; set; } = new();
+        public ObservableCollection<Student> TopStudents { get; set; } = new();
+        public ObservableCollection<LeaderboardEntry> LessonResults { get; set; } = new();
+
+        private int _lessonId;
+        public int LessonId
+        {
+            get => _lessonId;
+            set
+            {
+                if (SetProperty(ref _lessonId, value))
+                {
+                    IsLessonSpecific = value > 0;
+                    LoadLeaderboardAsync();
+                }
+            }
+        }
+
+        private bool _isLessonSpecific;
+        public bool IsLessonSpecific
+        {
+            get => _isLessonSpecific;
+            set => SetProperty(ref _isLessonSpecific, value);
+        }
+
+        private string _lessonName = string.Empty;
+        public string LessonName
+        {
+            get => _lessonName;
+            set => SetProperty(ref _lessonName, value);
+        }
 
         private LeaderboardCategory _selectedCategory = LeaderboardCategory.Speed;
         public LeaderboardCategory SelectedCategory
@@ -21,7 +56,7 @@ namespace FoutloosTypen.ViewModels
             {
                 if (SetProperty(ref _selectedCategory, value))
                 {
-                    LoadLeaderboard();
+                    LoadLeaderboardAsync();
                 }
             }
         }
@@ -33,66 +68,106 @@ namespace FoutloosTypen.ViewModels
             set => SetProperty(ref _currentStudentRank, value);
         }
 
-        private string _categoryTitle = "Snelheid (WPM)";
+        private string _categoryTitle = "Snelheid";
         public string CategoryTitle
         {
             get => _categoryTitle;
             set => SetProperty(ref _categoryTitle, value);
         }
 
-        public LeaderboardViewModel(ILeaderboardService leaderboardService, GlobalViewModel global)
+        private string _pageTitle = "Klassement";
+        public string PageTitle
+        {
+            get => _pageTitle;
+            set => SetProperty(ref _pageTitle, value);
+        }
+
+        public LeaderboardViewModel(
+            ILeaderboardService leaderboardService,
+            IResultService resultService,
+            ILessonService lessonService,
+            IStudentService studentService,
+            GlobalViewModel global)
         {
             _leaderboardService = leaderboardService;
+            _resultService = resultService;
+            _lessonService = lessonService;
+            _studentService = studentService;
             _global = global;
         }
 
         public override void OnAppearing()
         {
             base.OnAppearing();
-            LoadLeaderboard();
+            LoadLeaderboardAsync();
         }
 
-        private void LoadLeaderboard()
+        private void LoadLeaderboardAsync()
         {
+            if (IsLessonSpecific)
+            {
+                LoadLessonLeaderboard();
+            }
+            else
+            {
+                LoadGeneralLeaderboard();
+            }
+        }
+
+        private void LoadLessonLeaderboard()
+        {
+            var lesson = _lessonService.Get(LessonId);
+            LessonName = lesson?.Name ?? $"Les {LessonId}";
+            PageTitle = $"Klassement - {LessonName}";
+
+            var results = _resultService.GetLessonLeaderboard(LessonId, 10);
+
+            LessonResults.Clear();
+            int rank = 1;
+            foreach (var result in results)
+            {
+                var student = _studentService.Get(result.StudentId);
+                if (student != null)
+                {
+                    LessonResults.Add(new LeaderboardEntry
+                    {
+                        Rank = rank++,
+                        StudentName = student.Name,
+                        Speed = result.WordsPerMinute,
+                        Accuracy = result.AccuracyPercent,
+                        Score = result.Score,
+                        IsCurrentUser = _global.Student?.Id == student.Id
+                    });
+                }
+            }
+
+            if (_global.Student != null)
+            {
+                var bestResult = _resultService.GetStudentBestResult(LessonId, _global.Student.Id);
+                if (bestResult != null)
+                {
+                    var studentRankIndex = results.FindIndex(r => r.StudentId == _global.Student.Id);
+                    CurrentStudentRank = studentRankIndex >= 0 ? studentRankIndex + 1 : results.Count + 1;
+                }
+                else
+                {
+                    CurrentStudentRank = 0;
+                }
+            }
+        }
+
+        private void LoadGeneralLeaderboard()
+        {
+            PageTitle = "Algemeen Klassement";
+
             var students = _leaderboardService.GetLeaderboard(SelectedCategory, 10);
 
             TopStudents.Clear();
-            int rank = 1;
-            
             foreach (var student in students)
             {
-                var entry = new LeaderboardEntry
-                {
-                    Rank = rank++,
-                    Name = student.Name,
-                    StudentId = student.Id
-                };
-
-                // Set the correct value based on category
-                switch (SelectedCategory)
-                {
-                    case LeaderboardCategory.Speed:
-                        entry.Value = student.AvgSpeed;
-                        entry.FormattedValue = $"{student.AvgSpeed:F1}";
-                        break;
-                    case LeaderboardCategory.Precision:
-                        entry.Value = student.AvgPrecision;
-                        entry.FormattedValue = $"{student.AvgPrecision:F1}%";
-                        break;
-                    case LeaderboardCategory.Score:
-                        entry.Value = student.TotalScore;
-                        entry.FormattedValue = student.TotalScore.ToString();
-                        break;
-                    case LeaderboardCategory.CompletedLessons:
-                        entry.Value = student.CompletedLessons;
-                        entry.FormattedValue = student.CompletedLessons.ToString();
-                        break;
-                }
-
-                TopStudents.Add(entry);
+                TopStudents.Add(student);
             }
 
-            // Update category title
             CategoryTitle = SelectedCategory switch
             {
                 LeaderboardCategory.Speed => "Snelheid (WPM)",
@@ -102,7 +177,6 @@ namespace FoutloosTypen.ViewModels
                 _ => "Leaderboard"
             };
 
-            // Get current student rank if logged in
             if (_global.Student != null)
             {
                 CurrentStudentRank = _leaderboardService.GetStudentRank(_global.Student.Id, SelectedCategory);
@@ -132,14 +206,21 @@ namespace FoutloosTypen.ViewModels
         {
             SelectedCategory = LeaderboardCategory.CompletedLessons;
         }
+
+        [RelayCommand]
+        private async Task NavigateHome()
+        {
+            await Shell.Current.GoToAsync("//LessonView");
+        }
+
+        [RelayCommand]
+        private async Task ViewGeneralLeaderboard()
+        {
+            await Shell.Current.GoToAsync("//LeaderboardView");
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
 
-    public class LeaderboardEntry
-    {
-        public int Rank { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public int StudentId { get; set; }
-        public double Value { get; set; }
-        public string FormattedValue { get; set; } = string.Empty;
-    }
+    // REMOVED: LeaderboardEntry class - now in separate file
 }

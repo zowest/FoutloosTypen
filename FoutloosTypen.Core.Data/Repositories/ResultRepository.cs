@@ -1,6 +1,7 @@
 ﻿using System.Data.Common;
 using FoutloosTypen.Core.Models;
 using FoutloosTypen.Core.Interfaces.Repositories;
+using System.Diagnostics;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
@@ -23,8 +24,7 @@ namespace FoutloosTypen.Core.Data.Repositories
                     TotalCharactersTyped INT NOT NULL DEFAULT 0,
                     StartTime DATETIME NOT NULL,
                     EndTime DATETIME NULL,
-                    TimerExpired TINYINT(1) DEFAULT 0,
-                    UNIQUE KEY unique_student_lesson (StudentId, LessonId)
+                    TimerExpired TINYINT(1) DEFAULT 0
                 );
             """);
         }
@@ -34,6 +34,7 @@ namespace FoutloosTypen.Core.Data.Repositories
             OpenConnection();
 
             using var command = Connection.CreateCommand();
+            // CHANGED: Simple INSERT without ON DUPLICATE KEY UPDATE
             command.CommandText = """
                 INSERT INTO Results
                 (StudentId, LessonId, StrokesPerMinute, WordsPerMinute,
@@ -43,17 +44,6 @@ namespace FoutloosTypen.Core.Data.Repositories
                 (@studentId, @lessonId, @spm, @wpm,
                  @mistakes, @score, @timeRemaining, @accuracy,
                  @sentences, @characters, @startTime, @endTime, @timerExpired)
-                ON DUPLICATE KEY UPDATE
-                    StrokesPerMinute = VALUES(StrokesPerMinute),
-                    WordsPerMinute = VALUES(WordsPerMinute),
-                    TotalMistakes = VALUES(TotalMistakes),
-                    Score = VALUES(Score),
-                    TimeRemaining = VALUES(TimeRemaining),
-                    AccuracyPercent = VALUES(AccuracyPercent),
-                    SentencesCompleted = VALUES(SentencesCompleted),
-                    TotalCharactersTyped = VALUES(TotalCharactersTyped),
-                    EndTime = VALUES(EndTime),
-                    TimerExpired = VALUES(TimerExpired)
             """;
 
             AddParam(command, "@studentId", result.StudentId);
@@ -71,9 +61,13 @@ namespace FoutloosTypen.Core.Data.Repositories
             AddParam(command, "@timerExpired", result.TimerExpired ? 1 : 0);
 
             command.ExecuteNonQuery();
+            
+            Debug.WriteLine($"[ResultRepository] Saved new result for student {result.StudentId}, lesson {result.LessonId}, score {result.Score}");
+            
             CloseConnection();
         }
 
+        // CHANGED: Get BEST result (highest score) for leaderboard
         public Result? GetByStudentAndLesson(int studentId, int lessonId)
         {
             OpenConnection();
@@ -85,6 +79,8 @@ namespace FoutloosTypen.Core.Data.Repositories
                        SentencesCompleted, TotalCharactersTyped, StartTime, EndTime, TimerExpired
                 FROM Results
                 WHERE StudentId = @studentId AND LessonId = @lessonId
+                ORDER BY Score DESC, EndTime DESC
+                LIMIT 1
             """;
 
             AddParam(command, "@studentId", studentId);
@@ -157,13 +153,20 @@ namespace FoutloosTypen.Core.Data.Repositories
             OpenConnection();
 
             using var command = Connection.CreateCommand();
+            // Get best score per student for this lesson
             command.CommandText = $"""
-                SELECT Id, StudentId, LessonId, StrokesPerMinute, WordsPerMinute,
-                       TotalMistakes, Score, TimeRemaining, AccuracyPercent,
-                       SentencesCompleted, TotalCharactersTyped, StartTime, EndTime, TimerExpired
-                FROM Results
-                WHERE LessonId = @lessonId
-                ORDER BY Score DESC, WordsPerMinute DESC
+                SELECT r.Id, r.StudentId, r.LessonId, r.StrokesPerMinute, r.WordsPerMinute,
+                       r.TotalMistakes, r.Score, r.TimeRemaining, r.AccuracyPercent,
+                       r.SentencesCompleted, r.TotalCharactersTyped, r.StartTime, r.EndTime, r.TimerExpired
+                FROM Results r
+                INNER JOIN (
+                    SELECT StudentId, MAX(Score) as BestScore
+                    FROM Results
+                    WHERE LessonId = @lessonId
+                    GROUP BY StudentId
+                ) best ON r.StudentId = best.StudentId AND r.Score = best.BestScore
+                WHERE r.LessonId = @lessonId
+                ORDER BY r.Score DESC, r.WordsPerMinute DESC
                 LIMIT {limit}
             """;
 
@@ -226,6 +229,8 @@ namespace FoutloosTypen.Core.Data.Repositories
             while (reader.Read())
                 results.Add(Map(reader));
 
+            Debug.WriteLine($"[ResultRepository] Found {results.Count} attempts for student {studentId}, lesson {lessonId}");
+
             CloseConnection();
             return results;
         }
@@ -234,7 +239,6 @@ namespace FoutloosTypen.Core.Data.Repositories
         {
             return new Result
             {
-                // Id = reader.GetInt32(0), // Result doesn't have Id property
                 StudentId = reader.GetInt32(1),
                 LessonId = reader.GetInt32(2),
                 StrokesPerMinute = reader.GetInt32(3),

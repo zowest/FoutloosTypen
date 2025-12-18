@@ -64,6 +64,7 @@ namespace FoutloosTypen
             builder.Services.AddTransient<LoginView>().AddTransient<LoginViewModel>();
             builder.Services.AddTransient<ProfileView>().AddTransient<ProfileViewModel>();
             builder.Services.AddTransient<LeaderboardView>().AddTransient<LeaderboardViewModel>();
+            builder.Services.AddTransient<LessonLeaderboardView>().AddTransient<LessonLeaderboardViewModel>();
 #if WINDOWS
             builder.ConfigureLifecycleEvents(events =>
             {

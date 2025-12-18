@@ -1,136 +1,138 @@
-﻿using FoutloosTypen.Core.Interfaces.Services;
+﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Models;
+using FoutloosTypen.App.Models; // ADD THIS
 
 namespace FoutloosTypen.ViewModels
 {
-    public class LessonResultViewModel
+    [QueryProperty(nameof(LessonId), "lessonId")]
+    public partial class LessonLeaderboardViewModel : BaseViewModel, INotifyPropertyChanged
     {
-        private readonly Result _currentResult;
-        private readonly ScoreComparison? _comparison;
+        private readonly IResultService _resultService;
+        private readonly ILessonService _lessonService;
+        private readonly IStudentService _studentService;
+        private readonly GlobalViewModel _global;
 
-        public LessonResultViewModel(Result currentResult, ScoreComparison? comparison = null)
+        public ObservableCollection<LeaderboardEntry> TopResults { get; set; } = new();
+
+        private int _lessonId;
+        public int LessonId
         {
-            _currentResult = currentResult;
-            _comparison = comparison;
-        }
-
-        // Current result properties
-        public int Score => _currentResult.Score;
-        public int StrokesPerMinute => _currentResult.StrokesPerMinute;
-        public int WordsPerMinute => _currentResult.WordsPerMinute;
-        public string Accuracy => $"{Math.Round(_currentResult.AccuracyPercent, 1)}%";
-        public int TotalMistakes => _currentResult.TotalMistakes;
-
-        public string TimeRemaining
-        {
-            get
+            get => _lessonId;
+            set
             {
-                if (_currentResult.TimerExpired)
+                if (SetProperty(ref _lessonId, value))
                 {
-                    return "00:00";
+                    LoadLeaderboard();
                 }
-
-                var timeSpan = TimeSpan.FromSeconds(_currentResult.TimeRemaining);
-                return $"{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
             }
         }
 
-        public string ResultTitle => _currentResult.Score > 0 ? "Les Voltooid!" : "Les Gefaald";
-
-        // Comparison properties
-        public bool HasPreviousAttempt => _comparison != null && !_comparison.IsFirstAttempt && _comparison.PreviousBest != null;
-        public bool IsNewPersonalBest => _comparison?.IsNewPersonalBest ?? false;
-        public bool ShowFirstAttemptBadge => _comparison?.IsFirstAttempt ?? true;
-        public bool ShowComparisonBadge => HasPreviousAttempt && IsNewPersonalBest;
-
-        public string ComparisonTitle
+        private string _lessonName = string.Empty;
+        public string LessonName
         {
-            get
-            {
-                if (ShowFirstAttemptBadge)
-                    return "🎯 Eerste poging!";
-                if (IsNewPersonalBest)
-                    return "🎉 Nieuw persoonlijk record!";
-                return "Vergelijking met vorige beste poging";
-            }
+            get => _lessonName;
+            set => SetProperty(ref _lessonName, value);
         }
 
-        public string ScoreDifferenceText
+        private LeaderboardEntry? _currentStudentResult;
+        public LeaderboardEntry? CurrentStudentResult
         {
-            get
-            {
-                if (!HasPreviousAttempt) return "";
-                var diff = _comparison!.ScoreDifference;
-                if (diff > 0) return $"(+{diff})";
-                if (diff < 0) return $"({diff})";
-                return "(=)";
-            }
+            get => _currentStudentResult;
+            set => SetProperty(ref _currentStudentResult, value);
         }
 
-        public string SpeedDifferenceText
+        private int _currentStudentRank;
+        public int CurrentStudentRank
         {
-            get
-            {
-                if (!HasPreviousAttempt) return "";
-                var diff = _comparison!.SpeedDifference;
-                if (diff > 0) return $"(+{diff})";
-                if (diff < 0) return $"({diff})";
-                return "(=)";
-            }
+            get => _currentStudentRank;
+            set => SetProperty(ref _currentStudentRank, value);
         }
 
-        public string AccuracyDifferenceText
+        public LessonLeaderboardViewModel(
+            IResultService resultService,
+            ILessonService lessonService,
+            IStudentService studentService,
+            GlobalViewModel global)
         {
-            get
-            {
-                if (!HasPreviousAttempt) return "";
-                var diff = _comparison!.AccuracyDifference;
-                if (diff > 0) return $"(+{diff:F1}%)";
-                if (diff < 0) return $"({diff:F1}%)";
-                return "(=)";
-            }
+            _resultService = resultService;
+            _lessonService = lessonService;
+            _studentService = studentService;
+            _global = global;
         }
 
-        public Color ScoreDifferenceColor
+        public override void OnAppearing()
         {
-            get
-            {
-                if (!HasPreviousAttempt) return Colors.Gray;
-                var diff = _comparison!.ScoreDifference;
-                if (diff > 0) return Colors.Green;
-                if (diff < 0) return Colors.Red;
-                return Colors.Gray;
-            }
+            base.OnAppearing();
+            LoadLeaderboard();
         }
 
-        public Color SpeedDifferenceColor
+        private void LoadLeaderboard()
         {
-            get
+            if (LessonId == 0) return;
+
+            var lesson = _lessonService.Get(LessonId);
+            LessonName = lesson?.Name ?? $"Les {LessonId}";
+
+            var results = _resultService.GetLessonLeaderboard(LessonId, 10);
+
+            TopResults.Clear();
+            int rank = 1;
+            foreach (var result in results)
             {
-                if (!HasPreviousAttempt) return Colors.Gray;
-                var diff = _comparison!.SpeedDifference;
-                if (diff > 0) return Colors.Green;
-                if (diff < 0) return Colors.Red;
-                return Colors.Gray;
+                var student = _studentService.Get(result.StudentId);
+                if (student != null)
+                {
+                    TopResults.Add(new LeaderboardEntry
+                    {
+                        Rank = rank++,
+                        StudentName = student.Name,
+                        Speed = result.WordsPerMinute,
+                        Accuracy = result.AccuracyPercent,
+                        Score = result.Score,
+                        IsCurrentUser = _global.Student?.Id == student.Id
+                    });
+                }
+            }
+
+            if (_global.Student != null)
+            {
+                var bestResult = _resultService.GetStudentBestResult(LessonId, _global.Student.Id);
+                if (bestResult != null)
+                {
+                    var studentRankIndex = results.FindIndex(r => r.StudentId == _global.Student.Id);
+                    CurrentStudentRank = studentRankIndex >= 0 ? studentRankIndex + 1 : results.Count + 1;
+
+                    CurrentStudentResult = new LeaderboardEntry
+                    {
+                        Rank = CurrentStudentRank,
+                        StudentName = _global.Student.Name,
+                        Speed = bestResult.WordsPerMinute,
+                        Accuracy = bestResult.AccuracyPercent,
+                        Score = bestResult.Score,
+                        IsCurrentUser = true
+                    };
+                }
             }
         }
 
-        public Color AccuracyDifferenceColor
+        [RelayCommand]
+        private async Task NavigateHome()
         {
-            get
-            {
-                if (!HasPreviousAttempt) return Colors.Gray;
-                var diff = _comparison!.AccuracyDifference;
-                if (diff > 0) return Colors.Green;
-                if (diff < 0) return Colors.Red;
-                return Colors.Gray;
-            }
+            await Shell.Current.GoToAsync("//LessonView");
         }
 
-        public int PreviousBestScore => _comparison?.PreviousBest?.Score ?? 0;
-        public int PreviousBestWPM => _comparison?.PreviousBest?.WordsPerMinute ?? 0;
-        public string PreviousBestAccuracy => _comparison?.PreviousBest != null
-            ? $"{Math.Round(_comparison.PreviousBest.AccuracyPercent, 1)}%"
-            : "N/A";
+        [RelayCommand]
+        private async Task ViewGeneralLeaderboard()
+        {
+            await Shell.Current.GoToAsync("//LeaderboardView");
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
+    
+    // REMOVED: LeaderboardEntry class - now in separate file
 }

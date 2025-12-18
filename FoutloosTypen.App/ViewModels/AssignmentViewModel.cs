@@ -221,17 +221,10 @@ namespace FoutloosTypen.ViewModels
             }
 
             // Convert LessonProgress to Result
-            var currentResult = ConvertProgressToResult(progress);
+            var result = ConvertProgressToResult(progress);
 
-            // **GET COMPARISON WITH PREVIOUS BEST**
-            ScoreComparison? comparison = null;
-            if (_globalViewModel.Student != null)
-            {
-                comparison = _ResultService.CompareWithPrevious(SelectedLesson.Id, _globalViewModel.Student.Id, currentResult);
-            }
-
-            // Show custom popup with result data AND comparison
-            var popup = new ResultatenPopUp(currentResult, comparison);
+            // Show custom popup with result data
+            var popup = new ResultatenPopUp(result);
             await Application.Current.MainPage.Navigation.PushModalAsync(popup);
 
             // Wait for user response
@@ -239,8 +232,8 @@ namespace FoutloosTypen.ViewModels
 
             if (shouldContinue)
             {
-                // User clicked "Ga verder" - navigate back
-                await Shell.Current.GoToAsync("..");
+                // User clicked "Ga verder" - navigate to lesson-specific leaderboard
+                await Shell.Current.GoToAsync($"LessonLeaderboardView?lessonId={SelectedLesson.Id}");
             }
             else
             {
