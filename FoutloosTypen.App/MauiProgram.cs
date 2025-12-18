@@ -36,6 +36,7 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IAssignmentRepository, AssignmentRepository>();
             builder.Services.AddSingleton<IPracticeMaterialRepository, PracticeMaterialRepository>();
             builder.Services.AddSingleton<IStudentRepository, StudentRepository>();
+            builder.Services.AddSingleton<IEndlessModeRepository, EndlessModeRepository>();
 
 
             // Services
@@ -48,6 +49,8 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<ITimerService, TimerService>();
             builder.Services.AddSingleton<ITypingComparisonService, TypingComparisonService>();
             builder.Services.AddSingleton<IResultService, ResultService>();
+            builder.Services.AddSingleton<IEndlessModeService, EndlessModeService>();
+            builder.Services.AddSingleton<IEndlessModeService, EndlessModeService>();
 
             // ViewModels
             builder.Services.AddTransient<LessonViewModel>();

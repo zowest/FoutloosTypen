@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using FoutloosTypen.ViewModels;
 using Microsoft.Maui.Controls;
@@ -8,9 +9,8 @@ namespace FoutloosTypen.Views;
 
 public partial class EndlessModeView : ContentPage
 {
-    private readonly EndlessModeViewModel? _vm;
-
-    private Button? HoverButton;
+    private EndlessModeViewModel? _vm;
+    private int _lastScore;
 
     public EndlessModeView()
     {
@@ -32,72 +32,83 @@ public partial class EndlessModeView : ContentPage
     {
         base.OnAppearing();
 
-        if (_vm is not null)
+        if (_vm != null)
         {
+            _lastScore = _vm.Score;
+            _vm.PropertyChanged += OnViewModelPropertyChanged;
             await _vm.OnAppearingAsync();
         }
 
-        // Auto-focus voor typen
         await Task.Delay(100);
         HiddenEntry?.Focus();
     }
 
-    public void SetHoverButton(Button button)
+    protected override void OnDisappearing()
     {
-        HoverButton = button;
-    }
+        base.OnDisappearing();
 
-    private void OnHoverEnter(object sender, PointerEventArgs e)
-    {
-        switch (sender)
+        if (_vm != null)
         {
-            case Button button:
-                button.BackgroundColor = Colors.LightGrey;
-                break;
-            case Border border:
-                border.Stroke = Colors.LightGrey;
-                break;
-            case VisualElement ve:
-                ve.BackgroundColor = Colors.LightGrey;
-                break;
+            _vm.PropertyChanged -= OnViewModelPropertyChanged;
+            _vm.Timer.Stop();
         }
     }
 
-    private void OnHoverExit(object sender, PointerEventArgs e)
+    // =========================
+    // ViewModel ? UI animaties
+    // =========================
+    private async void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        switch (sender)
+        if (_vm == null)
+            return;
+
+        if (e.PropertyName == nameof(EndlessModeViewModel.ComboText)
+            && !string.IsNullOrWhiteSpace(_vm.ComboText))
         {
-            case Button button:
-                button.BackgroundColor = Colors.White;
-                break;
-            case Border border:
-                border.Stroke = Colors.Transparent;
-                break;
-            case VisualElement ve:
-                ve.BackgroundColor = Colors.White;
-                break;
+            await AnimateComboAsync();
+        }
+
+        if (e.PropertyName == nameof(EndlessModeViewModel.Score))
+        {
+            if (_vm.Score > _lastScore)
+                await AnimateScoreAsync();
+
+            _lastScore = _vm.Score;
         }
     }
 
+    private async Task AnimateComboAsync()
+    {
+        if (ComboLabel == null)
+            return;
+
+        ComboLabel.Scale = 1;
+        await ComboLabel.ScaleTo(1.35, 120, Easing.CubicOut);
+        await ComboLabel.ScaleTo(1.0, 120, Easing.CubicIn);
+    }
+
+    private async Task AnimateScoreAsync()
+    {
+        if (ScoreLabel == null)
+            return;
+
+        ScoreLabel.Scale = 1;
+        await ScoreLabel.ScaleTo(1.2, 80, Easing.CubicOut);
+        await ScoreLabel.ScaleTo(1.0, 80, Easing.CubicIn);
+    }
+
+    // =========================
+    // UI events
+    // =========================
     private async void OnHomeClicked(object sender, EventArgs e)
     {
-        try
-        {
-            _vm?.Timer?.Stop();
-            await Shell.Current.GoToAsync("..");
-        }
-        catch
-        {
-            await Navigation.PopAsync();
-        }
+        _vm?.Timer.Stop();
+        await Shell.Current.GoToAsync("..");
     }
 
     private void OnTextChanged(object sender, TextChangedEventArgs e)
     {
-        if (_vm != null)
-        {
-            _vm.UpdateTypedText(e.NewTextValue);
-        }
+        _vm?.UpdateTypedText(e.NewTextValue ?? string.Empty);
     }
 
     private void OnTapToFocus(object sender, EventArgs e)
@@ -107,12 +118,23 @@ public partial class EndlessModeView : ContentPage
 
     private void OnEntryFocused(object sender, FocusEventArgs e)
     {
-        Debug.WriteLine("Entry focused - ready for typing");
+        Debug.WriteLine("Entry focused");
     }
 
     private void OnEntryUnfocused(object sender, FocusEventArgs e)
     {
         Debug.WriteLine("Entry unfocused");
-        // zelfde gedrag als AssignmentView, dus geen auto-refocus
+    }
+
+    private void OnHoverEnter(object sender, PointerEventArgs e)
+    {
+        if (sender is VisualElement ve)
+            ve.BackgroundColor = Colors.LightGrey;
+    }
+
+    private void OnHoverExit(object sender, PointerEventArgs e)
+    {
+        if (sender is VisualElement ve)
+            ve.BackgroundColor = Colors.Transparent;
     }
 }
