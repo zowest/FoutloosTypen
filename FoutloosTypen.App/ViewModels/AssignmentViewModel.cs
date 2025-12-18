@@ -18,7 +18,7 @@ namespace FoutloosTypen.ViewModels
         private readonly ITypingComparisonService _typingComparisonService;
         private readonly IResultService _ResultService;
 
-        private const double TIMER_DURATION = 60; // 60 seconden per opdracht
+        private const double TIMER_DURATION = 60; // 60 seconden per opdracht!
 
         public ObservableCollection<Lesson> Lessons { get; set; } = new();
         public ObservableCollection<Assignment> Assignments { get; set; } = new();
