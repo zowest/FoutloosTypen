@@ -14,6 +14,7 @@ public partial class AssignmentView : ContentPage
     public AssignmentView()
     {
         InitializeComponent();
+
     }
 
     public AssignmentView(AssignmentViewModel vm) : this()

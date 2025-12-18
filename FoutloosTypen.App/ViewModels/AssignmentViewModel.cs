@@ -158,6 +158,7 @@ namespace FoutloosTypen.ViewModels
             IAssignmentService assignmentService,
             IPracticeMaterialService practiceMaterialService,
             ITimerService timerService,
+            ShareViewModel shareViewModel,
             ITypingComparisonService typingComparisonService,
             IResultService resultService)
         {
@@ -165,6 +166,7 @@ namespace FoutloosTypen.ViewModels
             _assignmentService = assignmentService;
             _practiceMaterialService = practiceMaterialService;
             _timerService = timerService;
+            ShareVM = shareViewModel;
             _typingComparisonService = typingComparisonService;
             _resultService = resultService;
 
@@ -251,6 +253,26 @@ namespace FoutloosTypen.ViewModels
                     _resultService.CompleteSentence(SelectedLesson.Id, typedText);
                 
                 MoveToNextMaterial();
+            }
+        }
+
+        private void MoveToNextMaterial()
+        {
+            if (_materials == null || !_materials.Any())
+                return;
+
+            _materialIndex++;
+
+            if (_materialIndex < _materials.Count)
+            {
+                CurrentMaterial = _materials[_materialIndex];
+                Debug.WriteLine($"Moved to next material: {_materialIndex + 1}/{_materials.Count}");
+            }
+            else
+            {
+                // All materials in current assignment completed, move to next assignment
+                Debug.WriteLine("All materials completed in this assignment");
+                MoveToNextAssignment();
             }
         }
 

@@ -5,9 +5,15 @@ using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Services;
 using FoutloosTypen.ViewModels;
 using FoutloosTypen.Views;
-using Grocery.Core.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.LifecycleEvents;
+using System.Diagnostics;
+using CommunityToolkit.Maui;
+using Microsoft.Maui.Devices;
+using Microsoft.Extensions.Configuration;
+using System.IO;
+using System.Text.Json;
+using Microsoft.Maui.Storage;
 
 #if WINDOWS
 using Windows.System;
@@ -19,15 +25,19 @@ namespace FoutloosTypen
     {
         public static MauiApp CreateMauiApp()
         {
+#if DEBUG
+            DebugDatabaseReset.Reset();
+#endif
 
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
+                .UseMauiCommunityToolkit()
                 .ConfigureFonts(fonts =>
-                {
-                    fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-                    fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
-                });
+            {
+                fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
+                fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+            });
 
             // Repositories
             builder.Services.AddSingleton<ILessonRepository, LessonRepository>();
@@ -36,9 +46,14 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IPracticeMaterialRepository, PracticeMaterialRepository>();
             builder.Services.AddSingleton<IStudentRepository, StudentRepository>();
             builder.Services.AddSingleton<ITtsService, TtsService>();
+            builder.Services.AddSingleton<ISharePostRepository, SharePostRepository>();
+            builder.Services.AddSingleton<IMediaUploadRepository, MediaUploadRepository>();
+            builder.Services.AddSingleton<IXAuthRepository, XAuthRepository>();
+            builder.Services.AddSingleton<IXAuthApiRepository, XAuthApiRepository>();
+            builder.Services.AddSingleton<IImageRepository, ImageRepository>();
+            builder.Services.AddSingleton<IShareImageRepository, ShareImageRepository>();
 
-
-            // Services
+            // Domain Services
             builder.Services.AddSingleton<ILessonService, LessonService>();
             builder.Services.AddSingleton<ICourseService, CourseService>();
             builder.Services.AddSingleton<IAssignmentService, AssignmentService>();
@@ -46,15 +61,22 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IAuthService, AuthService>();
             builder.Services.AddSingleton<IStudentService, StudentService>();
             builder.Services.AddSingleton<ITimerService, TimerService>();
+            builder.Services.AddSingleton<IXAuthService, XAuthService>();
+            builder.Services.AddSingleton<IShareImageService, ShareImageService>();
             builder.Services.AddSingleton<ITypingComparisonService, TypingComparisonService>();
+          
             builder.Services.AddSingleton<IResultService, ResultService>();
             builder.Services.AddSingleton<IAudioAssignmentService, AudioAssignmentService>();
 
-            // ViewModels
+            // Use XAuthRepository to provide XAuthSettings in DI
+            builder.Services.AddSingleton<FoutloosTypen.Core.Models.XAuthSettings>(provider => provider.GetRequiredService<IXAuthRepository>().GetSettings());
+
+            // ViewModels & Views
             builder.Services.AddTransient<LessonViewModel>();
             builder.Services.AddTransient<CoursesViewModel>();
             builder.Services.AddTransient<LearnpathViewModel>();
             builder.Services.AddTransient<LessonView>();
+            builder.Services.AddSingleton<ShareViewModel>();
             builder.Services.AddTransient<AssignmentViewModel>();
             builder.Services.AddTransient<AssignmentView>();
             builder.Services.AddSingleton<GlobalViewModel>();
@@ -103,11 +125,25 @@ namespace FoutloosTypen
             });
 #endif
 #if DEBUG
-
             builder.Logging.AddDebug();
 #endif
 
-            return builder.Build();
+            var app = builder.Build();
+
+            // Debug: log loaded XAuthSettings to confirm values at startup
+            try
+            {
+                var settings = app.Services.GetRequiredService<FoutloosTypen.Core.Models.XAuthSettings>();
+                Debug.WriteLine($"Startup: XAuthSettings.ClientId set: {!string.IsNullOrEmpty(settings.ClientId)}");
+                Debug.WriteLine($"Startup: XAuthSettings.RedirectUri set: {!string.IsNullOrEmpty(settings.RedirectUri)}");
+                Debug.WriteLine($"Startup: XAuthSettings.Scopes count: {settings.Scopes?.Length ?? 0}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Startup: failed to read XAuthSettings from DI: {ex.Message}");
+            }
+
+            return app;
         }
     }
 }

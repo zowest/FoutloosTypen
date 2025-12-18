@@ -187,8 +187,35 @@
                 </VerticalStackLayout>
             </VerticalStackLayout>
 
-            <HorizontalStackLayout Grid.Row="2" HorizontalOptions="Center" Spacing="30">
-            </HorizontalStackLayout>
+            <VerticalStackLayout Grid.Row="2" HorizontalOptions="Center" Spacing="10">
+                <Button Text="Delen" 
+                        IsVisible="{Binding ShareVM.ShowShareButton}"
+                        Command="{Binding ShareVM.ToggleShareOptionsCommand}"
+                        BackgroundColor="#512BD4"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        Padding="20,10"
+                        CornerRadius="8" />
+
+                <!-- Simplified share options -->
+                <HorizontalStackLayout IsVisible="{Binding ShareVM.IsShareOptionsVisible}"
+                                       Spacing="20"
+                                       HorizontalOptions="Center">
+                    <ImageButton Source="x.png"
+                                 Command="{Binding ShareVM.ShareToTwitterCommand}"
+                                 CommandParameter="{Binding}"
+                                 BackgroundColor="Transparent"
+                                 WidthRequest="64"
+                                 HeightRequest="64"
+                                 Aspect="AspectFit" />
+                    <ImageButton Source="download.png"
+                                 Command="{Binding DownloadImageCommand}"
+                                 BackgroundColor="Transparent"
+                                 WidthRequest="64"
+                                 HeightRequest="64"
+                                 Aspect="AspectFit" />
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
         </Grid>
     </ContentPage.Content>
 </ContentPage>
