@@ -36,10 +36,6 @@
 	  <ProjectReference Include="..\FoutloosTypen.Core\FoutloosTypen.Core.csproj" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Folder Include="Resources\" />
-	</ItemGroup>
-
 	<!-- Ensure appsettings.Development.json is copied to the build output so the App can load it at runtime -->
 	<ItemGroup>
 	  <Content Include="Resources\appsettings.Development.json">
