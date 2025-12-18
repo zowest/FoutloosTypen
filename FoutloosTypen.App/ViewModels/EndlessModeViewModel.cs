@@ -18,7 +18,6 @@ namespace FoutloosTypen.ViewModels
         private const double START_TIME = 60;
         private const int BASE_SCORE = 10;
 
-        // Combo timer (altijd vaste duur)
         private const double COMBO_TIME_MAX = 3.0;
         private const double COMBO_TICK = 0.1;
 
@@ -277,24 +276,21 @@ namespace FoutloosTypen.ViewModels
 
         private double GetTimeBonus()
         {
-            if (_combo >= 10) return 3;
+            if (_combo >= 10) return 4;
             if (_combo >= 5) return 2;
             return 1;
         }
 
         private (int min, int max) GetAllowedWordLength()
         {
-            if (_combo >= 10) return (11, 16);
-            if (_combo >= 9) return (9, 14);
-            if (_combo >= 7) return (7, 12);
-            if (_combo >= 5) return (5, 9);
+            if (_combo >= 11) return (12, 15);
+            if (_combo >= 10) return (11, 13);
+            if (_combo >= 9) return (9, 11);
+            if (_combo >= 7) return (7, 9);
+            if (_combo >= 5) return (5, 7);
             if (_combo >= 3) return (4, 7);
             return (3, 4);
         }
-
-        // =====================
-        // Text rendering
-        // =====================
         private void UpdateFormattedText()
         {
             var formatted = new FormattedString();
@@ -338,9 +334,6 @@ namespace FoutloosTypen.ViewModels
             UpdateFormattedText();
         }
 
-        // =====================
-        // End
-        // =====================
         private void OnTimerExpired(object? sender, EventArgs e)
         {
             _timerService.Stop();
