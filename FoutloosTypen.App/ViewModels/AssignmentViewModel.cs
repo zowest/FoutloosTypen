@@ -19,6 +19,12 @@ namespace FoutloosTypen.ViewModels
         private readonly IResultService _resultService;
 
         private const double TIMER_DURATION = 60;
+        public enum PopupResult
+        {
+            Home,
+            Restart,
+            NextLesson
+        }
 
         private string _userInput = string.Empty;
         public string UserInput
@@ -43,7 +49,7 @@ namespace FoutloosTypen.ViewModels
         private int _materialIndex = 0;
         private int _currentAssignmentIndex = 0;
         private string _previousUserInput = string.Empty;
-        
+
         // Optimalisatie: cache vorige display state waarden
         private string _lastCorrectText = string.Empty;
         private string _lastErrorText = string.Empty;
@@ -274,9 +280,9 @@ namespace FoutloosTypen.ViewModels
         private void ApplyDisplayStateOptimized(TypingDisplayState state)
         {
             // Check of er iets veranderd is
-            if (_lastCorrectText == state.CorrectText && 
-                _lastErrorText == state.ErrorText && 
-                _lastCursorChar == state.CursorChar && 
+            if (_lastCorrectText == state.CorrectText &&
+                _lastErrorText == state.ErrorText &&
+                _lastCursorChar == state.CursorChar &&
                 _lastRemainingText == state.RemainingText)
             {
                 return; // Niets gewijzigd, skip UI update
@@ -339,14 +345,10 @@ namespace FoutloosTypen.ViewModels
             FormattedText = formatted;
         }
 
-        /// <summary>
-        /// Update progress alleen bij woordgrenzen (spaties) voor betere performance
-        /// </summary>
         private void UpdateProgressOnWordBoundary(string typedText, int correctChars)
         {
             _typedCharactersCount = correctChars;
 
-            // Tel aantal complete woorden
             int currentWordCount = 0;
             for (int i = 0; i < typedText.Length; i++)
             {
@@ -378,7 +380,7 @@ namespace FoutloosTypen.ViewModels
             if (CurrentMaterial?.Sentence != null)
             {
                 var displayState = _typingComparisonService.CalculateDisplayState(CurrentMaterial.Sentence, string.Empty);
-                
+
                 // Reset cache zodat ApplyDisplayStateOptimized alles opnieuw bouwt
                 _lastCorrectText = "FORCE_RESET";
                 ApplyDisplayStateOptimized(displayState);
@@ -478,7 +480,7 @@ namespace FoutloosTypen.ViewModels
 
             // Vind de index van de huidige les
             var currentIndex = lessonsInCourse.FindIndex(l => l.Id == SelectedLesson.Id);
-            
+
             // Return de volgende les als die bestaat
             if (currentIndex >= 0 && currentIndex < lessonsInCourse.Count - 1)
             {
@@ -535,13 +537,13 @@ namespace FoutloosTypen.ViewModels
 
             switch (result)
             {
-                case PopupResult.Home:
-                    await Shell.Current.GoToAsync("..");
+                case ResultatenPopUp.PopupResult.Home:
+                    await Shell.Current.Navigation.PopToRootAsync();
                     break;
-                case PopupResult.Restart:
+                case ResultatenPopUp.PopupResult.Restart:
                     RestartLesson();
                     break;
-                case PopupResult.NextLesson:
+                case ResultatenPopUp.PopupResult.NextLesson:
                     await NavigateToNextLessonAsync();
                     break;
             }
@@ -625,4 +627,6 @@ namespace FoutloosTypen.ViewModels
             _timerService.Stop();
         }
     }
+
+    // Add this enum at the top of the file or in a shared location if it is used elsewhere
 }
