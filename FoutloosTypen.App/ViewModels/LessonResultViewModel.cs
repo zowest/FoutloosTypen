@@ -38,16 +38,17 @@ namespace FoutloosTypen.ViewModels
         public string ResultTitle => _currentResult.Score > 0 ? "Les Voltooid!" : "Les Gefaald";
 
         // Comparison properties
-        public bool HasPreviousAttempt => _comparison != null && !_comparison.IsFirstAttempt;
+        public bool HasPreviousAttempt => _comparison != null && !_comparison.IsFirstAttempt && _comparison.PreviousBest != null;
         public bool IsNewPersonalBest => _comparison?.IsNewPersonalBest ?? false;
-        public bool IsFirstAttempt => _comparison?.IsFirstAttempt ?? true;
+        public bool ShowFirstAttemptBadge => _comparison?.IsFirstAttempt ?? true;
+        public bool ShowComparisonBadge => HasPreviousAttempt && IsNewPersonalBest;
 
         public string ComparisonTitle
         {
             get
             {
-                if (IsFirstAttempt)
-                    return "Eerste poging!";
+                if (ShowFirstAttemptBadge)
+                    return "🎯 Eerste poging!";
                 if (IsNewPersonalBest)
                     return "🎉 Nieuw persoonlijk record!";
                 return "Vergelijking met vorige beste poging";
@@ -60,9 +61,9 @@ namespace FoutloosTypen.ViewModels
             {
                 if (!HasPreviousAttempt) return "";
                 var diff = _comparison!.ScoreDifference;
-                if (diff > 0) return $"+{diff} punten";
-                if (diff < 0) return $"{diff} punten";
-                return "Zelfde score";
+                if (diff > 0) return $"(+{diff})";
+                if (diff < 0) return $"({diff})";
+                return "(=)";
             }
         }
 
@@ -72,9 +73,9 @@ namespace FoutloosTypen.ViewModels
             {
                 if (!HasPreviousAttempt) return "";
                 var diff = _comparison!.SpeedDifference;
-                if (diff > 0) return $"+{diff} WPM";
-                if (diff < 0) return $"{diff} WPM";
-                return "Zelfde snelheid";
+                if (diff > 0) return $"(+{diff})";
+                if (diff < 0) return $"({diff})";
+                return "(=)";
             }
         }
 
@@ -84,9 +85,45 @@ namespace FoutloosTypen.ViewModels
             {
                 if (!HasPreviousAttempt) return "";
                 var diff = _comparison!.AccuracyDifference;
-                if (diff > 0) return $"+{diff:F1}%";
-                if (diff < 0) return $"{diff:F1}%";
-                return "Zelfde nauwkeurigheid";
+                if (diff > 0) return $"(+{diff:F1}%)";
+                if (diff < 0) return $"({diff:F1}%)";
+                return "(=)";
+            }
+        }
+
+        public Color ScoreDifferenceColor
+        {
+            get
+            {
+                if (!HasPreviousAttempt) return Colors.Gray;
+                var diff = _comparison!.ScoreDifference;
+                if (diff > 0) return Colors.Green;
+                if (diff < 0) return Colors.Red;
+                return Colors.Gray;
+            }
+        }
+
+        public Color SpeedDifferenceColor
+        {
+            get
+            {
+                if (!HasPreviousAttempt) return Colors.Gray;
+                var diff = _comparison!.SpeedDifference;
+                if (diff > 0) return Colors.Green;
+                if (diff < 0) return Colors.Red;
+                return Colors.Gray;
+            }
+        }
+
+        public Color AccuracyDifferenceColor
+        {
+            get
+            {
+                if (!HasPreviousAttempt) return Colors.Gray;
+                var diff = _comparison!.AccuracyDifference;
+                if (diff > 0) return Colors.Green;
+                if (diff < 0) return Colors.Red;
+                return Colors.Gray;
             }
         }
 
