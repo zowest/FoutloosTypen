@@ -14,6 +14,7 @@ using Microsoft.Extensions.Configuration;
 using System.IO;
 using System.Text.Json;
 using Microsoft.Maui.Storage;
+using SkiaSharp.Views.Maui.Controls.Hosting;
 
 #if WINDOWS
 using Windows.System;
@@ -26,13 +27,14 @@ namespace FoutloosTypen
         public static MauiApp CreateMauiApp()
         {
 #if DEBUG
-            DebugDatabaseReset.Reset();
+            // DebugDatabaseReset.Reset(); // Commented out - class not found
 #endif
 
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
                 .UseMauiCommunityToolkit()
+                .UseSkiaSharp()
                 .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -45,8 +47,6 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IAssignmentRepository, AssignmentRepository>();
             builder.Services.AddSingleton<IPracticeMaterialRepository, PracticeMaterialRepository>();
             builder.Services.AddSingleton<IStudentRepository, StudentRepository>();
-            builder.Services.AddSingleton<ITtsService, TtsService>();
-            builder.Services.AddSingleton<ISharePostRepository, SharePostRepository>();
             builder.Services.AddSingleton<IMediaUploadRepository, MediaUploadRepository>();
             builder.Services.AddSingleton<IXAuthRepository, XAuthRepository>();
             builder.Services.AddSingleton<IXAuthApiRepository, XAuthApiRepository>();
@@ -62,7 +62,7 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IStudentService, StudentService>();
             builder.Services.AddSingleton<ITimerService, TimerService>();
             builder.Services.AddSingleton<IXAuthService, XAuthService>();
-            builder.Services.AddSingleton<IShareImageService, ShareImageService>();
+
             builder.Services.AddSingleton<ITypingComparisonService, TypingComparisonService>();
           
             builder.Services.AddSingleton<IResultService, ResultService>();

@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using FoutloosTypen.Core.Models;
 using FoutloosTypen.Core.Interfaces.Services;
+using FoutloosTypen.Core.Interfaces.Repositories;
 using System.ComponentModel;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.Input;
@@ -17,6 +18,11 @@ namespace FoutloosTypen.ViewModels
         private readonly ITimerService _timerService;
         private readonly ITypingComparisonService _typingComparisonService;
         private readonly IResultService _ResultService;
+        private readonly IXAuthService _xAuthService;
+        private readonly IMediaUploadRepository _mediaUploadRepository;
+        private readonly IXAuthRepository _xAuthRepository;
+        private readonly IShareImageRepository _shareImageRepository;
+        private readonly XAuthSettings _xSettings;
 
         private const double TIMER_DURATION = 60; // 60 seconden per opdracht!
 
@@ -172,7 +178,12 @@ namespace FoutloosTypen.ViewModels
             ITimerService timerService,
             ShareViewModel shareViewModel,
             ITypingComparisonService typingComparisonService,
-            IResultService ResultService)
+            IResultService ResultService,
+            IXAuthService xAuthService,
+            IMediaUploadRepository mediaUploadRepository,
+            IXAuthRepository xAuthRepository,
+            IShareImageRepository shareImageRepository,
+            XAuthSettings xSettings)
         {
             _lessonService = lessonService;
             _assignmentService = assignmentService;
@@ -182,6 +193,11 @@ namespace FoutloosTypen.ViewModels
             _typingComparisonService = typingComparisonService;
 
             _ResultService = ResultService;
+            _xAuthService = xAuthService;
+            _mediaUploadRepository = mediaUploadRepository;
+            _xAuthRepository = xAuthRepository;
+            _shareImageRepository = shareImageRepository;
+            _xSettings = xSettings;
 
             // Subscribe to timer expired event
             _timerService.TimerExpired += OnTimerExpired;
@@ -216,8 +232,16 @@ namespace FoutloosTypen.ViewModels
             if (progress == null)
                 return;
 
-            // Show custom popup with progress data
-            var popup = new ResultatenPopUp(progress);
+            // Show custom popup with progress data and share functionality
+            var popup = new ResultatenPopUp(
+                progress,
+                SelectedLesson.Name,
+                _xAuthService,
+                _mediaUploadRepository,
+                _xAuthRepository,
+                _shareImageRepository,
+                _xSettings);
+            
             await Application.Current.MainPage.Navigation.PushModalAsync(popup);
             
             // Wait for user response
@@ -332,19 +356,19 @@ namespace FoutloosTypen.ViewModels
             {
                 // All assignments completed - Show results popup
                 Debug.WriteLine("All assignments completed! Showing results...");
-                
+
                 if (SelectedLesson != null)
                 {
                     _ResultService.EndLesson(SelectedLesson.Id);
                 }
-                
+
                 ShowLessonResults();
                 return;
             }
 
             // Reset timer for next assignment
             RestartTimer();
-            
+
             // Move to next assignment
             SelectedAssignment = Assignments[_currentAssignmentIndex];
             Debug.WriteLine($"Moved to assignment {_currentAssignmentIndex + 1}/{Assignments.Count}");
@@ -369,6 +393,7 @@ namespace FoutloosTypen.ViewModels
                 MoveToNextAssignment();
             }
         }
+
 
         /// <summary>
         /// Herstart de huidige les vanaf het begin
@@ -403,7 +428,15 @@ namespace FoutloosTypen.ViewModels
             if (Application.Current?.MainPage != null && SelectedLesson != null)
             {
                 var progress = _ResultService.GetProgress(SelectedLesson.Id);
-                var popup = new Views.ResultatenPopUp(progress);
+                var popup = new ResultatenPopUp(
+                    progress,
+                    SelectedLesson.Name,
+                    _xAuthService,
+                    _mediaUploadRepository,
+                    _xAuthRepository,
+                    _shareImageRepository,
+                    _xSettings);
+                
                 await Application.Current.MainPage.Navigation.PushModalAsync(popup);
 
                 // Wacht tot de gebruiker op de knop klikt
@@ -478,13 +511,6 @@ namespace FoutloosTypen.ViewModels
             UserInput = typedText;
             UpdateFormattedText();
 
-            // Check if sentence is complete and correct
-            if (typedText == CurrentMaterial.Sentence)
-            {
-                Debug.WriteLine("Sentence completed correctly!");
-                
-                // Move to next sentence or assignment
-                MoveToNextMaterial();
             // Update current progress (including incomplete sentences)
             if (SelectedLesson != null)
             {
@@ -503,26 +529,6 @@ namespace FoutloosTypen.ViewModels
                 
                 // Move to next sentence or assignment
                 MoveToNextMaterial();
-            }
-        }
-
-        private void MoveToNextMaterial()
-        {
-            if (_materials == null || !_materials.Any())
-                return;
-
-            _materialIndex++;
-
-            if (_materialIndex < _materials.Count)
-            {
-                CurrentMaterial = _materials[_materialIndex];
-                Debug.WriteLine($"Moved to next material: {_materialIndex + 1}/{_materials.Count}");
-            }
-            else
-            {
-                // All materials in current assignment completed, move to next assignment
-                Debug.WriteLine("All materials completed in this assignment");
-                MoveToNextAssignment();
             }
         }
 
@@ -574,9 +580,6 @@ namespace FoutloosTypen.ViewModels
             FormattedText = formatted;
         }
 
-        public override void OnDisappearing()
-        {
-            base.OnDisappearing();
         private void ResetTyping()
         {
             UserInput = string.Empty;

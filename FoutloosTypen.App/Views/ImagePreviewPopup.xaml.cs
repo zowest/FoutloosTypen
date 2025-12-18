@@ -22,8 +22,6 @@ namespace FoutloosTypen.Views
             CancelButton.Clicked += OnCancelClicked;
             ShareButton.Clicked += OnShareClicked;
 
-            TweetLabel.Text = _viewModel.TweetText;
-
             if (_viewModel.ImageBytes != null && _viewModel.ImageBytes.Length > 0)
             {
                 PreviewImage.Source = ImageSource.FromStream(() => new MemoryStream(_viewModel.ImageBytes));
