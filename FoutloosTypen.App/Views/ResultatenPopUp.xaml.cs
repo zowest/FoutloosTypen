@@ -4,6 +4,7 @@ using FoutloosTypen.ViewModels;
 using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Interfaces.Repositories;
 using Microsoft.Maui.Controls;
+using Microsoft.Extensions.DependencyInjection; // added
 
 namespace FoutloosTypen.Views
 {
@@ -30,7 +31,7 @@ namespace FoutloosTypen.Views
             XAuthSettings xSettings)
         {
             InitializeComponent();
-            
+
             _viewModel = new LessonResultViewModel(
                 progress,
                 lessonName,
@@ -39,19 +40,48 @@ namespace FoutloosTypen.Views
                 xAuthRepository,
                 shareImageRepository,
                 xSettings);
-            
+
             BindingContext = _viewModel;
             _userResponseTcs = new TaskCompletionSource<PopupResult>();
         }
 
-        // Constructor zonder share functionaliteit (backward compatibility)
+        // Constructor zonder expliciete parameters: probeer DI te gebruiken voor share
         public ResultatenPopUp(Result progress)
         {
             InitializeComponent();
-            
-            _viewModel = new LessonResultViewModel(progress);
+
+            // Try to resolve sharing dependencies from DI; if unavailable, fall back
+            var services = Application.Current?.Handler?.MauiContext?.Services;
+
+            var xAuthService = services?.GetService<IXAuthService>();
+            var mediaUploadRepository = services?.GetService<IMediaUploadRepository>();
+            var xAuthRepository = services?.GetService<IXAuthRepository>();
+            var shareImageRepository = services?.GetService<IShareImageRepository>();
+            var xSettings = services?.GetService<XAuthSettings>();
+
+            if (xAuthService != null &&
+                mediaUploadRepository != null &&
+                xAuthRepository != null &&
+                shareImageRepository != null &&
+                xSettings != null)
+            {
+                // No lesson name available here; use empty string
+                _viewModel = new LessonResultViewModel(
+                    progress,
+                    string.Empty,
+                    xAuthService,
+                    mediaUploadRepository,
+                    xAuthRepository,
+                    shareImageRepository,
+                    xSettings);
+            }
+            else
+            {
+                // Fallback: still functional UI, share disabled
+                _viewModel = new LessonResultViewModel(progress);
+            }
+
             BindingContext = _viewModel;
-            
             _userResponseTcs = new TaskCompletionSource<PopupResult>();
         }
 
@@ -114,5 +144,5 @@ namespace FoutloosTypen.Views
         {
             return true;
         }
-        }
+    }
 }

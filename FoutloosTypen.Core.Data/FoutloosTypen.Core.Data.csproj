@@ -24,6 +24,7 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.1" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="10.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
@@ -36,11 +37,7 @@
 	  <ProjectReference Include="..\FoutloosTypen.Core\FoutloosTypen.Core.csproj" />
 	</ItemGroup>
 
-	<!-- Ensure appsettings.Development.json is copied to the build output so the App can load it at runtime -->
-	<ItemGroup>
-	  <Content Include="Resources\appsettings.Development.json">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
+	<ItemGroup Condition="Exists('Resources/XApi.env')">
+		<EmbeddedResource Include="Resources\XApi.env" LogicalName="Resources/XApi.env" />
 	</ItemGroup>
-
 </Project>

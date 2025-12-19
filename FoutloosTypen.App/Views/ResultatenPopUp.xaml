@@ -12,20 +12,17 @@
            HorizontalOptions="Center"
            VerticalOptions="Center">
         <Grid>
-            <!-- Share button rechtsboven -->
             <ImageButton Source="x.png"
                          BackgroundColor="Transparent"
-                         BorderColor="Transparent"
-                         BorderWidth="0"
-                         CornerRadius="0"
-                         Padding="0"
+                         Command="{Binding ShareToTwitterCommand}"
+                         IsEnabled="{Binding CanShare}"
+                         ToolTipProperties.Text="Deel op X (Twitter)"
                          WidthRequest="48"
                          HeightRequest="48"
-                         Aspect="AspectFit"
-                         Clicked="OnShareClicked"
                          HorizontalOptions="End"
                          VerticalOptions="Start"
-                         IsVisible="{Binding CanShare}">
+                         Padding="0"
+                         Opacity="1.0">
                 <ImageButton.GestureRecognizers>
                     <PointerGestureRecognizer
                         PointerEntered="OnHoverEnter"
