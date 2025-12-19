@@ -1,5 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -10,11 +9,11 @@ using FoutloosTypen.Core.Models;
 namespace FoutloosTypen.ViewModels
 {
     [QueryProperty(nameof(LessonId), "lessonId")]
-    public partial class LeaderboardViewModel : BaseViewModel, INotifyPropertyChanged
+    public partial class LeaderboardViewModel : BaseViewModel
     {
         private readonly ILeaderboardService _leaderboardService;
         private readonly IResultService _resultService;
-        private readonly ILessonService _lesson_service;
+        private readonly ILessonService _lessonService;
         private readonly IStudentService _studentService;
         private readonly GlobalViewModel _global;
 
@@ -32,64 +31,26 @@ namespace FoutloosTypen.ViewModels
         public ObservableCollection<LeaderboardStudent> EndlessResults { get; set; } = new();
         public ObservableCollection<LeaderboardEntry> LessonResults { get; set; } = new();
 
+        [ObservableProperty]
         private int _lessonId;
-        public int LessonId
-        {
-            get => _lessonId;
-            set
-            {
-                if (SetProperty(ref _lessonId, value))
-                {
-                    IsLessonSpecific = value > 0;
-                    LoadLeaderboardAsync();
-                }
-            }
-        }
 
+        [ObservableProperty]
         private bool _isLessonSpecific;
-        public bool IsLessonSpecific
-        {
-            get => _isLessonSpecific;
-            set => SetProperty(ref _isLessonSpecific, value);
-        }
 
+        [ObservableProperty]
         private string _lessonName = string.Empty;
-        public string LessonName
-        {
-            get => _lessonName;
-            set => SetProperty(ref _lessonName, value);
-        }
 
+        [ObservableProperty]
         private int _currentStudentRank;
-        public int CurrentStudentRank
-        {
-            get => _currentStudentRank;
-            set => SetProperty(ref _currentStudentRank, value);
-        }
 
+        [ObservableProperty]
         private string _pageTitle = "Klassement";
-        public string PageTitle
-        {
-            get => _pageTitle;
-            set => SetProperty(ref _pageTitle, value);
-        }
 
         // Tabs
         public enum LeaderboardTab { TotalScore, Endless }
+        
+        [ObservableProperty]
         private LeaderboardTab _selectedTab = LeaderboardTab.TotalScore;
-        public LeaderboardTab SelectedTab
-        {
-            get => _selectedTab;
-            set
-            {
-                if (SetProperty(ref _selectedTab, value))
-                {
-                    OnPropertyChanged(nameof(IsTotalScoreTabSelected));
-                    OnPropertyChanged(nameof(IsEndlessTabSelected));
-                    LoadLeaderboardAsync();
-                }
-            }
-        }
 
         public bool IsTotalScoreTabSelected => SelectedTab == LeaderboardTab.TotalScore;
         public bool IsEndlessTabSelected => SelectedTab == LeaderboardTab.Endless;
@@ -103,9 +64,22 @@ namespace FoutloosTypen.ViewModels
         {
             _leaderboardService = leaderboardService;
             _resultService = resultService;
-            _lesson_service = lessonService;
+            _lessonService = lessonService;
             _studentService = studentService;
             _global = global;
+        }
+
+        partial void OnLessonIdChanged(int value)
+        {
+            IsLessonSpecific = value > 0;
+            LoadLeaderboardAsync();
+        }
+
+        partial void OnSelectedTabChanged(LeaderboardTab value)
+        {
+            OnPropertyChanged(nameof(IsTotalScoreTabSelected));
+            OnPropertyChanged(nameof(IsEndlessTabSelected));
+            LoadLeaderboardAsync();
         }
 
         public override void OnAppearing()
@@ -143,7 +117,7 @@ namespace FoutloosTypen.ViewModels
         {
             try
             {
-                var lesson = _lesson_service.Get(LessonId);
+                var lesson = _lessonService.Get(LessonId);
                 LessonName = lesson?.Name ?? $"Les {LessonId}";
                 PageTitle = $"Klassement - {LessonName}";
 
@@ -194,7 +168,6 @@ namespace FoutloosTypen.ViewModels
         {
             PageTitle = "Algemeen Klassement";
 
-            // Get all students and order by TotalScore descending
             var students = _studentService.GetAll() ?? new List<Student>();
             var ordered = students.OrderByDescending(s => s.TotalScore).ToList();
 
@@ -226,8 +199,8 @@ namespace FoutloosTypen.ViewModels
         private void LoadEndlessLeaderboard()
         {
             PageTitle = "Algemeen Klassement - Endless Mode";
-            // Placeholder: no data yet
             EndlessResults.Clear();
+            CurrentStudentRank = 0;
             Debug.WriteLine("[LeaderboardViewModel] Endless leaderboard placeholder");
         }
 
@@ -242,7 +215,5 @@ namespace FoutloosTypen.ViewModels
         {
             await Microsoft.Maui.Controls.Shell.Current.GoToAsync("//LessonView");
         }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }

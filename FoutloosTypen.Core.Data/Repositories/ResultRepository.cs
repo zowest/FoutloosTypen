@@ -25,7 +25,6 @@ namespace FoutloosTypen.Core.Data.Repositories
                 );
             """);
 
-            // Verwijder oude UNIQUE constraint als die bestaat
             try
             {
                 OpenConnection();
@@ -37,7 +36,6 @@ namespace FoutloosTypen.Core.Data.Repositories
             }
             catch (MySqlConnector.MySqlException)
             {
-                // Constraint bestaat niet, negeren
                 CloseConnection();
             }
         }

@@ -3,7 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="FoutloosTypen.Views.ProfileView"
              Title="Profiel"
-             BackgroundColor="White">
+             BackgroundColor="White"
+             Shell.NavBarIsVisible="False"
+             Shell.TabBarIsVisible="False">
     <Grid Padding="20">
         <!-- Definieer rows voor structuur -->
         <Grid.RowDefinitions>
@@ -36,7 +38,7 @@
         <VerticalStackLayout Grid.Row="1"
                              HorizontalOptions="Start"
                              VerticalOptions="Start"
-                             Spacing="100"
+                             Spacing="60"
                              Padding="40,20,40,40">
             
             <!-- Naam -->
@@ -55,45 +57,76 @@
                            FontSize="48"/>
                 </HorizontalStackLayout>
             </HorizontalStackLayout>
-            
-            <!-- Statistieken -->
+
+            <!-- Voortgang -->
             <VerticalStackLayout Spacing="12">
-                <Label Text="Statistieken:"
+                <Label Text="Voortgang:"
                        TextColor="Black"
                        FontSize="32"
                        FontAttributes="Bold"
                        Margin="0,0,0,10"/>
                 <HorizontalStackLayout>
-                    <Label Text="Gemiddelde WPM: "
+                    <Label Text="Voltooide lessen: "
+                           TextColor="Black"
+                           FontSize="20"/>
+                    <Label Text="{Binding CompletedLessons}"
+                           TextColor="Black"
+                           FontSize="20"
+                           FontAttributes="Bold"/>
+                </HorizontalStackLayout>
+                <HorizontalStackLayout>
+                    <Label Text="Totale score: "
+                           TextColor="Black"
+                           FontSize="20"/>
+                    <Label Text="{Binding TotalScore}"
+                           TextColor="Black"
+                           FontSize="20"
+                           FontAttributes="Bold"/>
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+            
+            <!-- Statistieken -->
+            <VerticalStackLayout Spacing="12">
+                <Label Text="Gemiddelde statistieken:"
+                       TextColor="Black"
+                       FontSize="32"
+                       FontAttributes="Bold"
+                       Margin="0,0,0,10"/>
+                <HorizontalStackLayout>
+                    <Label Text="Snelheid (WPM): "
                            TextColor="Black"
                            FontSize="20"/>
                     <Label Text="{Binding AverageWordsPerMinute}"
                            TextColor="Black"
-                           FontSize="20"/>
+                           FontSize="20"
+                           FontAttributes="Bold"/>
                 </HorizontalStackLayout>
                 <HorizontalStackLayout>
-                    <Label Text="Gemiddelde APM: "
+                    <Label Text="Toetsaanslagen (SPM): "
                            TextColor="Black"
                            FontSize="20"/>
                     <Label Text="{Binding AverageStrokesPerMinute}"
                            FontSize="20"
-                           TextColor="Black"/>
+                           TextColor="Black"
+                           FontAttributes="Bold"/>
                 </HorizontalStackLayout>
                 <HorizontalStackLayout Spacing="10">
-                    <Label Text="Gemiddelde nauwkeurigheid: "
+                    <Label Text="Nauwkeurigheid: "
                            FontSize="20"
                            TextColor="Black"/>
                     <Label Text="{Binding AverageAccuracy}"
                            TextColor="Black"
-                           FontSize="20"/>
+                           FontSize="20"
+                           FontAttributes="Bold"/>
                 </HorizontalStackLayout>
                 <HorizontalStackLayout>
-                    <Label Text="Gemiddeld aantal fouten: "
+                    <Label Text="Fouten per sessie: "
                            TextColor="Black"
                            FontSize="20"/>
                     <Label Text="{Binding AverageSessionMistakes}"
                            TextColor="Black"
-                           FontSize="20"/>
+                           FontSize="20"
+                           FontAttributes="Bold"/>
                 </HorizontalStackLayout>
             </VerticalStackLayout>
         </VerticalStackLayout>
