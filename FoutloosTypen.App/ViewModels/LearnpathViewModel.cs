@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using System.Diagnostics;
 using CommunityToolkit.Mvvm.Input;
 using FoutloosTypen.Views;
 using Microsoft.Maui.Controls;
@@ -47,7 +48,24 @@ namespace FoutloosTypen.ViewModels
         [RelayCommand]
         private async Task OpenLeaderboard()
         {
-            await Shell.Current.GoToAsync("//LeaderboardView");
+            try
+            {
+                Debug.WriteLine("[LearnpathViewModel] OpenLeaderboard called");
+
+                if (Shell.Current == null)
+                {
+                    Debug.WriteLine("[LearnpathViewModel] Shell.Current is null - cannot navigate");
+                    return;
+                }
+
+                // Use registered route name (more robust than absolute '//' route)
+                await Shell.Current.GoToAsync(nameof(LeaderboardView));
+                Debug.WriteLine("[LearnpathViewModel] Navigation to LeaderboardView requested");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.WriteLine($"[LearnpathViewModel] OpenLeaderboard navigation failed: {ex}");
+            }
         }
     }
 }

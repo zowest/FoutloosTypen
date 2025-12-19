@@ -1,5 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FoutloosTypen.Core.Interfaces.Services;
@@ -12,11 +14,22 @@ namespace FoutloosTypen.ViewModels
     {
         private readonly ILeaderboardService _leaderboardService;
         private readonly IResultService _resultService;
-        private readonly ILessonService _lessonService;
+        private readonly ILessonService _lesson_service;
         private readonly IStudentService _studentService;
         private readonly GlobalViewModel _global;
 
-        public ObservableCollection<Student> TopStudents { get; set; } = new();
+        // Display model used in the UI so we can expose Rank easily
+        public class LeaderboardStudent
+        {
+            public int Id { get; set; }
+            public int Rank { get; set; }
+            public string Name { get; set; } = string.Empty;
+            public int TotalScore { get; set; }
+            public bool IsCurrentUser { get; set; }
+        }
+
+        public ObservableCollection<LeaderboardStudent> TopStudents { get; set; } = new();
+        public ObservableCollection<LeaderboardStudent> EndlessResults { get; set; } = new();
         public ObservableCollection<LeaderboardEntry> LessonResults { get; set; } = new();
 
         private int _lessonId;
@@ -47,31 +60,11 @@ namespace FoutloosTypen.ViewModels
             set => SetProperty(ref _lessonName, value);
         }
 
-        private LeaderboardCategory _selectedCategory = LeaderboardCategory.Speed;
-        public LeaderboardCategory SelectedCategory
-        {
-            get => _selectedCategory;
-            set
-            {
-                if (SetProperty(ref _selectedCategory, value))
-                {
-                    LoadLeaderboardAsync();
-                }
-            }
-        }
-
         private int _currentStudentRank;
         public int CurrentStudentRank
         {
             get => _currentStudentRank;
             set => SetProperty(ref _currentStudentRank, value);
-        }
-
-        private string _categoryTitle = "Snelheid";
-        public string CategoryTitle
-        {
-            get => _categoryTitle;
-            set => SetProperty(ref _categoryTitle, value);
         }
 
         private string _pageTitle = "Klassement";
@@ -80,6 +73,26 @@ namespace FoutloosTypen.ViewModels
             get => _pageTitle;
             set => SetProperty(ref _pageTitle, value);
         }
+
+        // Tabs
+        public enum LeaderboardTab { TotalScore, Endless }
+        private LeaderboardTab _selectedTab = LeaderboardTab.TotalScore;
+        public LeaderboardTab SelectedTab
+        {
+            get => _selectedTab;
+            set
+            {
+                if (SetProperty(ref _selectedTab, value))
+                {
+                    OnPropertyChanged(nameof(IsTotalScoreTabSelected));
+                    OnPropertyChanged(nameof(IsEndlessTabSelected));
+                    LoadLeaderboardAsync();
+                }
+            }
+        }
+
+        public bool IsTotalScoreTabSelected => SelectedTab == LeaderboardTab.TotalScore;
+        public bool IsEndlessTabSelected => SelectedTab == LeaderboardTab.Endless;
 
         public LeaderboardViewModel(
             ILeaderboardService leaderboardService,
@@ -90,7 +103,7 @@ namespace FoutloosTypen.ViewModels
         {
             _leaderboardService = leaderboardService;
             _resultService = resultService;
-            _lessonService = lessonService;
+            _lesson_service = lessonService;
             _studentService = studentService;
             _global = global;
         }
@@ -103,119 +116,131 @@ namespace FoutloosTypen.ViewModels
 
         private void LoadLeaderboardAsync()
         {
-            if (IsLessonSpecific)
+            try
             {
-                LoadLessonLeaderboard();
+                if (IsLessonSpecific)
+                {
+                    LoadLessonLeaderboard();
+                    return;
+                }
+
+                if (SelectedTab == LeaderboardTab.TotalScore)
+                    LoadTotalScoreLeaderboard();
+                else
+                    LoadEndlessLeaderboard();
             }
-            else
+            catch (System.Exception ex)
             {
-                LoadGeneralLeaderboard();
+                Debug.WriteLine($"[LeaderboardViewModel] LoadLeaderboardAsync failed: {ex}");
+                TopStudents.Clear();
+                EndlessResults.Clear();
+                LessonResults.Clear();
+                PageTitle = "Klassement (error)";
             }
         }
 
         private void LoadLessonLeaderboard()
         {
-            var lesson = _lessonService.Get(LessonId);
-            LessonName = lesson?.Name ?? $"Les {LessonId}";
-            PageTitle = $"Klassement - {LessonName}";
-
-            var results = _resultService.GetLessonLeaderboard(LessonId, 10);
-
-            LessonResults.Clear();
-            int rank = 1;
-            foreach (var result in results)
+            try
             {
-                var student = _studentService.Get(result.StudentId);
-                if (student != null)
+                var lesson = _lesson_service.Get(LessonId);
+                LessonName = lesson?.Name ?? $"Les {LessonId}";
+                PageTitle = $"Klassement - {LessonName}";
+
+                var results = _resultService.GetLessonLeaderboard(LessonId, 10);
+
+                LessonResults.Clear();
+                int rank = 1;
+                foreach (var result in results)
                 {
-                    LessonResults.Add(new LeaderboardEntry
+                    var student = _studentService.Get(result.StudentId);
+                    if (student != null)
                     {
-                        Rank = rank++,
-                        StudentName = student.Name,
-                        Speed = result.WordsPerMinute,
-                        Accuracy = result.AccuracyPercent,
-                        Score = result.Score,
-                        IsCurrentUser = _global.Student?.Id == student.Id
-                    });
+                        LessonResults.Add(new LeaderboardEntry
+                        {
+                            Rank = rank++,
+                            StudentName = student.Name,
+                            Speed = result.WordsPerMinute,
+                            Accuracy = result.AccuracyPercent,
+                            Score = result.Score,
+                            IsCurrentUser = _global.Student?.Id == student.Id
+                        });
+                    }
+                }
+
+                if (_global.Student != null)
+                {
+                    var bestResult = _resultService.GetStudentBestResult(LessonId, _global.Student.Id);
+                    if (bestResult != null)
+                    {
+                        var studentRankIndex = results.FindIndex(r => r.StudentId == _global.Student.Id);
+                        CurrentStudentRank = studentRankIndex >= 0 ? studentRankIndex + 1 : results.Count + 1;
+                    }
+                    else
+                    {
+                        CurrentStudentRank = 0;
+                    }
                 }
             }
-
-            if (_global.Student != null)
+            catch (System.Exception ex)
             {
-                var bestResult = _resultService.GetStudentBestResult(LessonId, _global.Student.Id);
-                if (bestResult != null)
-                {
-                    var studentRankIndex = results.FindIndex(r => r.StudentId == _global.Student.Id);
-                    CurrentStudentRank = studentRankIndex >= 0 ? studentRankIndex + 1 : results.Count + 1;
-                }
-                else
-                {
-                    CurrentStudentRank = 0;
-                }
+                Debug.WriteLine($"[LeaderboardViewModel] LoadLessonLeaderboard failed: {ex}");
+                LessonResults.Clear();
+                PageTitle = "Les klassement (error)";
             }
         }
 
-        private void LoadGeneralLeaderboard()
+        private void LoadTotalScoreLeaderboard()
         {
             PageTitle = "Algemeen Klassement";
 
-            var students = _leaderboardService.GetLeaderboard(SelectedCategory, 10);
+            // Get all students and order by TotalScore descending
+            var students = _studentService.GetAll() ?? new List<Student>();
+            var ordered = students.OrderByDescending(s => s.TotalScore).ToList();
 
             TopStudents.Clear();
-            foreach (var student in students)
+            int rank = 1;
+            foreach (var s in ordered)
             {
-                TopStudents.Add(student);
+                TopStudents.Add(new LeaderboardStudent
+                {
+                    Id = s.Id,
+                    Rank = rank++,
+                    Name = s.Name,
+                    TotalScore = s.TotalScore,
+                    IsCurrentUser = _global.Student?.Id == s.Id
+                });
             }
-
-            CategoryTitle = SelectedCategory switch
-            {
-                LeaderboardCategory.Speed => "Snelheid (WPM)",
-                LeaderboardCategory.Precision => "Nauwkeurigheid (%)",
-                LeaderboardCategory.Score => "Totale Score",
-                LeaderboardCategory.CompletedLessons => "Voltooide Lessen",
-                _ => "Leaderboard"
-            };
 
             if (_global.Student != null)
             {
-                CurrentStudentRank = _leaderboardService.GetStudentRank(_global.Student.Id, SelectedCategory);
+                var idx = ordered.FindIndex(s => s.Id == _global.Student.Id);
+                CurrentStudentRank = idx >= 0 ? idx + 1 : 0;
+            }
+            else
+            {
+                CurrentStudentRank = 0;
             }
         }
 
-        [RelayCommand]
-        private void SelectCategorySpeed()
+        private void LoadEndlessLeaderboard()
         {
-            SelectedCategory = LeaderboardCategory.Speed;
+            PageTitle = "Algemeen Klassement - Endless Mode";
+            // Placeholder: no data yet
+            EndlessResults.Clear();
+            Debug.WriteLine("[LeaderboardViewModel] Endless leaderboard placeholder");
         }
 
         [RelayCommand]
-        private void SelectCategoryPrecision()
-        {
-            SelectedCategory = LeaderboardCategory.Precision;
-        }
+        private void SelectTotalScoreTab() => SelectedTab = LeaderboardTab.TotalScore;
 
         [RelayCommand]
-        private void SelectCategoryScore()
-        {
-            SelectedCategory = LeaderboardCategory.Score;
-        }
+        private void SelectEndlessTab() => SelectedTab = LeaderboardTab.Endless;
 
         [RelayCommand]
-        private void SelectCategoryLessons()
+        private async System.Threading.Tasks.Task NavigateHome()
         {
-            SelectedCategory = LeaderboardCategory.CompletedLessons;
-        }
-
-        [RelayCommand]
-        private async Task NavigateHome()
-        {
-            await Shell.Current.GoToAsync("//LessonView");
-        }
-
-        [RelayCommand]
-        private async Task ViewGeneralLeaderboard()
-        {
-            await Shell.Current.GoToAsync("//LeaderboardView");
+            await Microsoft.Maui.Controls.Shell.Current.GoToAsync("//LessonView");
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
