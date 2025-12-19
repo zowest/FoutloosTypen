@@ -16,6 +16,7 @@
 		<PackageReference Include="NUnit" Version="4.4.0" />
 		<PackageReference Include="NUnit.Analyzers" Version="4.4.0" />
 		<PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+		<PackageReference Include="SkiaSharp" Version="3.119.2-preview.1" />
 	</ItemGroup>
 
 	<ItemGroup>
