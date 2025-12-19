@@ -1,15 +1,15 @@
-﻿using System;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using FoutloosTypen.Core.Interfaces.Repositories;
+using FoutloosTypen.Core.Interfaces.Services;
+using FoutloosTypen.Core.Models;
+using Microsoft.Maui.Controls;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using CommunityToolkit.Mvvm.Input;
-using FoutloosTypen.Core.Interfaces.Services;
-using FoutloosTypen.Core.Models;
-using Microsoft.Maui.Controls;
-using Microsoft.Maui.Dispatching;
-using Microsoft.Maui.Graphics;
 
 namespace FoutloosTypen.ViewModels
 {
@@ -23,6 +23,8 @@ namespace FoutloosTypen.ViewModels
 
         private readonly IEndlessModeService _endlessModeService;
         private readonly ITimerService _timerService;
+        private readonly IResultRepository _resultRepository;
+        private readonly GlobalViewModel _globalViewModel;
         private readonly Random _random = new();
 
         private readonly IDispatcherTimer _comboTimer;
@@ -37,12 +39,17 @@ namespace FoutloosTypen.ViewModels
         private int _score;
         private double _comboTimeRemaining;
         private bool _isGameOver;
+        
         public EndlessModeViewModel(
             IEndlessModeService endlessModeService,
-            ITimerService timerService)
+            ITimerService timerService,
+            IResultRepository resultRepository,
+            GlobalViewModel globalViewModel)
         {
             _endlessModeService = endlessModeService;
             _timerService = timerService;
+            _resultRepository = resultRepository;
+            _globalViewModel = globalViewModel;
 
             RefreshCommand = new RelayCommand(Restart);
             HomeCommand = new RelayCommand(() => RequestHome?.Invoke());
@@ -143,6 +150,7 @@ namespace FoutloosTypen.ViewModels
             _comboTimer.Stop();
             _timerService.TimerExpired -= OnTimerExpired;
         }
+        
         private void Start()
         {
             IsGameOver = false;
@@ -242,6 +250,7 @@ namespace FoutloosTypen.ViewModels
 
             CurrentWord = pool[_random.Next(pool.Count)];
         }
+        
         private void StartComboTimer()
         {
             ComboTimeRemaining = COMBO_TIME_MAX;
@@ -291,6 +300,7 @@ namespace FoutloosTypen.ViewModels
             if (_combo >= 3) return (4, 7);
             return (3, 4);
         }
+        
         private void UpdateFormattedText()
         {
             var formatted = new FormattedString();
@@ -339,6 +349,29 @@ namespace FoutloosTypen.ViewModels
             _timerService.Stop();
             _comboTimer.Stop();
             IsGameOver = true;
+            
+            // Save the endless mode score to database
+            SaveEndlessModeScore();
+        }
+
+        private void SaveEndlessModeScore()
+        {
+            try
+            {
+                if (_globalViewModel?.Student != null)
+                {
+                    _resultRepository.SaveEndlessModeResult(_globalViewModel.Student.Id, Score);
+                    Debug.WriteLine($"Endless mode score saved: StudentId={_globalViewModel.Student.Id}, Score={Score}");
+                }
+                else
+                {
+                    Debug.WriteLine("Cannot save endless mode score: No student logged in");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error saving endless mode score: {ex.Message}");
+            }
         }
     }
 }

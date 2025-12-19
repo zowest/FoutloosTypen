@@ -64,7 +64,8 @@
                     Text="{Binding UserInput}"
                     TextChanged="OnTextChanged"
                     Opacity="0"
-                    HeightRequest="0" />
+                    HeightRequest="1"
+                    HorizontalOptions="Fill" />
             </VerticalStackLayout>
         </VerticalStackLayout>
 

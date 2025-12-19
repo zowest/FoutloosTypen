@@ -23,7 +23,7 @@ namespace FoutloosTypen.Core.Data.Repositories
                     WordsPerMinute   = VALUES(WordsPerMinute),
                     TotalMistakes    = VALUES(TotalMistakes),
                     Score            = VALUES(Score),
-                    TimeRemaining    = VALUES(TimeRemaining),
+                    TimeRemaining    = VALUES(TimeRemaining)
             """;
 
             AddParam(command, "@studentId", result.StudentId);
@@ -33,6 +33,26 @@ namespace FoutloosTypen.Core.Data.Repositories
             AddParam(command, "@mistakes", result.TotalMistakes);
             AddParam(command, "@score", result.Score);
             AddParam(command, "@timeRemaining", result.TimeRemaining);
+
+            command.ExecuteNonQuery();
+            CloseConnection();
+        }
+
+        public void SaveEndlessModeResult(int studentId, int score)
+        {
+            OpenConnection();
+
+            using var command = Connection.CreateCommand();
+            command.CommandText = """
+                INSERT INTO EndlessModeResults
+                (StudentId, Score, CompletedAt)
+                VALUES
+                (@studentId, @score, @completedAt)
+            """;
+
+            AddParam(command, "@studentId", studentId);
+            AddParam(command, "@score", score);
+            AddParam(command, "@completedAt", DateTime.Now);
 
             command.ExecuteNonQuery();
             CloseConnection();
@@ -116,18 +136,13 @@ namespace FoutloosTypen.Core.Data.Repositories
         {
             return new Result
             {
-                // Assuming the order of columns in SELECT matches the properties
-                // and that all properties are settable
-                // Id is not present in Result, so skip index 0
                 StudentId = reader.GetInt32(1),
                 LessonId = reader.GetInt32(2),
                 StrokesPerMinute = reader.GetInt32(3),
                 WordsPerMinute = reader.GetInt32(4),
                 TotalMistakes = reader.GetInt32(5),
                 Score = reader.GetInt32(6),
-                // TimeRemaining is a double in the model, but int in the DB, so cast
                 TimeRemaining = Convert.ToDouble(reader.GetInt32(7))
-                // Add more property assignments here if needed and available in the Result class
             };
         }
 
