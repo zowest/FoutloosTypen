@@ -20,7 +20,7 @@ namespace FoutloosTypen.ViewModels
         private string loginMessage;
 
         public LoginViewModel(IAuthService authService, GlobalViewModel global)
-        { //_authService = App.Services.GetServices<IAuthService>().FirstOrDefault();
+        {
             _authService = authService;
             _global = global;
         }
@@ -28,7 +28,20 @@ namespace FoutloosTypen.ViewModels
         [RelayCommand]
         private void Login()
         {
+            if (!string.IsNullOrWhiteSpace(Username) && string.IsNullOrWhiteSpace(Password))
+            {
+                LoginMessage = "Vul ook een wachtwoord in.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(Username) && string.IsNullOrWhiteSpace(Password))
+            {
+                LoginMessage = "Vul je gebruikersnaam en wachtwoord in.";
+                return;
+            }
+
             Student? authenticatedStudent = _authService.Login(Username, Password);
+
             if (authenticatedStudent != null)
             {
                 LoginMessage = $"Welkom {authenticatedStudent.Name}!";

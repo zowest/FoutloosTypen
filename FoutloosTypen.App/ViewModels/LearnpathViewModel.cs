@@ -30,5 +30,10 @@ namespace FoutloosTypen.ViewModels
         {
             await Shell.Current.GoToAsync(nameof(ProfileView));
         }
+        [RelayCommand]
+        private async Task Settings()
+        {
+            await Shell.Current.GoToAsync(nameof(SettingsView));
+        }
     }
 }

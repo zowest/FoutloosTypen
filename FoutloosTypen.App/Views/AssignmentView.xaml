@@ -161,8 +161,9 @@
                 </VerticalStackLayout>
             </VerticalStackLayout>
 
-            <HorizontalStackLayout Grid.Row="2" HorizontalOptions="Center" Spacing="30">
-            </HorizontalStackLayout>
+            <VerticalStackLayout Grid.Row="2" HorizontalOptions="Center" Spacing="10">
+                <!-- Share button removed - sharing is now only available in the result popup -->
+            </VerticalStackLayout>
         </Grid>
     </ContentPage.Content>
 </ContentPage>

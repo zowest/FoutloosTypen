@@ -13,6 +13,8 @@ namespace FoutloosTypen
             Routing.RegisterRoute(nameof(AssignmentView), typeof(AssignmentView));
             Routing.RegisterRoute("Login", typeof(LoginView));
             Routing.RegisterRoute(nameof(ProfileView), typeof(ProfileView));
+            Routing.RegisterRoute(nameof(SettingsView), typeof(SettingsView));
+            Routing.RegisterRoute(nameof(TTSAssignmentView), typeof(TTSAssignmentView));
         }
     }
 }

@@ -130,11 +130,29 @@
                      VerticalOptions="FillAndExpand"/>
 
             <!-- Description kolom -->
-            <VerticalStackLayout 
+            <VerticalStackLayout
                 Grid.Column="4" 
                 HorizontalOptions="Center" 
                 VerticalOptions="Center" 
                 Spacing="20">
+                <HorizontalStackLayout>
+                    <ImageButton Source="gear.png"
+          Command="{Binding SettingsCommand}"
+          BackgroundColor="Transparent"
+          BorderColor="Transparent"
+          BorderWidth="0"
+          CornerRadius="0"
+          Padding="0"
+          WidthRequest="48"
+          HeightRequest="48"
+          Aspect="AspectFit"
+          HorizontalOptions="End">
+                    <ImageButton.GestureRecognizers>
+                        <PointerGestureRecognizer
+         PointerEntered="OnHoverEnter"
+         PointerExited="OnHoverExit"/>
+                    </ImageButton.GestureRecognizers>
+                </ImageButton>
                 <ImageButton Source="person.png"
                          Command="{Binding ProfileCommand}"
                          BackgroundColor="Transparent"
@@ -152,6 +170,7 @@
                         PointerExited="OnHoverExit"/>
                     </ImageButton.GestureRecognizers>
                 </ImageButton>
+                </HorizontalStackLayout>
                 <Label Text="{Binding LessonsVM.SelectedLesson.Name}" 
                         FontSize="40" 
                         WidthRequest="500" 
