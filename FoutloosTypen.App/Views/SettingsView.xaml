@@ -2,7 +2,8 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="FoutloosTypen.Views.SettingsView"
-             Title="Instellingen">
+             Title="Instellingen"
+             BackgroundColor="White">
     <Grid RowDefinitions="Auto,*,Auto" Padding="12">
         <Image 
             Grid.Row="0"
@@ -33,6 +34,7 @@
             <HorizontalStackLayout Spacing="12" HorizontalOptions="Center">
                 <Label Text="Text-to-Speech Mode" 
                        VerticalOptions="Center"
+                       TextColor="Black"
                        FontSize="16"/>
                 <Switch IsToggled="{Binding UseTtsMode}"
                         OnColor="#ffcb05"
