@@ -11,5 +11,7 @@ namespace FoutloosTypen.Core.Interfaces.Repositories
         List<Result> GetByStudent(int studentId);
 
         List<Result> GetByLesson(int lessonId);
+        
+        void SaveEndlessModeResult(int studentId, int score); // Add this
     }
 }

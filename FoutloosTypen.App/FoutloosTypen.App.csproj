@@ -105,6 +105,9 @@
 		<MauiXaml Update="Views\AssignmentView.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
+		<MauiXaml Update="Views\EndlessModeView.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
 		<MauiXaml Update="Views\ProfileView.xaml">
 		  <Generator>MSBuild:Compile</Generator>
 		</MauiXaml>

@@ -47,6 +47,10 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IAssignmentRepository, AssignmentRepository>();
             builder.Services.AddSingleton<IPracticeMaterialRepository, PracticeMaterialRepository>();
             builder.Services.AddSingleton<IStudentRepository, StudentRepository>();
+            builder.Services.AddSingleton<IEndlessModeRepository, EndlessModeRepository>();
+            builder.Services.AddSingleton<IResultRepository, ResultRepository>(); //
+
+            // Services
             builder.Services.AddSingleton<IMediaUploadRepository, MediaUploadRepository>();
             builder.Services.AddSingleton<IXAuthRepository, XAuthRepository>();
             builder.Services.AddSingleton<IXAuthApiRepository, XAuthApiRepository>();
@@ -67,6 +71,8 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<ITypingComparisonService, TypingComparisonService>();
           
             builder.Services.AddSingleton<IResultService, ResultService>();
+            builder.Services.AddSingleton<IEndlessModeService, EndlessModeService>();
+            builder.Services.AddSingleton<IEndlessModeService, EndlessModeService>();
             builder.Services.AddSingleton<IAudioAssignmentService, AudioAssignmentService>();
 
             // Use XAuthRepository to provide XAuthSettings in DI
@@ -85,6 +91,7 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<GlobalViewModel>();
             builder.Services.AddTransient<LoginView>().AddTransient<LoginViewModel>();
             builder.Services.AddTransient<ProfileView>().AddTransient<ProfileViewModel>();
+            builder.Services.AddTransient<EndlessModeView>().AddTransient<EndlessModeViewModel>();
             builder.Services.AddTransient<SettingsView>().AddTransient<SettingsViewModel>();
 #if WINDOWS
             builder.ConfigureLifecycleEvents(events =>

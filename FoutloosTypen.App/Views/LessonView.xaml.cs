@@ -40,7 +40,13 @@ namespace FoutloosTypen.Views
         {
             HoverButton = button;
         }
-        
+
+        private async void OnEndlessModeClicked(object sender, EventArgs e)
+        {
+            await Shell.Current.GoToAsync(nameof(EndlessModeView));
+        }
+
+
         private void OnHoverEnter(object sender, PointerEventArgs e)
         {
             switch (sender)
