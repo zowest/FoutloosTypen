@@ -50,6 +50,14 @@ namespace FoutloosTypen.Core.Data.Repositories
                 (StudentId, LessonId, Score, StrokesPerMinute, WordsPerMinute,
                  AccuracyPercent, TotalMistakes, SentencesCompleted, TimeSpent, CompletedAt)
                 VALUES
+                (@studentId, @lessonId, @spm, @wpm,
+                 @mistakes, @score, @timeRemaining)
+                ON DUPLICATE KEY UPDATE
+                    StrokesPerMinute = VALUES(StrokesPerMinute),
+                    WordsPerMinute   = VALUES(WordsPerMinute),
+                    TotalMistakes    = VALUES(TotalMistakes),
+                    Score            = VALUES(Score),
+                    TimeRemaining    = VALUES(TimeRemaining)
                 (@studentId, @lessonId, @score, @spm, @wpm,
                  @accuracy, @mistakes, @sentences, @timeSpent, @completedAt)
             """;
@@ -69,6 +77,26 @@ namespace FoutloosTypen.Core.Data.Repositories
             
             Debug.WriteLine($"[ResultRepository] Saved new result for student {result.StudentId}, lesson {result.LessonId}, score {result.Score}");
             
+            CloseConnection();
+        }
+
+        public void SaveEndlessModeResult(int studentId, int score)
+        {
+            OpenConnection();
+
+            using var command = Connection.CreateCommand();
+            command.CommandText = """
+                INSERT INTO EndlessModeResults
+                (StudentId, Score, CompletedAt)
+                VALUES
+                (@studentId, @score, @completedAt)
+            """;
+
+            AddParam(command, "@studentId", studentId);
+            AddParam(command, "@score", score);
+            AddParam(command, "@completedAt", DateTime.Now);
+
+            command.ExecuteNonQuery();
             CloseConnection();
         }
 
@@ -241,6 +269,11 @@ namespace FoutloosTypen.Core.Data.Repositories
             {
                 StudentId = reader.GetInt32(1),
                 LessonId = reader.GetInt32(2),
+                StrokesPerMinute = reader.GetInt32(3),
+                WordsPerMinute = reader.GetInt32(4),
+                TotalMistakes = reader.GetInt32(5),
+                Score = reader.GetInt32(6),
+                TimeRemaining = Convert.ToDouble(reader.GetInt32(7))
                 Score = reader.GetInt32(3),
                 StrokesPerMinute = reader.GetInt32(4),
                 WordsPerMinute = reader.GetInt32(5),

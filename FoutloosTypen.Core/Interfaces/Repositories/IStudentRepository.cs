@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FoutloosTypen.Core.Models;
+﻿using FoutloosTypen.Core.Models;
 
 namespace FoutloosTypen.Core.Interfaces.Repositories
 {
@@ -12,6 +7,7 @@ namespace FoutloosTypen.Core.Interfaces.Repositories
         Student? Get(string username);
         Student? Get(int id);
         List<Student> GetAll();
+        void UpdateTtsMode(int studentId, bool useTtsMode);
         void UpdateStatistics(int studentId, double avgSpeed, double avgPrecision);
         void UpdateProgress(int studentId, int completedLessons, int totalScore);
     }
