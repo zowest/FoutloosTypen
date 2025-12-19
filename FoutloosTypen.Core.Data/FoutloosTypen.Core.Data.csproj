@@ -24,20 +24,19 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.1" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="10.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="MySqlConnector" Version="2.5.0" />
 		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.2" />
-		<PackageReference Include="SkiaSharp" Version="3.119.2-preview.1" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <ProjectReference Include="..\FoutloosTypen.Core\FoutloosTypen.Core.csproj" />
 	</ItemGroup>
 
-	<ItemGroup Condition="Exists('Resources/XApi.env')">
-		<EmbeddedResource Include="Resources\XApi.env" LogicalName="Resources/XApi.env" />
+	<ItemGroup>
+	  <Folder Include="Resources\Raw\" />
 	</ItemGroup>
+
 </Project>

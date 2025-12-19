@@ -15,7 +15,6 @@ public partial class AssignmentView : ContentPage
     public AssignmentView()
     {
         InitializeComponent();
-
     }
 
     public AssignmentView(AssignmentViewModel vm) : this()
@@ -112,5 +111,7 @@ public partial class AssignmentView : ContentPage
     private void OnEntryUnfocused(object sender, FocusEventArgs e)
     {
         Debug.WriteLine("Entry unfocused");
+        // Optionally refocus automatically
+        // HiddenEntry?.Focus();
     }
 }

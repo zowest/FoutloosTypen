@@ -14,6 +14,11 @@ namespace FoutloosTypen.Core.Models
             AssignmentType = AssignmentType.Audio;
         }
 
+        public AudioAssignment(int id, double timelimit, int lessonId) : base(id, timelimit, lessonId)
+        {
+            AssignmentType = AssignmentType.Audio;
+        }
+
         // audio-specific data
         public string InstructionText { get; set; } = string.Empty;
         public float SpeechRate { get; set; } = 0.9f;

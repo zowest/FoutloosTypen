@@ -7,13 +7,12 @@ namespace FoutloosTypen.Core.Models
         public int SentencesCompleted { get; set; } = 0;
         public int TotalCharactersTyped { get; set; } = 0;
         public List<string> CompletedSentences { get; set; } = new();
-        public string CurrentIncompleteText { get; set; } = string.Empty;
+        public string CurrentIncompleteText { get; set; } = string.Empty; // Add this
         public DateTime StartTime { get; set; }
         public DateTime? EndTime { get; set; }
         public double ExpectedTime { get; set; } = 300;
         public bool TimerExpired { get; set; } = false;
         public int StudentId { get; set; }
-        public bool IsEndlessMode { get; set; } = false; // Add this
 
         // Calculated properties
         public int Score { get; set; }
@@ -32,5 +31,7 @@ namespace FoutloosTypen.Core.Models
                 return timeSpent;
             }
         }
+            
+
     }
 }

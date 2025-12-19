@@ -75,15 +75,5 @@ namespace FoutloosTypen.Core.Services
                 TimerExpired?.Invoke(this, EventArgs.Empty);
             }
         }
-        public void AddTime(double seconds)
-        {
-            TimeRemaining = Math.Max(0, TimeRemaining + seconds);
-            OnPropertyChanged(nameof(TimeRemaining));
-            OnPropertyChanged(nameof(TimeRemainingFormatted));
-        }
-
-
-
-
     }
 }

@@ -13,10 +13,5 @@ namespace FoutloosTypen.Core.Interfaces.Services
         /// Compares the full typed text with expected text
         /// </summary>
         TypingComparisonResult Compare(string expectedText, string typedText);
-
-        /// <summary>
-        /// Calculates display state for UI - optimized for per-character updates
-        /// </summary>
-        TypingDisplayState CalculateDisplayState(string expectedText, string typedText);
     }
 }

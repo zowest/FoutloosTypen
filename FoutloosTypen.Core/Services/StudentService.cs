@@ -28,10 +28,5 @@ namespace FoutloosTypen.Core.Services
             List<Student> students = _studentRepository.GetAll();
             return students;
         }
-
-        public void UpdateTtsMode(int studentId, bool useTtsMode)
-        {
-            _studentRepository.UpdateTtsMode(studentId, useTtsMode);
-        }
     }
 }
