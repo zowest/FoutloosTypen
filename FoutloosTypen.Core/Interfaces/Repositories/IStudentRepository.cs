@@ -8,5 +8,7 @@ namespace FoutloosTypen.Core.Interfaces.Repositories
         Student? Get(int id);
         List<Student> GetAll();
         void UpdateTtsMode(int studentId, bool useTtsMode);
+        void UpdateStatistics(int studentId, double avgSpeed, double avgPrecision);
+        void UpdateProgress(int studentId, int completedLessons, int totalScore);
     }
 }

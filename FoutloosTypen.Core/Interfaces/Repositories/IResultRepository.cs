@@ -5,13 +5,15 @@ namespace FoutloosTypen.Core.Interfaces.Repositories
     public interface IResultRepository
     {
         void Save(Result result);
-
         Result? GetByStudentAndLesson(int studentId, int lessonId);
-
         List<Result> GetByStudent(int studentId);
-
         List<Result> GetByLesson(int lessonId);
         
         void SaveEndlessModeResult(int studentId, int score); // Add this
+
+        List<Result> GetTopByLesson(int lessonId, int limit = 10);
+        List<Result> GetTopByScore(int limit = 10);
+
+        List<Result> GetAllAttemptsByStudentAndLesson(int studentId, int lessonId);
     }
 }

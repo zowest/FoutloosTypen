@@ -4,37 +4,31 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="FoutloosTypen.Views.LessonView"
-    Title="Lessen">
+    Title="Lessen"
+    Shell.NavBarIsVisible="False"
+    Shell.FlyoutBehavior="Disabled">
     <ContentPage.Content>
         <Grid ColumnSpacing="0">
-        <Grid.ColumnDefinitions>
+            <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="2" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="2" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-        <!-- Cursus kolom -->
+
+            <!-- left columns unchanged (courses / lessons) -->
             <ScrollView Grid.Column="0">
-                <VerticalStackLayout 
-                    HorizontalOptions="Center" 
-                    VerticalOptions="Center" 
-                    Spacing="20">
-                    <Label Text="Cursussen" 
-                           FontSize="22" 
-                           FontAttributes="Bold" 
-                           HorizontalOptions="Center"
-                           TextColor="Black"/>
-                    <CollectionView ItemsSource="{Binding CoursesVM.Courses}" 
-                            SelectionMode="Single"
-                            SelectedItem="{Binding CoursesVM.SelectedCourse}">
+                <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="20">
+                    <Label Text="Cursussen" FontSize="22" FontAttributes="Bold" HorizontalOptions="Center" TextColor="Black"/>
+                    <CollectionView ItemsSource="{Binding CoursesVM.Courses}" SelectionMode="Single" SelectedItem="{Binding CoursesVM.SelectedCourse}">
                         <CollectionView.ItemsLayout>
                             <LinearItemsLayout Orientation="Vertical" ItemSpacing="20" />
                         </CollectionView.ItemsLayout>
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
                                 <Button Text="{Binding Name}"
-                                    MinimumHeightRequest="100"
+                                        MinimumHeightRequest="100"
                                         FontSize="30"
                                         BackgroundColor="White"
                                         BorderColor="Black"
@@ -43,8 +37,7 @@
                                         Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.CoursesVM.SelectCourseCommand}"
                                         CommandParameter="{Binding}">
                                     <Button.GestureRecognizers>
-                                        <PointerGestureRecognizer PointerEntered="OnHoverEnter"
-                                              PointerExited="OnHoverExit" />
+                                        <PointerGestureRecognizer PointerEntered="OnHoverEnter" PointerExited="OnHoverExit" />
                                     </Button.GestureRecognizers>
                                 </Button>
                                 
@@ -71,63 +64,75 @@
                 </VerticalStackLayout>
             </ScrollView>
 
-            <BoxView Grid.Column="1" 
-                     WidthRequest="2" 
-                     Color="Black" 
-                     VerticalOptions="FillAndExpand"/>
+            <BoxView Grid.Column="1" WidthRequest="2" Color="Black" VerticalOptions="FillAndExpand"/>
 
-
-        <!-- Lessons kolom - NU MET SCROLLVIEW -->
-        <ScrollView Grid.Column="2">
-            <VerticalStackLayout 
-                    HorizontalOptions="Center" 
-                    VerticalOptions="Start"
-                    Spacing="20"
-                    Padding="0,40,0,40">
-                    <CollectionView ItemsSource="{Binding LessonsVM.Lessons}" 
-                                    SelectionMode="Single" 
-                                    SelectedItem="{Binding LessonsVM.SelectedLesson}">
-                    <CollectionView.ItemsLayout>
-                            <LinearItemsLayout Orientation="Vertical" 
-                                               ItemSpacing="40" />
+            <ScrollView Grid.Column="2">
+                <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Start" Spacing="20" Padding="0,40,0,40">
+                    <CollectionView ItemsSource="{Binding LessonsVM.Lessons}" SelectionMode="Single" SelectedItem="{Binding LessonsVM.SelectedLesson}">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="40" />
                         </CollectionView.ItemsLayout>
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Border WidthRequest="100" 
-                                        HeightRequest="60" Padding="0" 
-                                        HorizontalOptions="Center" 
-                                        StrokeShape="RoundRectangle 25">
-                                    <Label x:Name="HoverButton" 
-                                        Text="{Binding Name}" 
-                                           VerticalOptions="Center" 
-                                           HorizontalOptions="Center" WidthRequest="75" 
-                                           HorizontalTextAlignment="Center" 
-                                           FontSize="25"
-                                           TextColor="Black"/>
+                                <Border WidthRequest="100" HeightRequest="60" Padding="0" HorizontalOptions="Center" StrokeShape="RoundRectangle 25">
+                                    <Label x:Name="HoverButton" Text="{Binding Name}" VerticalOptions="Center" HorizontalOptions="Center" WidthRequest="75" HorizontalTextAlignment="Center" FontSize="25" TextColor="Black"/>
                                     <Border.GestureRecognizers>
-                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type CollectionView}}, 
-                                                Path=BindingContext.LessonsVM.SelectLessonCommand}" 
-                                                CommandParameter="{Binding}"/>
-                                        <PointerGestureRecognizer
-                                            PointerEntered="OnHoverEnter"
-                                            PointerExited="OnHoverExit"></PointerGestureRecognizer>
+                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type CollectionView}}, Path=BindingContext.LessonsVM.SelectLessonCommand}" CommandParameter="{Binding}"/>
+                                        <PointerGestureRecognizer PointerEntered="OnHoverEnter" PointerExited="OnHoverExit"/>
                                     </Border.GestureRecognizers>
                                 </Border>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
-                    <Label Text="Start"
-                           HorizontalOptions="Center"
-                           FontSize="40"
-                           TextColor="Black"
-                           Margin="0,20,0,0"/>
+
+                    <Label Text="Start" HorizontalOptions="Center" FontSize="40" TextColor="Black" Margin="0,20,0,0"/>
                 </VerticalStackLayout>
             </ScrollView>
 
-            <BoxView Grid.Column="3" 
-                     WidthRequest="2" 
-                     Color="Black" 
-                     VerticalOptions="FillAndExpand"/>
+            <BoxView Grid.Column="3" WidthRequest="2" Color="Black" VerticalOptions="FillAndExpand"/>
+
+            <!-- Description column with leaderboard above description -->
+            <ScrollView Grid.Column="4">
+                <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Start" Spacing="20" Padding="20">
+                    <!-- trophy (image) + profile buttons aligned to the top-right - FIXED: Both 48x48 -->
+                    <HorizontalStackLayout HorizontalOptions="End" Spacing="12" Margin="0,0,0,8">
+                        <ImageButton Source="trophy_bw.png"
+                                     Command="{Binding OpenLeaderboardCommand}"
+                                     BackgroundColor="Transparent"
+                                     BorderColor="Transparent"
+                                     Padding="0"
+                                     WidthRequest="48"
+                                     HeightRequest="48"
+                                     Aspect="AspectFill"
+                                     Scale="1.05"
+                                     SemanticProperties.Hint="Open algemeen klassement">
+                            <ImageButton.GestureRecognizers>
+                                <PointerGestureRecognizer PointerEntered="OnHoverEnter" PointerExited="OnHoverExit"/>
+                            </ImageButton.GestureRecognizers>
+                        </ImageButton>
+
+                        <ImageButton Source="person.png"
+                                     Command="{Binding ProfileCommand}"
+                                     BackgroundColor="Transparent"
+                                     BorderColor="Transparent"
+                                     BorderWidth="0"
+                                     Padding="0"
+                                     WidthRequest="48"
+                                     HeightRequest="48"
+                                     Aspect="AspectFit">
+                            <ImageButton.GestureRecognizers>
+                                <PointerGestureRecognizer PointerEntered="OnHoverEnter" PointerExited="OnHoverExit"/>
+                            </ImageButton.GestureRecognizers>
+                        </ImageButton>
+                    </HorizontalStackLayout>
+
+                    <Label Text="{Binding LessonsVM.SelectedLesson.Name}" FontSize="40" WidthRequest="500" HorizontalTextAlignment="Center" VerticalTextAlignment="Start" LineBreakMode="WordWrap" TextColor="Black"/>
+                    <Label Text="☆ ☆ ☆" HorizontalOptions="Center" TextColor="Black" FontSize="160"/>
+                    <Label Text="Score: 0" HorizontalOptions="Center" TextColor="Black"/>
+
+                    <!-- Leaderboard Section: visible only when a lesson is selected -->
+                    <VerticalStackLayout Spacing="10" IsVisible="{Binding LessonsVM.HasSelectedLesson}">
+                        <Label Text="Klassement" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" TextColor="Black"/>
 
             <!-- Description kolom -->
             <VerticalStackLayout
@@ -210,6 +215,52 @@
                     </Button.GestureRecognizers>
                 </Button>
             </VerticalStackLayout>
+                        <Grid Padding="5" BackgroundColor="#F0F0F0" WidthRequest="400">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="40"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="80"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Label Grid.Column="0" Text="#" TextColor="Black" FontSize="14" FontAttributes="Bold" HorizontalTextAlignment="Center"/>
+                            <Label Grid.Column="1" Text="Naam" TextColor="Black" FontSize="14" FontAttributes="Bold" HorizontalTextAlignment="Start"/>
+                            <Label Grid.Column="2" Text="Score" TextColor="Black" FontSize="14" FontAttributes="Bold" HorizontalTextAlignment="Center"/>
+                        </Grid>
+
+                        <CollectionView ItemsSource="{Binding LeaderboardVM.LessonResults}" HeightRequest="180" WidthRequest="400">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Padding="5,8">
+                                        <Grid.Triggers>
+                                            <DataTrigger TargetType="Grid" Binding="{Binding IsCurrentUser}" Value="True">
+                                                <Setter Property="BackgroundColor" Value="#FFF8E1"/>
+                                            </DataTrigger>
+                                        </Grid.Triggers>
+
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="40"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="80"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Label Grid.Column="0" Text="{Binding Rank}" TextColor="Black" FontSize="14" HorizontalTextAlignment="Center" VerticalOptions="Center"/>
+                                        <Label Grid.Column="1" Text="{Binding StudentName}" TextColor="Black" FontSize="14" VerticalOptions="Center" LineBreakMode="TailTruncation"/>
+                                        <Label Grid.Column="2" Text="{Binding Score}" TextColor="Black" FontSize="14" FontAttributes="Bold" HorizontalTextAlignment="Center" VerticalOptions="Center"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+
+                    <Label Text="Beschrijving" FontSize="26" FontAttributes="Bold" HorizontalOptions="Center" TextColor="Black" Margin="0,20,0,0"/>
+                    <Label Text="{Binding LessonsVM.SelectedLesson.Description}" FontSize="18" WidthRequest="500" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" LineBreakMode="WordWrap" TextColor="Black"/>
+                    <Button Text="▶" HorizontalOptions="Center" FontSize="100" TextColor="Black" Clicked="OnPlayClicked" BackgroundColor="White">
+                        <Button.GestureRecognizers>
+                            <PointerGestureRecognizer PointerEntered="OnHoverEnter" PointerExited="OnHoverExit"/>
+                        </Button.GestureRecognizers>
+                    </Button>
+                </VerticalStackLayout>
+            </ScrollView>
         </Grid>
     </ContentPage.Content>
 </ContentPage>

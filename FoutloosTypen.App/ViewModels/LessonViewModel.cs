@@ -15,16 +15,20 @@ namespace FoutloosTypen.ViewModels
 
         public ObservableCollection<Lesson> Lessons { get; set; } = new();
 
-        private Lesson _selectedLesson = new();
-        public Lesson SelectedLesson
+        private Lesson? _selectedLesson;
+        public Lesson? SelectedLesson
         {
             get => _selectedLesson;
             set
             {
                 _selectedLesson = value;
                 OnPropertyChanged(nameof(SelectedLesson));
+                OnPropertyChanged(nameof(HasSelectedLesson));
             }
         }
+
+        // New property so XAML can bind directly (no converter needed)
+        public bool HasSelectedLesson => SelectedLesson != null;
 
         public LessonViewModel(ILessonService lessonService)
         {
@@ -62,7 +66,7 @@ namespace FoutloosTypen.ViewModels
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }
 

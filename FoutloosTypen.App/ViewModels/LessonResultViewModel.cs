@@ -10,6 +10,9 @@ using SkiaSharp;
 using System.Threading.Tasks;
 using Microsoft.Maui.ApplicationModel;
 using CommunityToolkit.Maui.Views;
+ï»¿using CommunityToolkit.Mvvm.ComponentModel;
+using FoutloosTypen.Core.Interfaces.Services;
+using FoutloosTypen.Core.Models;
 
 namespace FoutloosTypen.ViewModels
 {
@@ -55,18 +58,76 @@ namespace FoutloosTypen.ViewModels
         public int WordsPerMinute => _progress.WordsPerMinute;
         public string Accuracy => $"{Math.Round(_progress.AccuracyPercent, 1)}%";
         public int TotalMistakes => _progress.TotalMistakes;
+        private readonly Result _currentResult;
+        private readonly ScoreComparison? _comparison;
 
-        public string TimeRemaining
+        public Result CurrentResult => _currentResult;
+        public ScoreComparison? Comparison => _comparison;
+
+        // Basic Result Properties
+        public string LessonName { get; set; } = string.Empty;
+        public int Score => _currentResult.Score;
+        public int WordsPerMinute => _currentResult.WordsPerMinute;
+        public string Accuracy => $"{_currentResult.AccuracyPercent:F1}%";
+        public int StrokesPerMinute => _currentResult.StrokesPerMinute;
+        public int TotalMistakes => _currentResult.TotalMistakes;
+        public string TimeRemaining => FormatTime(_currentResult.TimeRemaining);
+
+        // Title
+        public string ResultTitle => _comparison?.IsFirstAttempt == true
+            ? "Eerste Poging!"
+            : (_comparison?.IsNewPersonalBest == true ? "Nieuw Record!" : "Les Voltooid!");
+
+        // Badge visibility
+        public bool ShowFirstAttemptBadge => _comparison?.IsFirstAttempt == true;
+        public bool ShowComparisonBadge => _comparison?.IsNewPersonalBest == true && _comparison?.IsFirstAttempt == false;
+        public bool HasPreviousAttempt => _comparison?.PreviousBest != null && !(_comparison?.IsFirstAttempt == true);
+
+        // Previous Best Properties
+        public int PreviousBestScore => _comparison?.PreviousBest?.Score ?? 0;
+        public int PreviousBestWPM => _comparison?.PreviousBest?.WordsPerMinute ?? 0;
+        public string PreviousBestAccuracy => $"{_comparison?.PreviousBest?.AccuracyPercent ?? 0:F1}%";
+
+        // Difference Properties with Colors
+        public string ScoreDifferenceText
         {
             get
             {
-                if (_progress.TimerExpired)
-                {
-                    return "00:00";
-                }
+                if (_comparison == null || _comparison.IsFirstAttempt) return string.Empty;
+                var diff = _comparison.ScoreDifference;
+                if (diff == 0) return string.Empty;
+                return diff > 0 ? $"+{diff}" : $"{diff}";
+            }
+        }
 
-                var timeSpan = TimeSpan.FromSeconds(_progress.TimeRemaining);
-                return $"{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
+        public Color ScoreDifferenceColor
+        {
+            get
+            {
+                if (_comparison == null) return Colors.Gray;
+                return _comparison.ScoreDifference > 0 ? Colors.Green :
+                       _comparison.ScoreDifference < 0 ? Colors.Red : Colors.Gray;
+            }
+        }
+
+        public string SpeedDifferenceText
+        {
+            get
+            {
+                if (_comparison == null || _comparison.IsFirstAttempt) return string.Empty;
+                var diff = _comparison.SpeedDifference;
+                if (diff == 0) return string.Empty;
+                return diff > 0 ? $"+{diff}" : $"{diff}";
+            }
+        }
+
+        public Color SpeedDifferenceColor
+        {
+            get
+            {
+                if (_comparison == null) return Colors.Gray;
+                return _comparison.SpeedDifference > 0 ? Colors.Green :
+                       _comparison.SpeedDifference < 0 ? Colors.Red : Colors.Gray;
             }
         }
 
@@ -212,7 +273,7 @@ namespace FoutloosTypen.ViewModels
                 return;
             }
 
-            var text = $"Net weer een typ-run gedaan…{_lessonName}! Score: {Score} - APM: {StrokesPerMinute} - Nauwkeurigheid: {Accuracy} #BolType";
+            var text = $"Net weer een typ-run gedaanï¿½{_lessonName}! Score: {Score} - APM: {StrokesPerMinute} - Nauwkeurigheid: {Accuracy} #BolType";
             Debug.WriteLine("Share tekst: " + text);
 
             System.IO.Stream? logoStream = null;
@@ -281,6 +342,40 @@ namespace FoutloosTypen.ViewModels
                     Debug.WriteLine("Geen MainPage beschikbaar voor DisplayAlert");
                 }
             });
+
+        public string AccuracyDifferenceText
+        {
+            get
+            {
+                if (_comparison == null || _comparison.IsFirstAttempt) return string.Empty;
+                var diff = _comparison.AccuracyDifference;
+                if (Math.Abs(diff) < 0.1) return string.Empty;
+                return diff > 0 ? $"+{diff:F1}%" : $"{diff:F1}%";
+            }
+        }
+
+        public Color AccuracyDifferenceColor
+        {
+            get
+            {
+                if (_comparison == null) return Colors.Gray;
+                return _comparison.AccuracyDifference > 0 ? Colors.Green :
+                       _comparison.AccuracyDifference < 0 ? Colors.Red : Colors.Gray;
+            }
+        }
+
+        public LessonResultViewModel(Result currentResult, ScoreComparison? comparison = null)
+        {
+            _currentResult = currentResult ?? throw new ArgumentNullException(nameof(currentResult));
+            _comparison = comparison;
+        }
+
+        private string FormatTime(double seconds)
+        {
+            var timeSpan = TimeSpan.FromSeconds(seconds);
+            if (timeSpan.TotalMinutes >= 1)
+                return $"{(int)timeSpan.TotalMinutes}m {timeSpan.Seconds}s";
+            return $"{(int)seconds}s";
         }
     }
 }

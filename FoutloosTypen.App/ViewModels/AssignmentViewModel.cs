@@ -17,6 +17,8 @@ namespace FoutloosTypen.ViewModels
         private readonly ITimerService _timerService;
         private readonly ITypingComparisonService _typingComparisonService;
         private readonly IResultService _resultService;
+        private readonly IResultService _ResultService;
+        private readonly GlobalViewModel _globalViewModel; // ADD THIS
 
         private const double TIMER_DURATION = 60;
         public enum PopupResult
@@ -186,14 +188,16 @@ namespace FoutloosTypen.ViewModels
             IPracticeMaterialService practiceMaterialService,
             ITimerService timerService,
             ITypingComparisonService typingComparisonService,
-            IResultService resultService)
+            IResultService ResultService,
+            GlobalViewModel globalViewModel)  // ADD THIS
         {
             _lessonService = lessonService;
             _assignmentService = assignmentService;
             _practiceMaterialService = practiceMaterialService;
             _timerService = timerService;
             _typingComparisonService = typingComparisonService;
-            _resultService = resultService;
+            _ResultService = ResultService;
+            _globalViewModel = globalViewModel;  // ADD THIS
 
             _timerService.TimerExpired += OnTimerExpired;
         }
@@ -233,6 +237,18 @@ namespace FoutloosTypen.ViewModels
                 _resultService.EndLesson(SelectedLesson.Id);
 
             _timerService.Stop();
+            Debug.WriteLine("Timer expired! Showing results...");
+
+            if (SelectedLesson == null) return;
+
+            // Mark that the timer expired
+            _ResultService.MarkTimerExpired(SelectedLesson.Id);
+
+            // End the lesson (this will automatically calculate results)
+            _ResultService.EndLesson(SelectedLesson.Id);
+
+            // Show results popup
+            await ShowLessonResultsAsync();
         }
 
         #endregion
@@ -278,6 +294,123 @@ namespace FoutloosTypen.ViewModels
             }
         }
         private void ApplyDisplayStateOptimized(TypingDisplayState state)
+            try
+            {
+                Debug.WriteLine("=== ShowLessonResultsAsync START ===");
+                
+                StopTimer();
+
+                if (SelectedLesson == null)
+                {
+                    Debug.WriteLine("ERROR: SelectedLesson is null");
+                    return;
+                }
+
+                if (Application.Current?.MainPage == null)
+                {
+                    Debug.WriteLine("ERROR: Application.Current.MainPage is null");
+                    return;
+                }
+
+                var progress = _ResultService.GetProgress(SelectedLesson.Id);
+                if (progress == null)
+                {
+                    Debug.WriteLine("ERROR: Progress is null");
+                    return;
+                }
+
+                Debug.WriteLine($"Progress retrieved: Speed={progress.Speed}, Accuracy={progress.Accuracy}, Score={progress.Score}");
+
+                // **SAVE TO DATABASE**
+                if (_globalViewModel.Student != null)
+                {
+                    _ResultService.SaveResult(SelectedLesson.Id, _globalViewModel.Student.Id, progress);
+                    Debug.WriteLine($"Result saved for student {_globalViewModel.Student.Id}, lesson {SelectedLesson.Id}");
+                }
+                else
+                {
+                    Debug.WriteLine("WARNING: No student logged in, result not saved");
+                }
+
+                // Convert LessonProgress to Result
+                var result = ConvertProgressToResult(progress);
+                Debug.WriteLine($"Result converted: WPM={result.WordsPerMinute}, Score={result.Score}");
+
+                // Get score comparison
+                ScoreComparison? comparison = null;
+                if (_globalViewModel.Student != null)
+                {
+                    comparison = _ResultService.CompareWithPrevious(SelectedLesson.Id, _globalViewModel.Student.Id, result);
+                    Debug.WriteLine($"Comparison: IsNewBest={comparison?.IsNewPersonalBest}, IsFirst={comparison?.IsFirstAttempt}");
+                }
+
+                // Show custom popup with result data
+                Debug.WriteLine("Creating ResultatenPopUp...");
+                var popup = new ResultatenPopUp(result, comparison);
+                
+                Debug.WriteLine("Pushing modal...");
+                await Application.Current.MainPage.Navigation.PushModalAsync(popup);
+                Debug.WriteLine("Modal pushed successfully");
+
+                // Wait for user response
+                Debug.WriteLine("Waiting for user response...");
+                bool shouldContinue = await popup.WaitForUserResponseAsync();
+                Debug.WriteLine($"User response: shouldContinue={shouldContinue}");
+
+                if (shouldContinue)
+                {
+                    // User clicked "Ga verder" - navigate to lesson-specific leaderboard
+                    Debug.WriteLine($"Navigating to leaderboard for lesson {SelectedLesson.Id}");
+                    await Shell.Current.GoToAsync($"{nameof(LessonLeaderboardView)}?lessonId={SelectedLesson.Id}");
+                }
+                else
+                {
+                    // User clicked "Herstart" - restart the lesson
+                    Debug.WriteLine("Restarting lesson...");
+                    RestartLesson();
+                }
+
+                Debug.WriteLine("=== ShowLessonResultsAsync END ===");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"=== EXCEPTION in ShowLessonResultsAsync ===");
+                Debug.WriteLine($"Message: {ex.Message}");
+                Debug.WriteLine($"StackTrace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    Debug.WriteLine($"InnerException: {ex.InnerException.Message}");
+                }
+            }
+        }
+
+        private Result ConvertProgressToResult(LessonProgress progress)
+        {
+            var timeSpent = (DateTime.Now - progress.StartTime).TotalSeconds;
+            var expectedTime = SelectedLesson?.TotalTime ?? 300;
+
+            return new Result
+            {
+                LessonId = progress.LessonId,
+                StudentId = _globalViewModel.Student?.Id ?? 0,  // USE GLOBAL VIEWMODEL
+                TotalMistakes = progress.TotalMistakes,
+                SentencesCompleted = progress.SentencesCompleted,
+                TotalCharactersTyped = progress.CharactersTyped,
+                CompletedSentences = new List<string>(),
+                CurrentIncompleteText = progress.CurrentText,
+                StartTime = progress.StartTime,
+                EndTime = DateTime.Now,
+                ExpectedTime = expectedTime,
+                TimerExpired = progress.TimerExpired,
+                Score = progress.Score,
+                StrokesPerMinute = progress.StrokesPerMinute,
+                WordsPerMinute = (int)progress.Speed,
+                AccuracyPercent = progress.Accuracy,
+                TimeRemaining = Math.Max(0, expectedTime - timeSpent)
+            };
+        }
+
+        public async Task OnAppearingAsync()
         {
             // Check of er iets veranderd is
             if (_lastCorrectText == state.CorrectText &&
@@ -317,6 +450,10 @@ namespace FoutloosTypen.ViewModels
                     BackgroundColor = Colors.Red,
                     FontSize = 32
                 });
+                    SelectedLesson = targetLesson;
+                    Debug.WriteLine($"Selected lesson: {targetLesson.Name} (ID: {targetLesson.Id}) with TotalTime: {targetLesson.TotalTime}");
+                    return;
+                }
             }
 
             // Cursor karakter (onderstreept)
@@ -340,6 +477,7 @@ namespace FoutloosTypen.ViewModels
                     TextColor = Colors.LightGray,
                     FontSize = 32
                 });
+                SelectedLesson = Lessons.First();
             }
 
             FormattedText = formatted;
@@ -417,6 +555,7 @@ namespace FoutloosTypen.ViewModels
                 SelectedAssignment = Assignments.First();
 
             _resultService.StartLesson(SelectedLesson.Id, Assignments.Count);
+            _ResultService.StartLesson(SelectedLesson.Id, Assignments.Count);
         }
 
         private void LoadPracticeMaterials()
@@ -460,10 +599,33 @@ namespace FoutloosTypen.ViewModels
                     _resultService.EndLesson(SelectedLesson.Id);
 
                 ShowLessonResults();
+                // All assignments completed - Show results popup
+                Debug.WriteLine("All assignments completed! Showing results...");
+
+                if (SelectedLesson != null)
+                {
+                    _ResultService.EndLesson(SelectedLesson.Id);
+                }
+
+                // Call async method properly on UI thread
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    try
+                    {
+                        await ShowLessonResultsAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"ERROR showing results: {ex.Message}");
+                        Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                    }
+                });
                 return;
             }
 
             RestartTimer();
+
+            // Move to next assignment
             SelectedAssignment = Assignments[_currentAssignmentIndex];
         }
 
@@ -480,6 +642,27 @@ namespace FoutloosTypen.ViewModels
 
             // Vind de index van de huidige les
             var currentIndex = lessonsInCourse.FindIndex(l => l.Id == SelectedLesson.Id);
+        public void RestartLesson()
+        {
+            Debug.WriteLine("Restarting lesson...");
+
+            // Reset naar de eerste opdracht
+            _currentAssignmentIndex = 0;
+            OnPropertyChanged(nameof(AssignmentProgress));
+            OnPropertyChanged(nameof(ProgressText));
+
+            // Selecteer de eerste opdracht
+            if (Assignments.Any())
+            {
+                SelectedAssignment = Assignments.First();
+            }
+
+            // Reset typing en timer
+            ResetTyping();
+            RestartTimer();
+
+            Debug.WriteLine("Lesson restarted successfully");
+        }
 
             // Return de volgende les als die bestaat
             if (currentIndex >= 0 && currentIndex < lessonsInCourse.Count - 1)
@@ -508,6 +691,18 @@ namespace FoutloosTypen.ViewModels
         #endregion
 
         #region Timer & Results
+            // Check if user made a mistake with the newly typed character
+            if (_typingComparisonService.IsCharacterIncorrect(
+                CurrentMaterial.Sentence,
+                _previousUserInput,
+                typedText))
+            {
+                if (SelectedLesson != null)
+                {
+                    _ResultService.RecordMistake(SelectedLesson.Id);
+                    Debug.WriteLine($"Mistake recorded! Total: {_ResultService.GetProgress(SelectedLesson.Id)?.TotalMistakes}");
+                }
+            }
 
         private async void OnTimerExpired(object? sender, EventArgs e)
         {
@@ -517,6 +712,19 @@ namespace FoutloosTypen.ViewModels
             _resultService.EndLesson(SelectedLesson.Id);
 
             await ShowLessonResultsAsync();
+            // Check if sentence is complete and correct
+            if (typedText == CurrentMaterial.Sentence)
+            {
+                if (SelectedLesson != null)
+                {
+                    _ResultService.CompleteSentence(SelectedLesson.Id, typedText);
+                    var progress = _ResultService.GetProgress(SelectedLesson.Id);
+                    Debug.WriteLine($"Sentence completed! Total mistakes: {progress?.TotalMistakes}, Sentences: {progress?.SentencesCompleted}");
+                }
+
+                // Move to next sentence or assignment
+                MoveToNextMaterial();
+            }
         }
 
         private async Task ShowLessonResultsAsync()
@@ -573,6 +781,16 @@ namespace FoutloosTypen.ViewModels
         }
 
         #endregion
+        public override void OnDisappearing()
+        {
+            base.OnDisappearing();
+
+            if (SelectedLesson != null)
+            {
+                _ResultService.EndLesson(SelectedLesson.Id);
+                var progress = _ResultService.GetProgress(SelectedLesson.Id);
+                Debug.WriteLine($"Lesson ended. Total mistakes: {progress?.TotalMistakes}, Time: {progress?.TimeSpent:F2}s");
+            }
 
         #region Commands
 

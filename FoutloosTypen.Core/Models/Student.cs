@@ -8,7 +8,7 @@ namespace FoutloosTypen.Core.Models
 {
     public partial class Student : Model
     {
-        public string  Username { get; set; }
+        public string Username { get; set; }
         public string Name { get; set; }
         public string Password { get; set; }
         public int Level { get; set; }
@@ -17,6 +17,10 @@ namespace FoutloosTypen.Core.Models
         public bool UseTtsMode { get; set; }
 
         public Student(int id, string username,  string name, string password, int level, double avgSpeed, double avgPrecision, bool useTtsMode = false)
+        public int CompletedLessons { get; set; }
+        public int TotalScore { get; set; }
+
+        public Student(int id, string username, string name, string password, int level, double avgSpeed, double avgPrecision, int completedLessons = 0, int totalScore = 0)
             : base(id)
         {
             Username = username;
@@ -26,6 +30,8 @@ namespace FoutloosTypen.Core.Models
             AvgSpeed = avgSpeed;
             AvgPrecision = avgPrecision;
             UseTtsMode = useTtsMode;
+            CompletedLessons = completedLessons;
+            TotalScore = totalScore;
         }
     }
 }

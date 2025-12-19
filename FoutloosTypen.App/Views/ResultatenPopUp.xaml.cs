@@ -1,4 +1,5 @@
 using System;
+using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Models;
 using FoutloosTypen.ViewModels;
 using FoutloosTypen.Core.Interfaces.Services;
@@ -83,6 +84,13 @@ namespace FoutloosTypen.Views
 
             BindingContext = _viewModel;
             _userResponseTcs = new TaskCompletionSource<PopupResult>();
+        public ResultatenPopUp(Result currentResult, ScoreComparison? comparison = null)
+        {
+            InitializeComponent();
+            
+            BindingContext = new LessonResultViewModel(currentResult, comparison);
+            
+            _userResponseTcs = new TaskCompletionSource<bool>();
         }
 
         public Task<PopupResult> WaitForUserResponseAsync()

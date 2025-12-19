@@ -15,6 +15,8 @@ namespace FoutloosTypen
             Routing.RegisterRoute(nameof(ProfileView), typeof(ProfileView));
             Routing.RegisterRoute(nameof(SettingsView), typeof(SettingsView));
             Routing.RegisterRoute(nameof(TTSAssignmentView), typeof(TTSAssignmentView));
+            Routing.RegisterRoute(nameof(LeaderboardView), typeof(LeaderboardView));
+            Routing.RegisterRoute(nameof(LessonLeaderboardView), typeof(LessonLeaderboardView));  // ADD THIS
         }
     }
 }
