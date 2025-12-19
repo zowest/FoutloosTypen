@@ -3,113 +3,39 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="FoutloosTypen.Views.LeaderboardView"
              Title="Klassement"
-             BackgroundColor="White">
+             BackgroundColor="White"
+             Shell.NavBarIsVisible="False"
+             Shell.FlyoutBehavior="Disabled">
     <Grid Padding="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Header met logo en home button -->
-        <Grid Grid.Row="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <!-- Lesson-specific leaderboard -->
+        <Border Grid.Row="0"
+                Stroke="Black"
+                StrokeThickness="2"
+                Padding="20"
+                BackgroundColor="White"
+                HorizontalOptions="Center"
+                VerticalOptions="Start"
+                WidthRequest="700"
+                Margin="0,20"
+                IsVisible="{Binding IsLessonSpecific}">
+            <VerticalStackLayout Spacing="12" HorizontalOptions="Center">
+                <HorizontalStackLayout HorizontalOptions="Center" Spacing="8">
+                    <Label Text="🏵️" FontSize="26" />
+                    <Label Text="{Binding PageTitle}" FontSize="28" FontAttributes="Bold" />
+                    <Label Text="🏵️" FontSize="26" />
+                </HorizontalStackLayout>
 
-            <Image Grid.Column="0"
-                   Source="boltype.png"
-                   HeightRequest="120"
-                   WidthRequest="120"
-                   HorizontalOptions="Start"
-                   VerticalOptions="Start"/>
+                <BoxView HeightRequest="2" Color="Black" WidthRequest="200" />
 
-            <ImageButton Grid.Column="1"
-                         Source="home.png"
-                         HeightRequest="40"
-                         WidthRequest="40"
-                         HorizontalOptions="End"
-                         VerticalOptions="Start"
-                         Clicked="OnHomeClicked"/>
-        </Grid>
-
-        <!-- Title -->
-        <Label Grid.Row="1"
-               Text="Klassement"
-               TextColor="Black"
-               FontSize="48"
-               FontAttributes="Bold"
-               Margin="0,20,0,20"/>
-
-        <!-- Category Buttons -->
-        <HorizontalStackLayout Grid.Row="2"
-                               Spacing="10"
-                               Margin="0,0,0,20">
-            <Button Text="Snelheid"
-                    Command="{Binding SelectCategorySpeedCommand}"
-                    BackgroundColor="#FF6200EE"
-                    TextColor="White"
-                    CornerRadius="5"
-                    Padding="15,10"/>
-            <Button Text="Nauwkeurigheid"
-                    Command="{Binding SelectCategoryPrecisionCommand}"
-                    BackgroundColor="#FF6200EE"
-                    TextColor="White"
-                    CornerRadius="5"
-                    Padding="15,10"/>
-            <Button Text="Score"
-                    Command="{Binding SelectCategoryScoreCommand}"
-                    BackgroundColor="#FF6200EE"
-                    TextColor="White"
-                    CornerRadius="5"
-                    Padding="15,10"/>
-            <Button Text="Lessen"
-                    Command="{Binding SelectCategoryLessonsCommand}"
-                    BackgroundColor="#FF6200EE"
-                    TextColor="White"
-                    CornerRadius="5"
-                    Padding="15,10"/>
-        </HorizontalStackLayout>
-
-        <!-- Leaderboard List -->
-        <ScrollView Grid.Row="3">
-            <VerticalStackLayout Spacing="10">
-                <!-- Header -->
-                <Grid Padding="10"
-                      BackgroundColor="#F0F0F0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="60"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="120"/>
-                    </Grid.ColumnDefinitions>
-
-                    <Label Grid.Column="0"
-                           Text="Rang"
-                           TextColor="Black"
-                           FontSize="16"
-                           FontAttributes="Bold"/>
-                    <Label Grid.Column="1"
-                           Text="Naam"
-                           TextColor="Black"
-                           FontSize="16"
-                           FontAttributes="Bold"/>
-                    <Label Grid.Column="2"
-                           Text="{Binding CategoryTitle}"
-                           TextColor="Black"
-                           FontSize="16"
-                           FontAttributes="Bold"
-                           HorizontalOptions="End"/>
-                </Grid>
-
-                <!-- Leaderboard Items -->
-                <CollectionView ItemsSource="{Binding TopStudents}">
+                <CollectionView ItemsSource="{Binding LessonResults}">
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
-                            <Grid Padding="10"
-                                  Margin="0,5">
+                            <Grid ColumnSpacing="8" Padding="4">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="60"/>
                                     <ColumnDefinition Width="*"/>
@@ -118,30 +44,26 @@
 
                                 <Label Grid.Column="0"
                                        Text="{Binding Rank, StringFormat='#{0}'}"
-                                       TextColor="Black"
                                        FontSize="18"
                                        VerticalOptions="Center"/>
                                 <Label Grid.Column="1"
-                                       Text="{Binding Name}"
-                                       TextColor="Black"
+                                       Text="{Binding StudentName}"
                                        FontSize="18"
                                        VerticalOptions="Center"/>
                                 <Label Grid.Column="2"
-                                       Text="{Binding FormattedValue}"
-                                       TextColor="Black"
+                                       Text="{Binding Score}"
                                        FontSize="18"
-                                       FontAttributes="Bold"
-                                       HorizontalOptions="End"
-                                       VerticalOptions="Center"/>
+                                       VerticalOptions="Center"
+                                       HorizontalTextAlignment="End"/>
                             </Grid>
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
                 </CollectionView>
             </VerticalStackLayout>
-        </ScrollView>
+        </Border>
 
-        <!-- Current Student Rank - Only show if rank > 0 -->
-        <Border Grid.Row="4"
+        <!-- Current student's rank small footer -->
+        <Border Grid.Row="1"
                 Stroke="#FF6200EE"
                 StrokeThickness="2"
                 BackgroundColor="#F8F8FF"
@@ -149,16 +71,8 @@
                 Margin="0,20,0,0"
                 IsVisible="{Binding CurrentStudentRank}">
             <HorizontalStackLayout Spacing="10">
-                <Label Text="Jouw positie:"
-                       TextColor="Black"
-                       FontSize="18"
-                       FontAttributes="Bold"
-                       VerticalOptions="Center"/>
-                <Label Text="{Binding CurrentStudentRank, StringFormat='#{0}'}"
-                       TextColor="#FF6200EE"
-                       FontSize="24"
-                       FontAttributes="Bold"
-                       VerticalOptions="Center"/>
+                <Label Text="Jouw positie:" TextColor="Black" FontSize="18" FontAttributes="Bold" VerticalOptions="Center"/>
+                <Label Text="{Binding CurrentStudentRank, StringFormat='#{0}'}" TextColor="#FF6200EE" FontSize="24" FontAttributes="Bold" VerticalOptions="Center"/>
             </HorizontalStackLayout>
         </Border>
     </Grid>
