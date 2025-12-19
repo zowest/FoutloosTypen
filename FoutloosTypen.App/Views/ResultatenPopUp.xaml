@@ -7,7 +7,7 @@
            BorderColor="Black"
            CornerRadius="20"
            Padding="30"
-           MaximumWidthRequest="900"
+           MaximumWidthRequest="1000"
            MaximumHeightRequest="600"
            HorizontalOptions="Center"
            VerticalOptions="Center">
@@ -46,7 +46,7 @@
                            FontAttributes="Bold"/>
                 </Border>
 
-                <!-- Results Comparison -->
+                <!-- Results Comparison - FIXED: Wider columns to prevent text clipping -->
                 <Grid ColumnSpacing="20" Margin="0,10,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -63,32 +63,32 @@
                                Margin="0,0,0,8"/>
                         
                         <HorizontalStackLayout>
-                            <Label Text="Score:" TextColor="Black" FontSize="14" WidthRequest="100"/>
+                            <Label Text="Score:" TextColor="Black" FontSize="14" WidthRequest="140"/>
                             <Label Text="{Binding Score}" TextColor="Black" FontSize="14" FontAttributes="Bold"/>
                         </HorizontalStackLayout>
                         
                         <HorizontalStackLayout>
-                            <Label Text="WPM:" TextColor="Black" FontSize="14" WidthRequest="100"/>
+                            <Label Text="WPM:" TextColor="Black" FontSize="14" WidthRequest="140"/>
                             <Label Text="{Binding WordsPerMinute}" TextColor="Black" FontSize="14" FontAttributes="Bold"/>
                         </HorizontalStackLayout>
                         
                         <HorizontalStackLayout>
-                            <Label Text="Nauwkeurigheid:" TextColor="Black" FontSize="14" WidthRequest="100"/>
+                            <Label Text="Nauwkeurigheid:" TextColor="Black" FontSize="14" WidthRequest="140"/>
                             <Label Text="{Binding Accuracy}" TextColor="Black" FontSize="14" FontAttributes="Bold"/>
                         </HorizontalStackLayout>
                         
                         <HorizontalStackLayout>
-                            <Label Text="APM:" TextColor="Black" FontSize="14" WidthRequest="100"/>
+                            <Label Text="APM:" TextColor="Black" FontSize="14" WidthRequest="140"/>
                             <Label Text="{Binding StrokesPerMinute}" TextColor="Black" FontSize="14"/>
                         </HorizontalStackLayout>
                         
                         <HorizontalStackLayout>
-                            <Label Text="Fouten:" TextColor="Black" FontSize="14" WidthRequest="100"/>
+                            <Label Text="Fouten:" TextColor="Black" FontSize="14" WidthRequest="140"/>
                             <Label Text="{Binding TotalMistakes}" TextColor="Black" FontSize="14"/>
                         </HorizontalStackLayout>
                         
                         <HorizontalStackLayout>
-                            <Label Text="Tijd over:" TextColor="Black" FontSize="14" WidthRequest="100"/>
+                            <Label Text="Tijd over:" TextColor="Black" FontSize="14" WidthRequest="140"/>
                             <Label Text="{Binding TimeRemaining}" TextColor="Black" FontSize="14"/>
                         </HorizontalStackLayout>
                     </VerticalStackLayout>
@@ -110,7 +110,7 @@
                                Margin="0,0,0,8"/>
                         
                         <HorizontalStackLayout>
-                            <Label Text="Score:" TextColor="Gray" FontSize="13" WidthRequest="90"/>
+                            <Label Text="Score:" TextColor="Gray" FontSize="13" WidthRequest="140"/>
                             <Label Text="{Binding PreviousBestScore}" TextColor="Gray" FontSize="13"/>
                             <Label Text="{Binding ScoreDifferenceText}" 
                                    TextColor="{Binding ScoreDifferenceColor}" 
@@ -120,7 +120,7 @@
                         </HorizontalStackLayout>
                         
                         <HorizontalStackLayout>
-                            <Label Text="WPM:" TextColor="Gray" FontSize="13" WidthRequest="90"/>
+                            <Label Text="WPM:" TextColor="Gray" FontSize="13" WidthRequest="140"/>
                             <Label Text="{Binding PreviousBestWPM}" TextColor="Gray" FontSize="13"/>
                             <Label Text="{Binding SpeedDifferenceText}" 
                                    TextColor="{Binding SpeedDifferenceColor}" 
@@ -130,7 +130,7 @@
                         </HorizontalStackLayout>
                         
                         <HorizontalStackLayout>
-                            <Label Text="Nauwkeurigheid:" TextColor="Gray" FontSize="13" WidthRequest="90"/>
+                            <Label Text="Nauwkeurigheid:" TextColor="Gray" FontSize="13" WidthRequest="140"/>
                             <Label Text="{Binding PreviousBestAccuracy}" TextColor="Gray" FontSize="13"/>
                             <Label Text="{Binding AccuracyDifferenceText}" 
                                    TextColor="{Binding AccuracyDifferenceColor}" 

@@ -76,17 +76,17 @@
             <!-- Description column with leaderboard above description -->
             <ScrollView Grid.Column="4">
                 <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Start" Spacing="20" Padding="20">
-                    <!-- trophy (image) + profile buttons aligned to the top-right -->
+                    <!-- trophy (image) + profile buttons aligned to the top-right - FIXED: Both 48x48 -->
                     <HorizontalStackLayout HorizontalOptions="End" Spacing="12" Margin="0,0,0,8">
-                        <!-- Use a monochrome PNG in Resources/Images/trophy_bw.png (Build Action = MauiImage) -->
                         <ImageButton Source="trophy_bw.png"
                                      Command="{Binding OpenLeaderboardCommand}"
                                      BackgroundColor="Transparent"
                                      BorderColor="Transparent"
-                                     BorderWidth="0"
-                                     WidthRequest="40"
-                                     HeightRequest="40"
-                                     Aspect="AspectFit"
+                                     Padding="0"
+                                     WidthRequest="48"
+                                     HeightRequest="48"
+                                     Aspect="AspectFill"
+                                     Scale="1.05"
                                      SemanticProperties.Hint="Open algemeen klassement">
                             <ImageButton.GestureRecognizers>
                                 <PointerGestureRecognizer PointerEntered="OnHoverEnter" PointerExited="OnHoverExit"/>
@@ -98,8 +98,9 @@
                                      BackgroundColor="Transparent"
                                      BorderColor="Transparent"
                                      BorderWidth="0"
-                                     WidthRequest="40"
-                                     HeightRequest="40"
+                                     Padding="0"
+                                     WidthRequest="48"
+                                     HeightRequest="48"
                                      Aspect="AspectFit">
                             <ImageButton.GestureRecognizers>
                                 <PointerGestureRecognizer PointerEntered="OnHoverEnter" PointerExited="OnHoverExit"/>

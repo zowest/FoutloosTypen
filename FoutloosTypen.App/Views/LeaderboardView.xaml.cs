@@ -1,4 +1,5 @@
 using FoutloosTypen.ViewModels;
+using Microsoft.Maui.Controls;
 
 namespace FoutloosTypen.Views
 {
@@ -10,6 +11,12 @@ namespace FoutloosTypen.Views
         {
             InitializeComponent();
             BindingContext = _vm = viewModel;
+
+            Shell.SetBackButtonBehavior(this, new BackButtonBehavior
+            {
+                IsVisible = false,
+                IsEnabled = false
+            });
         }
 
         protected override void OnAppearing()
