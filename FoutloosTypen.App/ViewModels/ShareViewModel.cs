@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using System.Diagnostics;
 using CommunityToolkit.Maui.Views;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,8 +18,10 @@ namespace FoutloosTypen.ViewModels
         private readonly IXAuthService _xAuthService;
         private readonly IMediaUploadRepository _mediaUploadRepository;
         private readonly IXAuthRepository _xAuthRepository;
+        private readonly IXAuthApiRepository _xAuthApiRepository;
         private readonly IShareImageRepository _shareImageRepository;
         private readonly XAuthSettings _xSettings;
+        private readonly GlobalViewModel _globalViewModel;
 
         [ObservableProperty]
         private bool _isShareOptionsVisible;
@@ -30,14 +33,18 @@ namespace FoutloosTypen.ViewModels
             IXAuthService xAuthService,
             IMediaUploadRepository mediaUploadRepository,
             IXAuthRepository xAuthRepository,
+            IXAuthApiRepository xAuthApiRepository,
             IShareImageRepository shareImageRepository,
-            XAuthSettings xSettings)
+            XAuthSettings xSettings,
+            GlobalViewModel globalViewModel)
         {
             _xAuthService = xAuthService;
             _mediaUploadRepository = mediaUploadRepository;
             _xAuthRepository = xAuthRepository;
+            _xAuthApiRepository = xAuthApiRepository;
             _shareImageRepository = shareImageRepository;
             _xSettings = xSettings;
+            _globalViewModel = globalViewModel;
         }
 
         [RelayCommand]
@@ -55,22 +62,101 @@ namespace FoutloosTypen.ViewModels
 
             try
             {
-                var authCode = await AuthenticateUserAsync();
-                if (string.IsNullOrEmpty(authCode))
+                int ownerUserId = _globalViewModel?.Student?.Id ?? 0;
+                if (ownerUserId == 0)
                 {
+                    await ShowErrorAsync("Fout", "Geen gebruiker ingelogd.");
                     IsShareOptionsVisible = false;
                     return;
                 }
 
-                var accessToken = await ExchangeAuthCodeAsync(authCode);
-                if (string.IsNullOrEmpty(accessToken))
+                var tokens = await _xAuthService.GetUserAccessTokensAsync(ownerUserId);
+                bool needsReAuth = false;
+
+                if (tokens != null)
                 {
-                    await ShowErrorAsync("Authenticatie mislukt", "Kon geen toegangstoken verkrijgen.");
-                    IsShareOptionsVisible = false;
-                    return;
+                    // Verify that the stored tokens still belong to the same X account
+                    var currentXUser = await _xAuthApiRepository.VerifyCredentialsAsync(
+                        _xSettings.ConsumerKey,
+                        _xSettings.ConsumerSecret,
+                        tokens.Value.AccessToken,
+                        tokens.Value.AccessSecret);
+
+                    if (currentXUser == null)
+                    {
+                        needsReAuth = true;
+                    }
+                    else
+                    {
+                        // Check if stored X user info matches current tokens
+                        var storedXUser = await _xAuthRepository.GetXUserInfoAsync(ownerUserId);
+                        
+                        if (storedXUser == null || storedXUser.Value.XUserId != currentXUser.Value.userId)
+                        {
+                            needsReAuth = true;
+                        }
+                    }
                 }
 
-                await ShowPreviewPopupAsync(assignmentVM);
+                if (tokens == null || needsReAuth)
+                {
+                    if (needsReAuth)
+                    {
+                        await _xAuthRepository.DeleteOAuth1TokensAsync(ownerUserId);
+                        await _xAuthRepository.DeleteXUserInfoAsync(ownerUserId);
+                    }
+
+                    var authResult = await AuthenticateUserAsync();
+                    if (string.IsNullOrEmpty(authResult))
+                    {
+                        await ShowErrorAsync("Authenticatie geannuleerd", "Je moet eerst inloggen om te delen.");
+                        IsShareOptionsVisible = false;
+                        return;
+                    }
+
+                    var parts = authResult.Split('|');
+                    if (parts.Length != 3)
+                    {
+                        await ShowErrorAsync("Authenticatie fout", "Ongeldige authenticatie respons.");
+                        IsShareOptionsVisible = false;
+                        return;
+                    }
+
+                    var (accessToken, accessTokenSecret) = await _xAuthApiRepository.ExchangeRequestTokenAsync(
+                        _xSettings.ConsumerKey,
+                        _xSettings.ConsumerSecret,
+                        parts[0],
+                        parts[1],
+                        parts[2]);
+
+                    if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(accessTokenSecret))
+                    {
+                        await ShowErrorAsync("Token exchange mislukt", "Kon geen toegangstokens verkrijgen.");
+                        IsShareOptionsVisible = false;
+                        return;
+                    }
+
+                    // Verify and save X user info
+                    var xUserInfo = await _xAuthApiRepository.VerifyCredentialsAsync(
+                        _xSettings.ConsumerKey,
+                        _xSettings.ConsumerSecret,
+                        accessToken,
+                        accessTokenSecret);
+
+                    if (xUserInfo == null)
+                    {
+                        await ShowErrorAsync("Verificatie mislukt", "Kon X account niet verifiëren.");
+                        IsShareOptionsVisible = false;
+                        return;
+                    }
+
+                    await _xAuthService.SaveUserAccessTokensAsync(ownerUserId, accessToken, accessTokenSecret);
+                    await _xAuthRepository.SaveXUserInfoAsync(ownerUserId, xUserInfo.Value.userId, xUserInfo.Value.username);
+                    
+                    tokens = (accessToken, accessTokenSecret);
+                }
+
+                await ShowPreviewPopupAsync(assignmentVM, ownerUserId);
                 IsShareOptionsVisible = false;
             }
             catch (Exception ex)
@@ -82,28 +168,39 @@ namespace FoutloosTypen.ViewModels
 
         private async Task<string?> AuthenticateUserAsync()
         {
-            var authCode = await _xAuthService.AuthenticateAsync(
-                _xSettings.ClientId,
-                _xSettings.RedirectUri,
-                _xSettings.Scopes,
-                forceConsent: true);
+            var authResult = await _xAuthService.AuthenticateAsync(
+                _xSettings.ConsumerKey,
+                _xSettings.ConsumerSecret,
+                _xSettings.CallbackUrl);
 
             await Task.Delay(500);
-            return authCode;
+            return authResult;
         }
 
-        private async Task<string?> ExchangeAuthCodeAsync(string authCode)
+        private bool AreSettingsValid(out string error)
         {
-            var accessToken = await _xAuthService.ExchangeCodeForTokenAsync(
-                _xSettings.ClientId,
-                authCode,
-                _xSettings.RedirectUri);
+            if (_xSettings == null)
+            {
+                error = "X/Twitter instellingen ontbreken.";
+                return false;
+            }
 
-            await Task.Delay(200);
-            return accessToken;
+            var missing = new List<string>();
+            if (string.IsNullOrWhiteSpace(_xSettings.ConsumerKey)) missing.Add("ConsumerKey");
+            if (string.IsNullOrWhiteSpace(_xSettings.ConsumerSecret)) missing.Add("ConsumerSecret");
+            if (string.IsNullOrWhiteSpace(_xSettings.CallbackUrl)) missing.Add("CallbackUrl");
+
+            if (missing.Count > 0)
+            {
+                error = $"X/Twitter is op dit moment niet beschikbaar.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
         }
 
-        private async Task ShowPreviewPopupAsync(AssignmentViewModel assignmentVM)
+        private async Task ShowPreviewPopupAsync(AssignmentViewModel assignmentVM, int ownerUserId)
         {
             var lessonName = assignmentVM.SelectedLesson?.Name ?? "Onbekende les";
             var progressText = assignmentVM.ProgressText;
@@ -111,7 +208,6 @@ namespace FoutloosTypen.ViewModels
 
             var text = ShareImageGenerator.BuildTweetText(lessonName, progressText);
             
-            // Load logo stream from app package
             System.IO.Stream? logoStream = null;
             try
             {
@@ -119,7 +215,6 @@ namespace FoutloosTypen.ViewModels
             }
             catch
             {
-                // Logo not found, will use fallback
             }
 
             SKBitmap bitmap;
@@ -138,11 +233,13 @@ namespace FoutloosTypen.ViewModels
             var sharePreviewViewModel = new SharePreviewViewModel(
                 _mediaUploadRepository,
                 _xAuthRepository,
+                _xAuthService,
                 _shareImageRepository,
                 _xSettings,
                 lessonName,
                 progressText,
                 lessonId,
+                ownerUserId,
                 bitmap,
                 text);
 
