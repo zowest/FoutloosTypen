@@ -142,13 +142,12 @@ namespace FoutloosTypen
 
             var app = builder.Build();
 
-            // Debug: log loaded XAuthSettings to confirm values at startup
             try
             {
                 var settings = app.Services.GetRequiredService<FoutloosTypen.Core.Models.XAuthSettings>();
-                Debug.WriteLine($"Startup: XAuthSettings.ClientId set: {!string.IsNullOrEmpty(settings.ClientId)}");
-                Debug.WriteLine($"Startup: XAuthSettings.RedirectUri set: {!string.IsNullOrEmpty(settings.RedirectUri)}");
-                Debug.WriteLine($"Startup: XAuthSettings.Scopes count: {settings.Scopes?.Length ?? 0}");
+                Debug.WriteLine($"Startup: XAuthSettings.ConsumerKey set: {!string.IsNullOrEmpty(settings.ConsumerKey)}");
+                Debug.WriteLine($"Startup: XAuthSettings.ConsumerSecret set: {!string.IsNullOrEmpty(settings.ConsumerSecret)}");
+                Debug.WriteLine($"Startup: XAuthSettings.CallbackUrl: {settings.CallbackUrl}");
             }
             catch (Exception ex)
             {

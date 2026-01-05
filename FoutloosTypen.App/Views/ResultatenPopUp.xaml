@@ -11,10 +11,55 @@
            MaximumHeightRequest="600"
            HorizontalOptions="Center"
            VerticalOptions="Center">
-        <ScrollView>
-            <VerticalStackLayout Spacing="15">
+        <Grid>
+            <!-- X Share Button (top right) -->
+            <ImageButton Source="x.png"
+                         BackgroundColor="Transparent"
+                         Command="{Binding ShareToTwitterCommand}"
+                         IsEnabled="{Binding CanShare}"
+                         ToolTipProperties.Text="Deel op X (Twitter)"
+                         WidthRequest="48"
+                         HeightRequest="48"
+                         HorizontalOptions="End"
+                         VerticalOptions="Start"
+                         Padding="0"
+                         Opacity="1.0">
+                <ImageButton.GestureRecognizers>
+                    <PointerGestureRecognizer
+                        PointerEntered="OnHoverEnter"
+                        PointerExited="OnHoverExit"/>
+                </ImageButton.GestureRecognizers>
+            </ImageButton>
 
-                <!-- Title -->
+            <!-- Switch X Account info (below share button) -->
+            <VerticalStackLayout HorizontalOptions="End"
+                                 VerticalOptions="Start"
+                                 Margin="0,60,0,0"
+                                 Spacing="4"
+                                 x:Name="XAccountSwitcher">
+                <Label Text="{Binding CurrentXUsername}"
+                       FontSize="12"
+                       TextColor="Gray"
+                       HorizontalOptions="End"/>
+                <Button Text="Wissel X-account"
+                        FontSize="10"
+                        Padding="8,4"
+                        BackgroundColor="LightGray"
+                        TextColor="Black"
+                        CornerRadius="4"
+                        Command="{Binding SwitchXAccountCommand}"
+                        IsEnabled="{Binding CanShare}">
+                    <Button.GestureRecognizers>
+                        <PointerGestureRecognizer
+                            PointerEntered="OnHoverEnter"
+                            PointerExited="OnHoverExit"/>
+                    </Button.GestureRecognizers>
+                </Button>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="80" 
+                                 HorizontalOptions="Center" 
+                                 VerticalOptions="Center">
                 <Label Text="{Binding ResultTitle}"
                        FontSize="32"
                        FontAttributes="Bold"

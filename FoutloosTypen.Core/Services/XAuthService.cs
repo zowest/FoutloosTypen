@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Interfaces.Repositories;
 
@@ -19,71 +18,47 @@ namespace FoutloosTypen.Core.Services
             _xAuthApiRepository = xAuthApiRepository;
         }
 
-        public async Task<string?> AuthenticateAsync(string clientId, string redirectUri, string[] scopes, bool forceConsent = false)
+        public async Task<string?> AuthenticateAsync(string consumerKey, string consumerSecret, string callbackUrl)
         {
-            if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(redirectUri))
+            if (string.IsNullOrWhiteSpace(consumerKey) || string.IsNullOrWhiteSpace(consumerSecret))
                 return null;
 
-            var (verifier, challenge) = CreatePkcePair();
-            await _xAuthRepository.SavePkceVerifierAsync(verifier);
+            var effectiveCallback = _xAuthApiRepository.PrepareRedirectUri(callbackUrl);
 
-            var effectiveRedirectUri = _xAuthApiRepository.PrepareRedirectUri(redirectUri);
-            var authUrl = _xAuthApiRepository.BuildAuthUrl(clientId, effectiveRedirectUri, scopes, challenge, forceConsent);
+            var (requestToken, requestTokenSecret) = await _xAuthApiRepository.GetRequestTokenAsync(
+                consumerKey, consumerSecret, effectiveCallback);
 
-            return await _xAuthApiRepository.AuthenticateWithBrowserAsync(authUrl, effectiveRedirectUri);
-        }
-
-        public async Task<string?> ExchangeCodeForTokenAsync(string clientId, string code, string redirectUri)
-        {
-            var verifier = await _xAuthRepository.GetPkceVerifierAsync() ?? string.Empty;
-            var (access, refresh, scope) = await _xAuthApiRepository.ExchangeCodeForTokenAsync(
-                clientId, code, redirectUri, verifier);
-
-            if (string.IsNullOrEmpty(access))
+            if (string.IsNullOrEmpty(requestToken) || string.IsNullOrEmpty(requestTokenSecret))
+            {
+                Debug.WriteLine("Failed to get request token");
                 return null;
+            }
 
-            await SaveTokensAsync(access, refresh, scope);
-            await _xAuthRepository.SaveClientInfoAsync(clientId, redirectUri);
+            Debug.WriteLine($"Got request token: {requestToken}");
 
-            return access;
-        }
+            var authorizeUrl = $"https://api.twitter.com/oauth/authorize?oauth_token={Uri.EscapeDataString(requestToken)}";
+            var oauthVerifier = await _xAuthApiRepository.AuthenticateWithBrowserAsync(authorizeUrl, effectiveCallback);
 
-        public async Task<string?> RefreshAccessTokenAsync(string clientId, string refreshToken, string redirectUri)
-        {
-            var (access, refresh, scope) = await _xAuthApiRepository.RefreshAccessTokenAsync(
-                clientId, refreshToken, redirectUri);
-
-            if (string.IsNullOrEmpty(access))
+            if (string.IsNullOrEmpty(oauthVerifier))
+            {
+                Debug.WriteLine("User cancelled or no verifier received");
                 return null;
+            }
 
-            await SaveTokensAsync(access, refresh, scope);
-            return access;
+            Debug.WriteLine($"Got oauth_verifier: {oauthVerifier}");
+            return $"{requestToken}|{requestTokenSecret}|{oauthVerifier}";
         }
 
         public Task SignOutAsync() => _xAuthRepository.ClearAllTokensAsync();
 
-        private async Task SaveTokensAsync(string? access, string? refresh, string? scope)
-        {
-            if (!string.IsNullOrEmpty(access))
-                await _xAuthRepository.SaveAccessTokenAsync(access);
-            if (!string.IsNullOrEmpty(refresh))
-                await _xAuthRepository.SaveRefreshTokenAsync(refresh);
-            if (!string.IsNullOrEmpty(scope))
-                await _xAuthRepository.SaveScopeAsync(scope);
-        }
+        // OAuth1 per-user token management
+        public Task SaveUserAccessTokensAsync(int ownerUserId, string accessToken, string accessSecret)
+            => _xAuthRepository.SaveOAuth1TokensAsync(ownerUserId, accessToken, accessSecret);
 
-        private static (string verifier, string challenge) CreatePkcePair()
-        {
-            var bytes = new byte[32];
-            RandomNumberGenerator.Fill(bytes);
-            var verifier = Base64UrlEncode(bytes);
-            using var sha = SHA256.Create();
-            var challengeBytes = sha.ComputeHash(Encoding.ASCII.GetBytes(verifier));
-            var challenge = Base64UrlEncode(challengeBytes);
-            return (verifier, challenge);
-        }
+        public Task<(string AccessToken, string AccessSecret)?> GetUserAccessTokensAsync(int ownerUserId)
+            => _xAuthRepository.GetOAuth1TokensAsync(ownerUserId);
 
-        private static string Base64UrlEncode(byte[] bytes)
-            => Convert.ToBase64String(bytes).Replace('+', '-').Replace('/', '_').TrimEnd('=');
+        public Task DeleteUserAccessTokensAsync(int ownerUserId)
+            => _xAuthRepository.DeleteOAuth1TokensAsync(ownerUserId);
     }
 }

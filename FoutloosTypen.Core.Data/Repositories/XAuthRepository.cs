@@ -19,36 +19,19 @@ namespace FoutloosTypen.Core.Data.Repositories
         {
             var (env, source) = LoadEnvWithSource();
 
-            string clientId = ReadValue(env, "CLIENT_ID", Environment.GetEnvironmentVariable("CLIENT_ID"));
-            string redirectUri = ReadValue(env, "REDIRECT_URI", Environment.GetEnvironmentVariable("REDIRECT_URI"));
             string consumerKey = ReadValue(env, "CONSUMER_KEY", Environment.GetEnvironmentVariable("CONSUMER_KEY"));
             string consumerSecret = ReadValue(env, "CONSUMER_SECRET", Environment.GetEnvironmentVariable("CONSUMER_SECRET"));
-            string oauthToken = ReadValue(env, "OAUTH_TOKEN", Environment.GetEnvironmentVariable("OAUTH_TOKEN"));
-            string oauthTokenSecret = ReadValue(env, "OAUTH_TOKEN_SECRET", Environment.GetEnvironmentVariable("OAUTH_TOKEN_SECRET"));
-            string scopesEnv = ReadValue(env, "SCOPES", Environment.GetEnvironmentVariable("SCOPES"));
-
-            string[] scopesParsed = Array.Empty<string>();
-            if (!string.IsNullOrWhiteSpace(scopesEnv))
-            {
-                scopesParsed = scopesEnv
-                    .Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                    .Distinct(StringComparer.Ordinal)
-                    .ToArray();
-            }
+            string callbackUrl = ReadValue(env, "CALLBACK_URL", Environment.GetEnvironmentVariable("CALLBACK_URL"));
 
             var settings = new XAuthSettings
             {
-                ClientId = (clientId ?? string.Empty).Trim(),
-                RedirectUri = (redirectUri ?? string.Empty).Trim(),
-                Scopes = scopesParsed,
                 ConsumerKey = consumerKey ?? string.Empty,
                 ConsumerSecret = consumerSecret ?? string.Empty,
-                OAuthToken = oauthToken ?? string.Empty,
-                OAuthTokenSecret = oauthTokenSecret ?? string.Empty
+                CallbackUrl = callbackUrl ?? string.Empty
             };
 
             Debug.WriteLine($"XAuthRepository: config source: {source}");
-            Debug.WriteLine($"XAuthRepository: clientId set: {!string.IsNullOrWhiteSpace(settings.ClientId)}, redirectUri set: {!string.IsNullOrWhiteSpace(settings.RedirectUri)}, scopes count: {settings.Scopes?.Length ?? 0}");
+            Debug.WriteLine($"XAuthRepository: consumerKey set: {!string.IsNullOrWhiteSpace(settings.ConsumerKey)}, consumerSecret set: {!string.IsNullOrWhiteSpace(settings.ConsumerSecret)}");
 
             _settings = settings;
         }
@@ -162,36 +145,136 @@ namespace FoutloosTypen.Core.Data.Repositories
 
         public XAuthSettings GetSettings() => _settings;
 
-        public Task<string?> GetStoredAccessTokenAsync() => SecureStorage.GetAsync("x_access_token");
-        public Task<string?> GetStoredRefreshTokenAsync() => SecureStorage.GetAsync("x_refresh_token");
         public Task<string?> GetAuthenticatedHandleAsync() => SecureStorage.GetAsync("x_handle");
-        public Task<string?> GetStoredOAuth1TokenAsync() => SecureStorage.GetAsync("x_oauth_token");
-        public Task<string?> GetStoredOAuth1SecretAsync() => SecureStorage.GetAsync("x_oauth_token_secret");
-        public Task<string?> GetPkceVerifierAsync() => SecureStorage.GetAsync("x_pkce_verifier");
-
-        public async Task SaveAccessTokenAsync(string token) => await SecureStorage.SetAsync("x_access_token", token);
-        public async Task SaveRefreshTokenAsync(string token) => await SecureStorage.SetAsync("x_refresh_token", token);
-        public async Task SaveScopeAsync(string scope) => await SecureStorage.SetAsync("x_scope", scope);
-
-        public async Task SaveClientInfoAsync(string clientId, string redirectUri)
-        {
-            await SecureStorage.SetAsync("x_client_id", clientId);
-            await SecureStorage.SetAsync("x_redirect_uri", redirectUri);
-        }
-
-        public async Task SavePkceVerifierAsync(string verifier) => await SecureStorage.SetAsync("x_pkce_verifier", verifier);
 
         public async Task ClearAllTokensAsync()
         {
-            SecureStorage.Remove("x_access_token");
-            SecureStorage.Remove("x_refresh_token");
-            SecureStorage.Remove("x_pkce_verifier");
-            SecureStorage.Remove("x_handle");
-            SecureStorage.Remove("x_oauth_token");
-            SecureStorage.Remove("x_oauth_token_secret");
-            SecureStorage.Remove("x_client_id");
-            SecureStorage.Remove("x_redirect_uri");
-            SecureStorage.Remove("x_scope");
+            try
+            {
+                SecureStorage.Remove("x_handle");
+                
+                // Clear device-level OAuth tokens
+                SecureStorage.Remove("x_oauth_token_0");
+                SecureStorage.Remove("x_oauth_token_secret_0");
+                SecureStorage.Remove("x_user_id_0");
+                SecureStorage.Remove("x_username_0");
+                
+                Debug.WriteLine("[XAuthRepository] Cleared all tokens");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[XAuthRepository] FAILED to clear tokens: {ex.GetType().Name}: {ex.Message}");
+            }
+            
+            await Task.CompletedTask;
+        }
+
+        public async Task SaveOAuth1TokensAsync(int ownerUserId, string accessToken, string accessSecret)
+        {
+            try
+            {
+                await SecureStorage.SetAsync($"x_oauth_token_{ownerUserId}", accessToken);
+                await SecureStorage.SetAsync($"x_oauth_token_secret_{ownerUserId}", accessSecret);
+                Debug.WriteLine($"[XAuthRepository] Saved OAuth1 tokens for ownerUserId={ownerUserId}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[XAuthRepository] FAILED to save OAuth1 tokens: {ex.GetType().Name}: {ex.Message}");
+                throw new InvalidOperationException("Kon OAuth tokens niet opslaan in SecureStorage. Controleer apparaat beveiliging.", ex);
+            }
+        }
+
+        public async Task<(string AccessToken, string AccessSecret)?> GetOAuth1TokensAsync(int ownerUserId)
+        {
+            try
+            {
+                var token = await SecureStorage.GetAsync($"x_oauth_token_{ownerUserId}");
+                var secret = await SecureStorage.GetAsync($"x_oauth_token_secret_{ownerUserId}");
+                
+                if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(secret))
+                {
+                    Debug.WriteLine($"[XAuthRepository] No OAuth1 tokens found for ownerUserId={ownerUserId}");
+                    return null;
+                }
+                
+                Debug.WriteLine($"[XAuthRepository] Retrieved OAuth1 tokens for ownerUserId={ownerUserId}");
+                return (token, secret);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[XAuthRepository] FAILED to retrieve OAuth1 tokens: {ex.GetType().Name}: {ex.Message}");
+                return null; // Behandel als "geen tokens" in plaats van crash
+            }
+        }
+
+        public Task DeleteOAuth1TokensAsync(int ownerUserId)
+        {
+            try
+            {
+                SecureStorage.Remove($"x_oauth_token_{ownerUserId}");
+                SecureStorage.Remove($"x_oauth_token_secret_{ownerUserId}");
+                Debug.WriteLine($"[XAuthRepository] Deleted OAuth1 tokens for ownerUserId={ownerUserId}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[XAuthRepository] FAILED to delete OAuth1 tokens: {ex.GetType().Name}: {ex.Message}");
+            }
+            
+            return Task.CompletedTask;
+        }
+
+        public async Task SaveXUserInfoAsync(int ownerUserId, string xUserId, string xUsername)
+        {
+            try
+            {
+                await SecureStorage.SetAsync($"x_user_id_{ownerUserId}", xUserId);
+                await SecureStorage.SetAsync($"x_username_{ownerUserId}", xUsername);
+                Debug.WriteLine($"[XAuthRepository] Saved X user info for ownerUserId={ownerUserId}: X user={xUserId}, username={xUsername}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[XAuthRepository] FAILED to save X user info: {ex.GetType().Name}: {ex.Message}");
+                throw new InvalidOperationException("Kon X gebruikersinformatie niet opslaan in SecureStorage.", ex);
+            }
+        }
+
+        public async Task<(string XUserId, string XUsername)?> GetXUserInfoAsync(int ownerUserId)
+        {
+            try
+            {
+                var xUserId = await SecureStorage.GetAsync($"x_user_id_{ownerUserId}");
+                var xUsername = await SecureStorage.GetAsync($"x_username_{ownerUserId}");
+                
+                if (string.IsNullOrWhiteSpace(xUserId) || string.IsNullOrWhiteSpace(xUsername))
+                {
+                    Debug.WriteLine($"[XAuthRepository] No X user info found for ownerUserId={ownerUserId}");
+                    return null;
+                }
+                
+                Debug.WriteLine($"[XAuthRepository] Retrieved X user info for ownerUserId={ownerUserId}: X user={xUserId}, username={xUsername}");
+                return (xUserId, xUsername);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[XAuthRepository] FAILED to retrieve X user info: {ex.GetType().Name}: {ex.Message}");
+                return null;
+            }
+        }
+
+        public Task DeleteXUserInfoAsync(int ownerUserId)
+        {
+            try
+            {
+                SecureStorage.Remove($"x_user_id_{ownerUserId}");
+                SecureStorage.Remove($"x_username_{ownerUserId}");
+                Debug.WriteLine($"[XAuthRepository] Deleted X user info for ownerUserId={ownerUserId}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[XAuthRepository] FAILED to delete X user info: {ex.GetType().Name}: {ex.Message}");
+            }
+            
+            return Task.CompletedTask;
         }
     }
 }
