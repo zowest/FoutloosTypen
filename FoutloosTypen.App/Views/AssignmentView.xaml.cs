@@ -103,4 +103,14 @@ public partial class AssignmentView : ContentPage
     {
         HiddenEntry?.Focus();
     }
+
+    private void OnEntryFocused(object sender, FocusEventArgs e)
+    {
+
+    }
+
+    private void OnEntryUnfocused(object sender, FocusEventArgs e)
+    {
+
+    }
 }

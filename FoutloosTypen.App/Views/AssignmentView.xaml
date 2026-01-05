@@ -40,7 +40,6 @@
                                    LineBreakMode="WordWrap"
                                    MaximumWidthRequest="800" />
 
-                            <!-- Hidden Entry to capture keyboard input -->
                             <Entry x:Name="HiddenEntry"
                                    Text="{Binding UserInput, Mode=TwoWay}"
                                    TextChanged="OnTextChanged"
@@ -101,7 +100,6 @@
             </VerticalStackLayout>
 
             <VerticalStackLayout Grid.Row="1" HorizontalOptions="Center" Spacing="10">
-                <!-- Share button removed - sharing is now only available in the result popup -->
             </VerticalStackLayout>
         </Grid>
     </ContentPage.Content>
