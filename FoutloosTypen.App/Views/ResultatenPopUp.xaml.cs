@@ -1,13 +1,17 @@
 using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Models;
 using FoutloosTypen.ViewModels;
+using FoutloosTypen.Core.Interfaces.Services;
+using FoutloosTypen.Core.Interfaces.Repositories;
 using Microsoft.Maui.Controls;
+using Microsoft.Extensions.DependencyInjection; // added
 
 namespace FoutloosTypen.Views
 {
     public partial class ResultatenPopUp : ContentPage
     {
-        private TaskCompletionSource<bool> _userResponseTcs;
+        private TaskCompletionSource<PopupResult> _userResponseTcs;
+        private readonly LessonResultViewModel _viewModel;
 
         public ResultatenPopUp(Result currentResult, ScoreComparison? comparison = null)
         {
@@ -18,23 +22,35 @@ namespace FoutloosTypen.Views
             _userResponseTcs = new TaskCompletionSource<bool>();
         }
 
-        public Task<bool> WaitForUserResponseAsync()
+        public Task<PopupResult> WaitForUserResponseAsync()
         {
             return _userResponseTcs.Task;
         }
 
         private async void OnContinueClicked(object sender, EventArgs e)
         {
-            _userResponseTcs.TrySetResult(true);
+            _userResponseTcs.TrySetResult(PopupResult.Home);
             await Navigation.PopModalAsync();
-            
-            await Shell.Current.Navigation.PopToRootAsync();
         }
 
         private async void OnRestartClicked(object sender, EventArgs e)
         {
-            _userResponseTcs.TrySetResult(false);
+            _userResponseTcs.TrySetResult(PopupResult.Restart);
             await Navigation.PopModalAsync();
+        }
+
+        private async void OnNextLessonClicked(object sender, EventArgs e)
+        {
+            _userResponseTcs.TrySetResult(PopupResult.NextLesson);
+            await Navigation.PopModalAsync();
+        }
+
+        private async void OnShareClicked(object sender, EventArgs e)
+        {
+            if (_viewModel.CanShare)
+            {
+                await _viewModel.ShareToTwitterCommand.ExecuteAsync(null);
+            }
         }
 
         private void OnHoverEnter(object sender, PointerEventArgs e)
@@ -43,6 +59,10 @@ namespace FoutloosTypen.Views
             {
                 btn.BackgroundColor = Colors.LightGray;
             }
+            else if (sender is ImageButton imgBtn)
+            {
+                imgBtn.Opacity = 0.7;
+            }
         }
 
         private void OnHoverExit(object sender, PointerEventArgs e)
@@ -50,6 +70,10 @@ namespace FoutloosTypen.Views
             if (sender is Button btn)
             {
                 btn.BackgroundColor = Colors.White;
+            }
+            else if (sender is ImageButton imgBtn)
+            {
+                imgBtn.Opacity = 1.0;
             }
         }
 

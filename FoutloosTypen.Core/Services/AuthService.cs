@@ -1,8 +1,9 @@
 ﻿using FoutloosTypen.Core.Helpers;
 using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Models;
+using FoutloosTypen.Core.Interfaces.Repositories;
 
-namespace Grocery.Core.Services
+namespace FoutloosTypen.Core.Services
 {
     public class AuthService : IAuthService
     {

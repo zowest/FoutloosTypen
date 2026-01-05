@@ -72,6 +72,26 @@ namespace FoutloosTypen.Core.Data.Repositories
             CloseConnection();
         }
 
+        public void SaveEndlessModeResult(int studentId, int score)
+        {
+            OpenConnection();
+
+            using var command = Connection.CreateCommand();
+            command.CommandText = """
+                INSERT INTO EndlessModeResults
+                (StudentId, Score, CompletedAt)
+                VALUES
+                (@studentId, @score, @completedAt)
+            """;
+
+            AddParam(command, "@studentId", studentId);
+            AddParam(command, "@score", score);
+            AddParam(command, "@completedAt", DateTime.Now);
+
+            command.ExecuteNonQuery();
+            CloseConnection();
+        }
+
         public Result? GetByStudentAndLesson(int studentId, int lessonId)
         {
             OpenConnection();

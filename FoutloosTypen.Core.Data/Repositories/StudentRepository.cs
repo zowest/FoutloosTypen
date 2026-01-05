@@ -6,6 +6,37 @@ namespace FoutloosTypen.Core.Data.Repositories
 {
     public class StudentRepository : DatabaseConnection, IStudentRepository
     {
+        public StudentRepository()
+        {
+            // Check if column exists before adding
+            if (!ColumnExists("students", "UseTtsMode"))
+            {
+                CreateTable("""
+                    ALTER TABLE students 
+                    ADD COLUMN UseTtsMode TINYINT(1) DEFAULT 0
+                """);
+            }
+        }
+
+        private bool ColumnExists(string tableName, string columnName)
+        {
+            OpenConnection();
+            using var cmd = Connection.CreateCommand();
+            cmd.CommandText = "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = @table AND COLUMN_NAME = @column";
+            
+            var tableParam = cmd.CreateParameter();
+            tableParam.ParameterName = "@table";
+            tableParam.Value = tableName;
+            cmd.Parameters.Add(tableParam);
+            
+            var columnParam = cmd.CreateParameter();
+            columnParam.ParameterName = "@column";
+            columnParam.Value = columnName;
+            cmd.Parameters.Add(columnParam);
+            
+            return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+        }
+
         public Student? Get(string username)
         {
             OpenConnection();
