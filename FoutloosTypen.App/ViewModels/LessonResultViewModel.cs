@@ -1,15 +1,6 @@
-using System.Diagnostics;
-using FoutloosTypen.Core.Models;
-using System.ComponentModel;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
+ï»¿using CommunityToolkit.Mvvm.ComponentModel;
 using FoutloosTypen.Core.Interfaces.Services;
-using FoutloosTypen.Core.Interfaces.Repositories;
-using FoutloosTypen.Helpers;
-using SkiaSharp;
-using System.Threading.Tasks;
-using Microsoft.Maui.ApplicationModel;
-using CommunityToolkit.Maui.Views;
+using FoutloosTypen.Core.Models;
 
 namespace FoutloosTypen.ViewModels
 {
@@ -66,13 +57,10 @@ namespace FoutloosTypen.ViewModels
         {
             get
             {
-                if (_progress.TimerExpired)
-                {
-                    return "00:00";
-                }
-
-                var timeSpan = TimeSpan.FromSeconds(_progress.TimeRemaining);
-                return $"{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
+                if (_comparison == null || _comparison.IsFirstAttempt) return string.Empty;
+                var diff = _comparison.ScoreDifference;
+                if (diff == 0) return string.Empty;
+                return diff > 0 ? $"+{diff}" : $"{diff}";
             }
         }
 
@@ -219,7 +207,7 @@ namespace FoutloosTypen.ViewModels
                     if (xUserInfo == null)
                     {
                         Debug.WriteLine("Kon X gebruikersinformatie niet ophalen");
-                        await ShowErrorAsync("Verificatie mislukt", "Kon X account niet verifi�ren.");
+                        await ShowErrorAsync("Verificatie mislukt", "Kon X account niet verifiëren.");
                         IsSharing = false;
                         return;
                     }
@@ -270,7 +258,7 @@ namespace FoutloosTypen.ViewModels
             }
         }
 
-        private bool AreSettingsValid(out string error)
+        public string SpeedDifferenceText
         {
             if (_xSettings == null)
             {
@@ -285,15 +273,14 @@ namespace FoutloosTypen.ViewModels
 
             if (missing.Count > 0)
             {
-                error = $"X/Twitter is op dit moment niet beschikbaar.";
-                return false;
+                if (_comparison == null || _comparison.IsFirstAttempt) return string.Empty;
+                var diff = _comparison.SpeedDifference;
+                if (diff == 0) return string.Empty;
+                return diff > 0 ? $"+{diff}" : $"{diff}";
             }
-
-            error = string.Empty;
-            return true;
         }
 
-        private async Task<string?> AuthenticateUserAsync()
+        public Color SpeedDifferenceColor
         {
             Debug.WriteLine("AuthenticateUserAsync aangeroepen");
 
@@ -306,8 +293,9 @@ namespace FoutloosTypen.ViewModels
 
             if (_xAuthService == null || _xSettings == null)
             {
-                Debug.WriteLine("_xAuthService of _xSettings is null");
-                return null;
+                if (_comparison == null) return Colors.Gray;
+                return _comparison.SpeedDifference > 0 ? Colors.Green :
+                       _comparison.SpeedDifference < 0 ? Colors.Red : Colors.Gray;
             }
 
             var authResult = await _xAuthService.AuthenticateAsync(
@@ -336,7 +324,7 @@ namespace FoutloosTypen.ViewModels
                 return false;
             }
 
-            var text = $"Net weer een typ-run gedaan�{_lessonName}! Score: {Score} - APM: {StrokesPerMinute} - Nauwkeurigheid: {Accuracy} #BolType";
+            var text = $"Net weer een typ-run gedaan{_lessonName}! Score: {Score} - APM: {StrokesPerMinute} - Nauwkeurigheid: {Accuracy} #BolType";
             System.IO.Stream? logoStream = null;
             try { logoStream = await Microsoft.Maui.Storage.FileSystem.OpenAppPackageFileAsync("boltype.png"); } catch { }
 
@@ -371,7 +359,7 @@ namespace FoutloosTypen.ViewModels
             return false;
         }
 
-        private async Task ShowErrorAsync(string title, string message)
+        private string FormatTime(double seconds)
         {
             var page = Shell.Current?.CurrentPage ?? Application.Current?.MainPage;
             if (page != null)

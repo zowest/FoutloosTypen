@@ -74,6 +74,7 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IEndlessModeService, EndlessModeService>();
             builder.Services.AddSingleton<IEndlessModeService, EndlessModeService>();
             builder.Services.AddSingleton<IAudioAssignmentService, AudioAssignmentService>();
+            builder.Services.AddSingleton<ILeaderboardService, LeaderboardService>();
 
             // Use XAuthRepository to provide XAuthSettings in DI
             builder.Services.AddSingleton<FoutloosTypen.Core.Models.XAuthSettings>(provider => provider.GetRequiredService<IXAuthRepository>().GetSettings());
