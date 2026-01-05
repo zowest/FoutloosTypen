@@ -2,38 +2,72 @@
 using FoutloosTypen.Core.Models;
 using FoutloosTypen.Core.Interfaces.Services;
 using System.ComponentModel;
-using System.Diagnostics;
 using CommunityToolkit.Mvvm.Input;
+using FoutloosTypen.Views;
 
 namespace FoutloosTypen.ViewModels
 {
     [QueryProperty(nameof(LessonId), "lessonId")]
     public partial class AssignmentViewModel : BaseViewModel, INotifyPropertyChanged
     {
+        // Services (Business Layer)
         private readonly IAssignmentService _assignmentService;
         private readonly ILessonService _lessonService;
         private readonly IPracticeMaterialService _practiceMaterialService;
         private readonly ITimerService _timerService;
+        private readonly ITypingComparisonService _typingComparisonService;
+        private readonly IResultService _resultService;
 
-        private const double TIMER_DURATION = 60; // 60 seconden per opdracht
+        private const double TIMER_DURATION = 60;
+        public enum PopupResult
+        {
+            Home,
+            Restart,
+            NextLesson
+        }
 
+        private string _userInput = string.Empty;
+        public string UserInput
+        {
+            get => _userInput;
+            set
+            {
+                if (_userInput != value)
+                {
+                    _userInput = value;
+                    OnPropertyChanged(nameof(UserInput));
+                }
+            }
+        }
+
+        // Collections
         public ObservableCollection<Lesson> Lessons { get; set; } = new();
         public ObservableCollection<Assignment> Assignments { get; set; } = new();
 
+        // State
         private List<PracticeMaterial> _materials = new();
         private int _materialIndex = 0;
         private int _currentAssignmentIndex = 0;
+        private string _previousUserInput = string.Empty;
+
+        // Optimalisatie: cache vorige display state waarden
+        private string _lastCorrectText = string.Empty;
+        private string _lastErrorText = string.Empty;
+        private string _lastCursorChar = string.Empty;
+        private string _lastRemainingText = string.Empty;
+        private int _lastWordCount = 0;
+
+        #region Bindable Properties
 
         private int _lessonId;
-        public int LessonId 
-        { 
-            get => _lessonId; 
-            set 
-            { 
-                _lessonId = value; 
+        public int LessonId
+        {
+            get => _lessonId;
+            set
+            {
+                _lessonId = value;
                 OnPropertyChanged(nameof(LessonId));
-                Debug.WriteLine($"LessonId set to: {value}");
-            } 
+            }
         }
 
         private PracticeMaterial _currentMaterial;
@@ -59,10 +93,8 @@ namespace FoutloosTypen.ViewModels
                 OnPropertyChanged(nameof(SelectedLesson));
                 FilterAssignmentsByLesson();
 
-                // Initialize timer with lesson's total time
                 if (value != null && value.TotalTime > 0)
                 {
-                    Debug.WriteLine($"Initializing timer with {value.TotalTime} seconds from lesson");
                     _timerService.Initialize(TIMER_DURATION);
                     _timerService.Start();
                 }
@@ -82,179 +114,338 @@ namespace FoutloosTypen.ViewModels
             }
         }
 
-        private string _userInput = string.Empty;
-        public string UserInput
+        // Display properties bound to UI
+        private string _correctText = string.Empty;
+        public string CorrectText
         {
-            get => _userInput;
-            set
-            {
-                _userInput = value;
-                OnPropertyChanged(nameof(UserInput));
-                UpdateTypedCharactersCount();
-            }
+            get => _correctText;
+            set { if (_correctText != value) { _correctText = value; OnPropertyChanged(nameof(CorrectText)); } }
         }
 
-        private FormattedString _formattedText;
-        public FormattedString FormattedText
+        private string _errorText = string.Empty;
+        public string ErrorText
         {
-            get => _formattedText;
-            set
-            {
-                _formattedText = value;
-                OnPropertyChanged(nameof(FormattedText));
-            }
+            get => _errorText;
+            set { if (_errorText != value) { _errorText = value; OnPropertyChanged(nameof(ErrorText)); OnPropertyChanged(nameof(HasError)); } }
         }
 
-        // Progress voor opdrachten (1/5, 2/5, etc.)
-        public string AssignmentProgress
+        public bool HasError => !string.IsNullOrEmpty(ErrorText);
+
+        private string _cursorChar = string.Empty;
+        public string CursorChar
         {
-            get
-            {
-                if (Assignments.Count == 0)
-                    return "Opdracht 0/5";
-                return $"Opdracht {_currentAssignmentIndex + 1}/{Assignments.Count}";
-            }
+            get => _cursorChar;
+            set { if (_cursorChar != value) { _cursorChar = value; OnPropertyChanged(nameof(CursorChar)); } }
         }
 
-        // AANGEPASTE PROPERTIES VOOR PROGRESSIEBAR (PER KARAKTER)
+        private string _remainingText = string.Empty;
+        public string RemainingText
+        {
+            get => _remainingText;
+            set { if (_remainingText != value) { _remainingText = value; OnPropertyChanged(nameof(RemainingText)); } }
+        }
+
         private int _typedCharactersCount;
         public int TypedCharactersCount
         {
             get => _typedCharactersCount;
-            set
-            {
-                _typedCharactersCount = value;
-                OnPropertyChanged(nameof(TypedCharactersCount));
-                OnPropertyChanged(nameof(Progress));
-                OnPropertyChanged(nameof(ProgressText));
-            }
+            set => _typedCharactersCount = value;
         }
 
         private int _totalCharactersCount;
         public int TotalCharactersCount
         {
             get => _totalCharactersCount;
+            set { if (_totalCharactersCount != value) { _totalCharactersCount = value; OnPropertyChanged(nameof(TotalCharactersCount)); } }
+        }
+
+        public double Progress => TotalCharactersCount == 0 ? 0 : (double)TypedCharactersCount / TotalCharactersCount;
+        public string ProgressText => $"{Math.Round(Progress * 100)}% - {AssignmentProgress}";
+        public string AssignmentProgress => Assignments.Count == 0 ? "Opdracht 0/0" : $"Opdracht {_currentAssignmentIndex + 1}/{Assignments.Count}";
+        public ITimerService Timer => _timerService;
+
+        private FormattedString _formattedText = new();
+        public FormattedString FormattedText
+        {
+            get => _formattedText;
             set
             {
-                _totalCharactersCount = value;
-                OnPropertyChanged(nameof(TotalCharactersCount));
-                OnPropertyChanged(nameof(Progress));
-                OnPropertyChanged(nameof(ProgressText));
+                if (_formattedText != value)
+                {
+                    _formattedText = value;
+                    OnPropertyChanged(nameof(FormattedText));
+                }
             }
         }
 
-        public double Progress
-        {
-            get
-            {
-                if (TotalCharactersCount == 0)
-                    return 0;
-                return (double)TypedCharactersCount / TotalCharactersCount;
-            }
-        }
-
-        public string ProgressText
-        {
-            get => $"{Math.Round(Progress * 100)}% - {AssignmentProgress}";
-        }
-
-        public ITimerService Timer => _timerService;
+        #endregion
 
         public AssignmentViewModel(
             ILessonService lessonService,
             IAssignmentService assignmentService,
             IPracticeMaterialService practiceMaterialService,
-            ITimerService timerService)
+            ITimerService timerService,
+            ITypingComparisonService typingComparisonService,
+            IResultService resultService)
         {
             _lessonService = lessonService;
             _assignmentService = assignmentService;
             _practiceMaterialService = practiceMaterialService;
             _timerService = timerService;
+            _typingComparisonService = typingComparisonService;
+            _resultService = resultService;
 
-            FormattedText = new FormattedString();
+            _timerService.TimerExpired += OnTimerExpired;
         }
+
+        #region Lifecycle
 
         public async Task OnAppearingAsync()
         {
-            // Get all lessons with TotalTime calculated
             var lessons = _lessonService.GetAll();
-
             Lessons.Clear();
 
             if (lessons != null)
             {
                 foreach (var lesson in lessons)
-                {
                     Lessons.Add(lesson);
-                    Debug.WriteLine($"Loaded lesson: {lesson.Name} with TotalTime: {lesson.TotalTime} seconds");
-                }
             }
 
-            // If LessonId was passed via navigation, select that lesson
             if (LessonId > 0)
             {
                 var targetLesson = Lessons.FirstOrDefault(l => l.Id == LessonId);
                 if (targetLesson != null)
                 {
                     SelectedLesson = targetLesson;
-                    Debug.WriteLine($"Selected lesson: {targetLesson.Name} (ID: {targetLesson.Id}) with TotalTime: {targetLesson.TotalTime}");
                     return;
                 }
             }
 
-            // Otherwise select first lesson
             if (Lessons.Any())
-            {
                 SelectedLesson = Lessons.First();
+        }
+
+        public override void OnDisappearing()
+        {
+            base.OnDisappearing();
+
+            if (SelectedLesson != null)
+                _resultService.EndLesson(SelectedLesson.Id);
+
+            _timerService.Stop();
+        }
+
+        #endregion
+
+        #region Typing Logic (delegates to Service)
+
+        public void UpdateTypedText(string typedText)
+        {
+            if (CurrentMaterial?.Sentence == null)
+                return;
+
+            string targetText = CurrentMaterial.Sentence;
+
+            // Delegate mistake detection to BL
+            if (_typingComparisonService.IsCharacterIncorrect(targetText, _previousUserInput, typedText))
+            {
+                if (SelectedLesson != null)
+                    _resultService.RecordMistake(SelectedLesson.Id);
+            }
+
+            _previousUserInput = typedText;
+
+            // Bereken display state
+            var displayState = _typingComparisonService.CalculateDisplayState(targetText, typedText);
+
+            // Pas alleen gewijzigde waarden toe (voorkomt onnodige UI updates)
+            ApplyDisplayStateOptimized(displayState);
+
+            // Update progress alleen na woorden (spatie of einde)
+            UpdateProgressOnWordBoundary(typedText, displayState.CorrectCharacterCount);
+
+            // Update result service
+            if (SelectedLesson != null)
+                _resultService.UpdateCurrentProgress(SelectedLesson.Id, typedText.Length, typedText);
+
+            // Check completion
+            if (displayState.IsComplete)
+            {
+                if (SelectedLesson != null)
+                    _resultService.CompleteSentence(SelectedLesson.Id, typedText);
+
+                MoveToNextMaterial();
             }
         }
+
+        private void ApplyDisplayStateOptimized(TypingDisplayState state)
+        {
+            // Check of er iets veranderd is
+            if (_lastCorrectText == state.CorrectText &&
+                _lastErrorText == state.ErrorText &&
+                _lastCursorChar == state.CursorChar &&
+                _lastRemainingText == state.RemainingText)
+            {
+                return; // Niets gewijzigd, skip UI update
+            }
+
+            _lastCorrectText = state.CorrectText;
+            _lastErrorText = state.ErrorText;
+            _lastCursorChar = state.CursorChar;
+            _lastRemainingText = state.RemainingText;
+
+            // Bouw FormattedString voor UI
+            var formatted = new FormattedString();
+
+            // Groene tekst (correct getypt)
+            if (!string.IsNullOrEmpty(state.CorrectText))
+            {
+                formatted.Spans.Add(new Span
+                {
+                    Text = state.CorrectText,
+                    TextColor = Colors.Black,
+                    FontSize = 32
+                });
+            }
+
+            // Rode tekst (fouten)
+            if (!string.IsNullOrEmpty(state.ErrorText))
+            {
+                formatted.Spans.Add(new Span
+                {
+                    Text = state.ErrorText,
+                    TextColor = Colors.Red,
+                    FontSize = 32
+                });
+            }
+
+            // Cursor karakter (onderstreept)
+            if (!string.IsNullOrEmpty(state.CursorChar))
+            {
+                formatted.Spans.Add(new Span
+                {
+                    Text = state.CursorChar,
+                    TextColor = Colors.Black,
+                    TextDecorations = TextDecorations.Underline,
+                    FontSize = 32
+                });
+            }
+
+            // Resterende tekst (grijs)
+            if (!string.IsNullOrEmpty(state.RemainingText))
+            {
+                formatted.Spans.Add(new Span
+                {
+                    Text = state.RemainingText,
+                    TextColor = Colors.Gray,
+                    FontSize = 32
+                });
+            }
+
+            FormattedText = formatted;
+        }
+
+        private void UpdateProgressOnWordBoundary(string typedText, int correctChars)
+        {
+            _typedCharactersCount = correctChars;
+
+            int currentWordCount = 0;
+            for (int i = 0; i < typedText.Length; i++)
+            {
+                if (typedText[i] == ' ')
+                    currentWordCount++;
+            }
+
+            // Update UI alleen bij nieuw woord of bij voltooiing
+            bool isComplete = correctChars == TotalCharactersCount;
+            if (currentWordCount != _lastWordCount || isComplete)
+            {
+                _lastWordCount = currentWordCount;
+                OnPropertyChanged(nameof(Progress));
+                OnPropertyChanged(nameof(ProgressText));
+            }
+        }
+
+        private void ResetTyping()
+        {
+            _previousUserInput = string.Empty;
+            _typedCharactersCount = 0;
+            _lastWordCount = 0;
+            _lastCorrectText = string.Empty;
+            _lastErrorText = string.Empty;
+            _lastCursorChar = string.Empty;
+            _lastRemainingText = string.Empty;
+            UserInput = string.Empty;
+
+            if (CurrentMaterial?.Sentence != null)
+            {
+                var displayState = _typingComparisonService.CalculateDisplayState(CurrentMaterial.Sentence, string.Empty);
+
+                // Reset cache zodat ApplyDisplayStateOptimized alles opnieuw bouwt
+                _lastCorrectText = "FORCE_RESET";
+                ApplyDisplayStateOptimized(displayState);
+            }
+            else
+            {
+                FormattedText = new FormattedString();
+            }
+
+            OnPropertyChanged(nameof(Progress));
+            OnPropertyChanged(nameof(ProgressText));
+        }
+
+        #endregion
+
+        #region Navigation
 
         private void FilterAssignmentsByLesson()
         {
             if (SelectedLesson is null)
                 return;
 
-            Debug.WriteLine($"Filtering assignments for lesson ID: {SelectedLesson.Id}");
-
-            var allAssignments = _assignmentService.GetAll();
-
-            var filteredAssignments = allAssignments
+            var filteredAssignments = _assignmentService.GetAll()
                 .Where(a => a.LessonId == SelectedLesson.Id)
                 .OrderBy(a => a.Id)
                 .ToList();
 
-            Debug.WriteLine($"Found {filteredAssignments.Count} assignments for lesson {SelectedLesson.Id}");
-
             Assignments.Clear();
             foreach (var assignment in filteredAssignments)
-            {
                 Assignments.Add(assignment);
-                Debug.WriteLine($"Added assignment: Id={assignment.Id}, LessonId={assignment.LessonId}");
-            }
 
             _currentAssignmentIndex = 0;
             if (Assignments.Any())
                 SelectedAssignment = Assignments.First();
+
+            _resultService.StartLesson(SelectedLesson.Id, Assignments.Count);
         }
 
         private void LoadPracticeMaterials()
         {
-            Debug.WriteLine("LoadPracticeMaterials aangeroepen");
-
             if (SelectedAssignment == null)
                 return;
 
-            _materials = _practiceMaterialService
-                .GetAll()
+            _materials = _practiceMaterialService.GetAll()
                 .Where(pm => pm.AssignmentId == SelectedAssignment.Id)
                 .ToList();
 
             _materialIndex = 0;
 
-            if (_materials.Any())
+            CurrentMaterial = _materials.Any()
+                ? _materials[_materialIndex]
+                : new PracticeMaterial { Sentence = "Geen zinnen gevonden." };
+        }
+
+        private void MoveToNextMaterial()
+        {
+            if (_materials == null || !_materials.Any())
+                return;
+
+            _materialIndex++;
+
+            if (_materialIndex < _materials.Count)
                 CurrentMaterial = _materials[_materialIndex];
             else
-                CurrentMaterial = new PracticeMaterial { Sentence = "Geen zinnen gevonden." };
+                MoveToNextAssignment();
         }
 
         private void MoveToNextAssignment()
@@ -265,143 +456,261 @@ namespace FoutloosTypen.ViewModels
 
             if (_currentAssignmentIndex >= Assignments.Count)
             {
-                // Alle 5 opdrachten zijn voltooid - Geen popup meer
-                Debug.WriteLine("All 5 assignments completed! Timer continues running.");
+                // All assignments completed - Show results popup
+                if (SelectedLesson != null)
+                {
+                    _resultService.EndLesson(SelectedLesson.Id);
+                }
+
+                // Call async method properly on UI thread
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    try
+                    {
+                        await ShowLessonResultsAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"ERROR showing results: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                    }
+                });
                 return;
             }
 
-            // Reset timer naar 60 seconden voor de volgende opdracht
             RestartTimer();
-            
-            // Ga naar de volgende opdracht
+
+            // Move to next assignment
             SelectedAssignment = Assignments[_currentAssignmentIndex];
-            Debug.WriteLine($"Moved to assignment {_currentAssignmentIndex + 1}/{Assignments.Count}");
         }
 
-        private void UpdateTotalCharactersCount()
+        private Lesson? GetNextLesson()
         {
-            if (CurrentMaterial == null || string.IsNullOrWhiteSpace(CurrentMaterial.Sentence))
+            if (SelectedLesson == null)
+                return null;
+
+            // Haal alle lessen uit dezelfde cursus op
+            var lessonsInCourse = Lessons
+                .Where(l => l.CourseId == SelectedLesson.CourseId)
+                .OrderBy(l => l.Id)
+                .ToList();
+
+            // Vind de huidige les index
+            int currentIndex = lessonsInCourse.FindIndex(l => l.Id == SelectedLesson.Id);
+
+            // Return de volgende les als die bestaat
+            if (currentIndex >= 0 && currentIndex < lessonsInCourse.Count - 1)
             {
-                TotalCharactersCount = 0;
+                return lessonsInCourse[currentIndex + 1];
+            }
+
+            return null;
+        }
+
+        private async Task NavigateToNextLessonAsync()
+        {
+            var nextLesson = GetNextLesson();
+            if (nextLesson != null)
+            {
+                // Navigeer naar de volgende les
+                await Shell.Current.GoToAsync($"..?lessonId={nextLesson.Id}");
+            }
+            else
+            {
+                // Geen volgende les, ga terug naar home
+                await Shell.Current.Navigation.PopToRootAsync();
+            }
+        }
+
+        #endregion
+
+        #region Timer
+
+        private async void OnTimerExpired(object? sender, EventArgs e)
+        {
+            if (SelectedLesson == null) return;
+
+            _resultService.MarkTimerExpired(SelectedLesson.Id);
+            _resultService.EndLesson(SelectedLesson.Id);
+
+            await ShowLessonResultsAsync();
+        }
+
+        #endregion
+
+        #region Results
+
+        private async Task ShowLessonResultsAsync()
+        {
+            StopTimer();
+
+            if (SelectedLesson == null || Application.Current?.MainPage == null)
                 return;
-            }
 
-            TotalCharactersCount = CurrentMaterial.Sentence.Length;
-        }
-
-        private void UpdateTypedCharactersCount()
-        {
-            if (string.IsNullOrEmpty(UserInput) || CurrentMaterial == null)
-            {
-                TypedCharactersCount = 0;
-                return;
-            }
-
-            string targetText = CurrentMaterial.Sentence ?? string.Empty;
-            int correctChars = 0;
-
-            for (int i = 0; i < UserInput.Length && i < targetText.Length; i++)
-            {
-                if (UserInput[i] == targetText[i])
-                {
-                    correctChars++;
-                }
-            }
-
-            TypedCharactersCount = correctChars;
-        }
-
-        private void ResetTyping()
-        {
-            UserInput = string.Empty;
-            TypedCharactersCount = 0;
-            UpdateFormattedText();
-        }
-
-        public void UpdateTypedText(string typedText)
-        {
-            if (CurrentMaterial == null || string.IsNullOrEmpty(CurrentMaterial.Sentence))
+            var progress = _resultService.GetProgress(SelectedLesson.Id);
+            if (progress == null)
                 return;
 
-            UserInput = typedText;
-            UpdateFormattedText();
+            var result = ConvertLessonProgressToResult(progress);
 
-            // Check of de zin compleet en correct is
-            if (typedText.Length == CurrentMaterial.Sentence.Length)
+            // Get all required services from DI
+            var services = Application.Current.Handler?.MauiContext?.Services;
+
+            var xAuthService = services?.GetService<Core.Interfaces.Services.IXAuthService>();
+            var mediaUploadRepository = services?.GetService<Core.Interfaces.Repositories.IMediaUploadRepository>();
+            var xAuthRepository = services?.GetService<Core.Interfaces.Repositories.IXAuthRepository>();
+            var xAuthApiRepository = services?.GetService<Core.Interfaces.Repositories.IXAuthApiRepository>();
+            var shareImageRepository = services?.GetService<Core.Interfaces.Repositories.IShareImageRepository>();
+            var xSettings = services?.GetService<Core.Models.XAuthSettings>();
+            var globalViewModel = services?.GetService<GlobalViewModel>();
+
+            ResultatenPopUp popup;
+
+            if (xAuthService != null &&
+                mediaUploadRepository != null &&
+                xAuthRepository != null &&
+                xAuthApiRepository != null &&
+                shareImageRepository != null &&
+                xSettings != null &&
+                globalViewModel != null)
             {
-                bool allCorrect = true;
-                for (int i = 0; i < typedText.Length; i++)
-                {
-                    if (typedText[i] != CurrentMaterial.Sentence[i])
-                    {
-                        allCorrect = false;
-                        break;
-                    }
-                }
 
-                if (allCorrect)
-                {
-                    Debug.WriteLine("Sentence completed correctly! Moving to next assignment...");
-                    MoveToNextAssignment();
-                }
+                popup = new ResultatenPopUp(
+                    result,
+                    SelectedLesson.Name,
+                    xAuthService,
+                    mediaUploadRepository,
+                    xAuthRepository,
+                    xAuthApiRepository,
+                    shareImageRepository,
+                    xSettings,
+                    globalViewModel,
+                    _resultService);
+            }
+            else
+            {
+                popup = new ResultatenPopUp(result);
+            }
+
+            await Application.Current.MainPage.Navigation.PushModalAsync(popup);
+
+            var popupResult = await popup.WaitForUserResponseAsync();
+
+            switch (popupResult)
+            {
+                case ResultatenPopUp.PopupResult.Home:
+                    await Shell.Current.Navigation.PopToRootAsync();
+                    break;
+                case ResultatenPopUp.PopupResult.Restart:
+                    RestartLesson();
+                    break;
+                case ResultatenPopUp.PopupResult.NextLesson:
+                    await NavigateToNextLessonAsync();
+                    break;
             }
         }
 
-        private void UpdateFormattedText()
+        private Result ConvertLessonProgressToResult(Core.Interfaces.Services.LessonProgress progress)
         {
-            var formatted = new FormattedString();
-            string targetText = CurrentMaterial?.Sentence ?? string.Empty;
-            string typedText = UserInput ?? string.Empty;
+            // Calculate time spent
+            var timeSpent = (DateTime.Now - progress.StartTime).TotalSeconds;
 
-            for (int i = 0; i < targetText.Length; i++)
+            // Calculate Words Per Minute (WPM)
+            // Average word length is 5 characters, so divide characters by 5, then by minutes
+            var minutes = timeSpent / 60.0;
+            var wordsTyped = progress.CharactersTyped / 5.0;
+            var wordsPerMinute = minutes > 0 ? (int)Math.Round(wordsTyped / minutes) : 0;
+
+            // Calculate Strokes Per Minute (characters including mistakes)
+            var totalStrokes = progress.CharactersTyped + progress.TotalMistakes;
+            var strokesPerMinute = minutes > 0 ? (int)Math.Round(totalStrokes / minutes) : 0;
+
+            // Calculate Accuracy Percentage
+            var totalAttempts = progress.CharactersTyped + progress.TotalMistakes;
+            var accuracyPercent = totalAttempts > 0
+                ? Math.Round((double)progress.CharactersTyped / totalAttempts * 100, 1)
+                : 0;
+
+            // Calculate Score
+            // Base score on accuracy and speed
+            var baseScore = progress.CharactersTyped;
+            var accuracyMultiplier = accuracyPercent / 100.0;
+            var speedBonus = wordsPerMinute * 2;
+            var mistakePenalty = progress.TotalMistakes * 5;
+            var score = Math.Max(0, (int)Math.Round(baseScore * accuracyMultiplier + speedBonus - mistakePenalty));
+
+            var services = Application.Current?.Handler?.MauiContext?.Services;
+            var globalViewModel = services?.GetService<GlobalViewModel>();
+            var studentId = globalViewModel?.Student?.Id ?? 0;
+
+            var result = new Result
             {
-                var span = new Span
-                {
-                    Text = targetText[i].ToString(),
-                    FontSize = 32,
-                };
+                LessonId = progress.LessonId,
+                StudentId = studentId,  // FIXED: Set the actual student ID
+                TotalMistakes = progress.TotalMistakes,
+                SentencesCompleted = progress.SentencesCompleted,
+                TotalCharactersTyped = progress.CharactersTyped,
+                Score = score,
+                WordsPerMinute = wordsPerMinute,
+                StrokesPerMinute = strokesPerMinute,
+                AccuracyPercent = accuracyPercent,
+                CompletedSentences = new List<string>(),
+                CurrentIncompleteText = progress.CurrentText,
+                StartTime = progress.StartTime,
+                EndTime = DateTime.Now,
+                ExpectedTime = 60,
+                TimerExpired = progress.TimerExpired,
+                IsEndlessMode = false
+            };
 
-                if (i < typedText.Length)
+            try
+            {
+                var resultRepository = services?.GetService<Core.Interfaces.Repositories.IResultRepository>();
+                var studentRepository = services?.GetService<Core.Interfaces.Repositories.IStudentRepository>();
+
+                if (resultRepository != null && studentId > 0)
                 {
-                    if (typedText[i] == targetText[i])
+                    resultRepository.Save(result);
+                    System.Diagnostics.Debug.WriteLine($"[AssignmentViewModel] Saved result for student {studentId}, lesson {progress.LessonId}, score {score}");
+
+                    if (studentRepository != null)
                     {
-                        span.TextColor = Colors.Black;
-                        span.BackgroundColor = Colors.Transparent;
+                        var student = studentRepository.Get(studentId);
+                        if (student != null)
+                        {
+                            var newAvgSpeed = (student.AvgSpeed + wordsPerMinute) / 2.0;
+                            var newAvgPrecision = (student.AvgPrecision + accuracyPercent) / 2.0;
+
+                            studentRepository.UpdateStatistics(studentId, newAvgSpeed, newAvgPrecision);
+
+                            var newCompletedLessons = student.CompletedLessons + 1;
+                            var newTotalScore = student.TotalScore + score;
+                            studentRepository.UpdateProgress(studentId, newCompletedLessons, newTotalScore);
+                        }
                     }
-                    else
-                    {
-                        span.TextColor = Colors.White;
-                        span.BackgroundColor = Colors.Red;
-                    }
-                }
-                else if (i == typedText.Length)
-                {
-                    span.TextColor = Colors.Gray;
-                    span.BackgroundColor = Colors.LightGray;
                 }
                 else
                 {
-                    span.TextColor = Colors.LightGray;
-                    span.BackgroundColor = Colors.Transparent;
+                    System.Diagnostics.Debug.WriteLine($"[AssignmentViewModel] Could not save result - missing repository or studentId. StudentId={studentId}, HasResultRepo={resultRepository != null}");
                 }
-
-                formatted.Spans.Add(span);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AssignmentViewModel] Error saving result: {ex.Message}");
             }
 
-            FormattedText = formatted;
+            return result;
         }
 
-        [RelayCommand]
-        private void SelectLesson(Lesson lesson)
-        {
-            SelectedLesson = lesson;
-        }
+        #endregion
+
+        #region Commands
 
         [RelayCommand]
-        private void SelectAssignment(Assignment assignment)
-        {
-            SelectedAssignment = assignment;
-        }
+        private void SelectLesson(Lesson lesson) => SelectedLesson = lesson;
+
+        [RelayCommand]
+        private void SelectAssignment(Assignment assignment) => SelectedAssignment = assignment;
 
         [RelayCommand]
         private void StartTimer()
@@ -409,24 +718,18 @@ namespace FoutloosTypen.ViewModels
             _currentAssignmentIndex = 0;
             OnPropertyChanged(nameof(AssignmentProgress));
             OnPropertyChanged(nameof(ProgressText));
-            
+
             if (Assignments.Any())
                 SelectedAssignment = Assignments.First();
-                
+
             RestartTimer();
         }
 
         [RelayCommand]
-        private void StopTimer()
-        {
-            _timerService.Stop();
-        }
+        private void StopTimer() => _timerService.Stop();
 
         [RelayCommand]
-        private void RestartTimer()
-        {
-            _timerService.Restart();
-        }
+        private void RestartTimer() => _timerService.Restart();
 
         [RelayCommand]
         private void Refresh()
@@ -435,16 +738,50 @@ namespace FoutloosTypen.ViewModels
             RestartTimer();
         }
 
+        #endregion
+
+        #region Helpers
+
+        private void RestartLesson()
+        {
+            // Reset naar de eerste opdracht
+            _currentAssignmentIndex = 0;
+            OnPropertyChanged(nameof(AssignmentProgress));
+            OnPropertyChanged(nameof(ProgressText));
+
+            // Selecteer de eerste opdracht
+            if (Assignments.Any())
+            {
+                SelectedAssignment = Assignments.First();
+            }
+
+            // Reset typing en timer
+            ResetTyping();
+            RestartTimer();
+        }
+
+        private void UpdateTotalCharactersCount()
+        {
+            TotalCharactersCount = CurrentMaterial?.Sentence?.Length ?? 0;
+        }
+
+        #endregion
+
+        #region INotifyPropertyChanged
+
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        #endregion
 
         ~AssignmentViewModel()
         {
-            StopTimer();
+            _timerService.TimerExpired -= OnTimerExpired;
+            _timerService.Stop();
         }
     }
 }

@@ -1,8 +1,22 @@
 ﻿using FoutloosTypen.Core.Models;
 
-namespace FoutloosTypen.Core.Interfaces.Services;
-
-public interface ITypingComparisonService
+namespace FoutloosTypen.Core.Interfaces.Services
 {
-    TypingSentenceResult Compare(string expectedText, string typedText);
+    public interface ITypingComparisonService
+    {
+        /// <summary>
+        /// Detects if a newly typed character is incorrect
+        /// </summary>
+        bool IsCharacterIncorrect(string expectedText, string previousInput, string currentInput);
+        
+        /// <summary>
+        /// Compares the full typed text with expected text
+        /// </summary>
+        TypingComparisonResult Compare(string expectedText, string typedText);
+
+        /// <summary>
+        /// Calculates display state for UI - optimized for per-character updates
+        /// </summary>
+        TypingDisplayState CalculateDisplayState(string expectedText, string typedText);
+    }
 }

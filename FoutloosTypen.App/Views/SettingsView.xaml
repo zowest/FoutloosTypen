@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="FoutloosTypen.Views.SettingsView"
+             Title="Instellingen"
+             BackgroundColor="White"
+             Shell.NavBarIsVisible="False"
+             Shell.TabBarIsVisible="False">
+    <Grid RowDefinitions="*" Padding="12">
+        <!-- TopBar removed - only content area -->
+        <VerticalStackLayout
+                Grid.Row="0"
+                Spacing="24"
+                VerticalOptions="Center"
+                HorizontalOptions="Center">
+            <Label Text="Instellingen"
+                   FontSize="28"
+                   TextColor="Black"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"/>
+            <HorizontalStackLayout Spacing="12" HorizontalOptions="Center">
+                <Label Text="Text-to-Speech Mode" 
+                       VerticalOptions="Center"
+                       TextColor="Black"
+                       FontSize="16"/>
+                <Switch IsToggled="{Binding UseTtsMode}"
+                        OnColor="#ffcb05"
+                        ThumbColor="LightYellow"/>
+            </HorizontalStackLayout>
+            
+            <!-- Back button -->
+            <Button Text="← Terug"
+                    FontSize="16"
+                    Clicked="OnHomeClicked"
+                    BackgroundColor="LightGray"
+                    TextColor="Black"
+                    Margin="0,40,0,0"
+                    Padding="20,10"
+                    HorizontalOptions="Center"/>
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

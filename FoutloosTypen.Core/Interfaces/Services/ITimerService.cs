@@ -8,14 +8,17 @@ namespace FoutloosTypen.Core.Interfaces.Services
 {
     public interface ITimerService
     {
+        event EventHandler? TimerExpired;
+        
+        double TimeRemaining { get; }
+        string TimeRemainingFormatted { get; }
+        bool IsRunning { get; }
+        
         void Initialize(double timeInSeconds);
         void Start();
         void Stop();
         void Restart();
-        
 
-        double TimeRemaining { get; }
-        string TimeRemainingFormatted { get; }
-        bool IsRunning { get; }
+        void AddTime(double seconds);
     }
 }
