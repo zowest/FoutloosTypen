@@ -5,7 +5,8 @@
     x:Class="FoutloosTypen.Views.AssignmentView"
     Title="Opdracht"
     BackgroundColor="White"
-    Shell.NavBarIsVisible="False">
+    Shell.NavBarIsVisible="False"
+    Shell.TabBarIsVisible="False">
     <ContentPage.Content>
         <Grid RowDefinitions="*,Auto" Padding="12">
             <!-- REMOVED Grid.Row="0" - TopBar section completely removed -->
