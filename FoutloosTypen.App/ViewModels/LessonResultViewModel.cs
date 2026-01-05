@@ -1,15 +1,11 @@
-using System.Diagnostics;
-using FoutloosTypen.Core.Models;
-using System.ComponentModel;
+using CommunityToolkit.Maui.Views;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Interfaces.Repositories;
-using FoutloosTypen.Helpers;
+using FoutloosTypen.Core.Interfaces.Services;
+using FoutloosTypen.Core.Models;
 using SkiaSharp;
-using System.Threading.Tasks;
-using Microsoft.Maui.ApplicationModel;
-using CommunityToolkit.Maui.Views;
+using System.Diagnostics;
 
 namespace FoutloosTypen.ViewModels
 {
@@ -27,6 +23,9 @@ namespace FoutloosTypen.ViewModels
 
         [ObservableProperty]
         private bool _isSharing;
+
+        [ObservableProperty]
+        private string? _currentXUsername;
 
         public LessonResultViewModel(
             Result progress,
@@ -61,26 +60,8 @@ namespace FoutloosTypen.ViewModels
         public int WordsPerMinute => _progress.WordsPerMinute;
         public string Accuracy => $"{Math.Round(_progress.AccuracyPercent, 1)}%";
         public int TotalMistakes => _progress.TotalMistakes;
-
-        public string TimeRemaining
-        {
-            get
-            {
-                if (_progress.TimerExpired)
-                {
-                    return "00:00";
-                }
-
-                var timeSpan = TimeSpan.FromSeconds(_progress.TimeRemaining);
-                return $"{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
-            }
-        }
-
         public string ResultTitle => _progress.Score > 0 ? "Les Voltooid!" : "Les Gefaald";
         public bool CanShare => _xAuthService != null;
-
-        [ObservableProperty]
-        private string? _currentXUsername;
 
         public Result GetResult() => _progress;
 
@@ -120,11 +101,11 @@ namespace FoutloosTypen.ViewModels
                 // Delete existing tokens and X user info
                 await _xAuthRepository.DeleteOAuth1TokensAsync(ownerUserId);
                 await _xAuthRepository.DeleteXUserInfoAsync(ownerUserId);
-                
+
                 CurrentXUsername = null;
 
                 Debug.WriteLine($"Tokens verwijderd voor ownerUserId={ownerUserId}, nieuwe OAuth flow vereist");
-                
+
                 await ShowErrorAsync("X-account ontkoppeld", "Klik op 'Delen op X' om een ander X-account te koppelen.");
             }
             catch (Exception ex)
@@ -219,7 +200,7 @@ namespace FoutloosTypen.ViewModels
                     if (xUserInfo == null)
                     {
                         Debug.WriteLine("Kon X gebruikersinformatie niet ophalen");
-                        await ShowErrorAsync("Verificatie mislukt", "Kon X account niet verifiëren.");
+                        await ShowErrorAsync("Verificatie mislukt", "Kon X account niet verifiÃ«ren.");
                         IsSharing = false;
                         return;
                     }
@@ -227,7 +208,7 @@ namespace FoutloosTypen.ViewModels
                     Debug.WriteLine($"Sla tokens op voor ownerUserId={ownerUserId}");
                     await _xAuthService.SaveUserAccessTokensAsync(ownerUserId, accessToken, accessTokenSecret);
                     await _xAuthRepository.SaveXUserInfoAsync(ownerUserId, xUserInfo.Value.userId, xUserInfo.Value.username);
-                    
+
                     CurrentXUsername = $"@{xUserInfo.Value.username}";
                     Debug.WriteLine($"Nieuwe X account gekoppeld: @{xUserInfo.Value.username} (ID: {xUserInfo.Value.userId})");
                 }
@@ -238,7 +219,7 @@ namespace FoutloosTypen.ViewModels
 
                 Debug.WriteLine("Toon preview popup en deel");
                 var shareSuccess = await ShowPreviewPopupAndShareAsync(ownerUserId);
-                
+
                 if (shareSuccess)
                 {
                     // Open X profile in browser after successful share
@@ -247,7 +228,7 @@ namespace FoutloosTypen.ViewModels
                     {
                         var profileUrl = $"https://twitter.com/{xUserInfo.Value.XUsername}";
                         Debug.WriteLine($"Open X profiel: {profileUrl}");
-                        
+
                         try
                         {
                             await Launcher.OpenAsync(new Uri(profileUrl));
@@ -258,7 +239,7 @@ namespace FoutloosTypen.ViewModels
                         }
                     }
                 }
-                
+
                 IsSharing = false;
             }
             catch (Exception ex)
@@ -272,6 +253,8 @@ namespace FoutloosTypen.ViewModels
 
         private bool AreSettingsValid(out string error)
         {
+            error = string.Empty;
+
             if (_xSettings == null)
             {
                 error = "X/Twitter instellingen ontbreken.";
@@ -285,11 +268,10 @@ namespace FoutloosTypen.ViewModels
 
             if (missing.Count > 0)
             {
-                error = $"X/Twitter is op dit moment niet beschikbaar.";
+                error = $"Ontbrekende instellingen: {string.Join(", ", missing)}";
                 return false;
             }
 
-            error = string.Empty;
             return true;
         }
 
@@ -306,7 +288,6 @@ namespace FoutloosTypen.ViewModels
 
             if (_xAuthService == null || _xSettings == null)
             {
-                Debug.WriteLine("_xAuthService of _xSettings is null");
                 return null;
             }
 
@@ -314,14 +295,18 @@ namespace FoutloosTypen.ViewModels
                 _xSettings.ConsumerKey,
                 _xSettings.ConsumerSecret,
                 _xSettings.CallbackUrl);
+
             await Task.Delay(500);
             return authResult;
         }
 
         private async Task<bool> ShowPreviewPopupAndShareAsync(int ownerUserId)
         {
+            Debug.WriteLine("ShowPreviewPopupAndShareAsync aangeroepen");
+
             if (_mediaUploadRepository == null || _xAuthRepository == null || _shareImageRepository == null || _xSettings == null)
             {
+                Debug.WriteLine($"Dependency nulls: media={_mediaUploadRepository != null}, xRepo={_xAuthRepository != null}, shareImg={_shareImageRepository != null}, settings={_xSettings != null}");
                 return false;
             }
 
@@ -333,13 +318,21 @@ namespace FoutloosTypen.ViewModels
                 return false;
             }
 
-            var text = $"Net weer een typ-run gedaan…{_lessonName}! Score: {Score} - APM: {StrokesPerMinute} - Nauwkeurigheid: {Accuracy} #BolType";
+            var text = $"Net weer een typ-run gedaan van {_lessonName}! Score: {Score} - APM: {StrokesPerMinute} - Nauwkeurigheid: {Accuracy} #BolType";
+
             System.IO.Stream? logoStream = null;
-            try { logoStream = await Microsoft.Maui.Storage.FileSystem.OpenAppPackageFileAsync("boltype.png"); } catch { }
+            try
+            {
+                logoStream = await Microsoft.Maui.Storage.FileSystem.OpenAppPackageFileAsync("boltype.png");
+            }
+            catch
+            {
+                // Logo niet gevonden, gebruik versie zonder logo
+            }
 
             SKBitmap bitmap = logoStream != null
-                ? ShareImageGenerator.GenerateWithResults(_lessonName, _progress, logoStream)
-                : ShareImageGenerator.GenerateWithResults(_lessonName, _progress);
+                ? Helpers.ShareImageGenerator.GenerateWithResults(_lessonName, _progress, logoStream)
+                : Helpers.ShareImageGenerator.GenerateWithResults(_lessonName, _progress);
 
             var sharePreviewViewModel = new SharePreviewViewModel(
                 _mediaUploadRepository,
@@ -356,15 +349,15 @@ namespace FoutloosTypen.ViewModels
 
             var preview = new Views.ImagePreviewPopup(sharePreviewViewModel);
             var page = Shell.Current?.CurrentPage ?? Application.Current?.MainPage;
-            
+
             if (page != null)
             {
                 await MainThread.InvokeOnMainThreadAsync(async () => await page.ShowPopupAsync(preview));
-                
+
                 // Check if share was successful
                 return sharePreviewViewModel.ShareSuccessful;
             }
-            
+
             return false;
         }
 

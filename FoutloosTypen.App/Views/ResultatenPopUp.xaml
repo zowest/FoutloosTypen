@@ -6,30 +6,49 @@
     <Frame BackgroundColor="White"
            BorderColor="Black"
            CornerRadius="20"
-           Padding="40"
-           WidthRequest="1000"
-           HeightRequest="500"
+           Padding="30"
+           MaximumWidthRequest="1000"
+           MaximumHeightRequest="600"
            HorizontalOptions="Center"
            VerticalOptions="Center">
         <Grid>
-            <!-- X Share Button (top right) -->
-            <ImageButton Source="x.png"
-                         BackgroundColor="Transparent"
-                         Command="{Binding ShareToTwitterCommand}"
-                         IsEnabled="{Binding CanShare}"
-                         ToolTipProperties.Text="Deel op X (Twitter)"
-                         WidthRequest="48"
-                         HeightRequest="48"
-                         HorizontalOptions="End"
-                         VerticalOptions="Start"
-                         Padding="0"
-                         Opacity="1.0">
-                <ImageButton.GestureRecognizers>
-                    <PointerGestureRecognizer
-                        PointerEntered="OnHoverEnter"
-                        PointerExited="OnHoverExit"/>
-                </ImageButton.GestureRecognizers>
-            </ImageButton>
+            <!-- Top right buttons -->
+            <HorizontalStackLayout HorizontalOptions="End"
+                                   VerticalOptions="Start"
+                                   Spacing="10">
+                <!-- Settings Button -->
+                <ImageButton Source="settings.png"
+                             BackgroundColor="Transparent"
+                             ToolTipProperties.Text="Instellingen"
+                             WidthRequest="48"
+                             HeightRequest="48"
+                             Padding="0"
+                             Opacity="1.0"
+                             Clicked="OnSettingsClicked">
+                    <ImageButton.GestureRecognizers>
+                        <PointerGestureRecognizer
+                            PointerEntered="OnHoverEnter"
+                            PointerExited="OnHoverExit"/>
+                    </ImageButton.GestureRecognizers>
+                </ImageButton>
+
+                <!-- X Share Button -->
+                <ImageButton Source="x.png"
+                             BackgroundColor="Transparent"
+                             Command="{Binding ShareToTwitterCommand}"
+                             IsEnabled="{Binding CanShare}"
+                             ToolTipProperties.Text="Deel op X (Twitter)"
+                             WidthRequest="48"
+                             HeightRequest="48"
+                             Padding="0"
+                             Opacity="1.0">
+                    <ImageButton.GestureRecognizers>
+                        <PointerGestureRecognizer
+                            PointerEntered="OnHoverEnter"
+                            PointerExited="OnHoverExit"/>
+                    </ImageButton.GestureRecognizers>
+                </ImageButton>
+            </HorizontalStackLayout>
 
             <!-- Switch X Account info (below share button) -->
             <VerticalStackLayout HorizontalOptions="End"
@@ -57,112 +76,94 @@
                 </Button>
             </VerticalStackLayout>
 
-            <VerticalStackLayout Spacing="80" 
-                                 HorizontalOptions="Center" 
-                                 VerticalOptions="Center">
-                <Label Text="{Binding ResultTitle}"
-                       FontSize="48"
-                       FontAttributes="Bold"
-                       TextColor="Black"
-                       HorizontalOptions="Center"/>
-                <VerticalStackLayout
-                    HorizontalOptions="Start">
-                    <Label Text="Resultaten: "
+            <ScrollView>
+                <VerticalStackLayout Spacing="40" 
+                                     HorizontalOptions="Center" 
+                                     VerticalOptions="Center"
+                                     Padding="20">
+                    <Label Text="{Binding ResultTitle}"
+                           FontSize="32"
+                           FontAttributes="Bold"
                            TextColor="Black"
-                           FontSize="24"
-                           FontAttributes="Bold"/>
-                    <HorizontalStackLayout>
-                        <Label Text="Score: "
-                            TextColor="Black"/>
-                        <Label Text="{Binding Score}"
-                               TextColor="Black"/>
-                    </HorizontalStackLayout>
-                    <HorizontalStackLayout>
-                        <Label Text="APM:"
-                           TextColor="Black"/>
-                        <Label Text="{Binding StrokesPerMinute}"
-                            TextColor="Black"/>
-                    </HorizontalStackLayout>
-                    <HorizontalStackLayout>
-                        <Label Text="WPM:"
-                           TextColor="Black"/>
-                        <Label Text="{Binding WordsPerMinute}"
-                            TextColor="Black"/>
-                    </HorizontalStackLayout>
-                    <HorizontalStackLayout>
-                        <Label Text="Nauwkeurigheid:"
-                           TextColor="Black"/>
-                        <Label Text="{Binding Accuracy}"
-                             TextColor="Black"/>
-                    </HorizontalStackLayout>
-                    <HorizontalStackLayout>
-                        <Label Text="Fouten:"
-                            TextColor="Black"/>
-                        <Label Text="{Binding TotalMistakes}"
-                             TextColor="Black"/>
-                    </HorizontalStackLayout>
-                    <HorizontalStackLayout>
-                        <Label Text="Tijd over: "
-                           TextColor="Black"/>
-                        <Label Text="{Binding TimeRemaining}"
-                            TextColor="Black"/>
+                           HorizontalOptions="Center"/>
+
+                    <!-- Results -->
+                    <VerticalStackLayout Spacing="10">
+                        <HorizontalStackLayout Spacing="20" HorizontalOptions="Center">
+                            <Label Text="Score:" TextColor="Black" FontSize="18" FontAttributes="Bold"/>
+                            <Label Text="{Binding Score}" TextColor="Black" FontSize="18" FontAttributes="Bold"/>
+                        </HorizontalStackLayout>
+
+                        <HorizontalStackLayout Spacing="20" HorizontalOptions="Center">
+                            <Label Text="WPM:" TextColor="Black" FontSize="16"/>
+                            <Label Text="{Binding WordsPerMinute}" TextColor="Black" FontSize="16"/>
+                        </HorizontalStackLayout>
+
+                        <HorizontalStackLayout Spacing="20" HorizontalOptions="Center">
+                            <Label Text="APM:" TextColor="Black" FontSize="16"/>
+                            <Label Text="{Binding StrokesPerMinute}" TextColor="Black" FontSize="16"/>
+                        </HorizontalStackLayout>
+
+                        <HorizontalStackLayout Spacing="20" HorizontalOptions="Center">
+                            <Label Text="Nauwkeurigheid:" TextColor="Black" FontSize="16"/>
+                            <Label Text="{Binding Accuracy}" TextColor="Black" FontSize="16"/>
+                        </HorizontalStackLayout>
+
+                        <HorizontalStackLayout Spacing="20" HorizontalOptions="Center">
+                            <Label Text="Fouten:" TextColor="Black" FontSize="16"/>
+                            <Label Text="{Binding TotalMistakes}" TextColor="Black" FontSize="16"/>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+
+                    <!-- Buttons -->
+                    <HorizontalStackLayout Spacing="60"
+                                           HorizontalOptions="Center"
+                                           Margin="0,20,0,0">
+
+                        <ImageButton Source="herstart.png"
+                                     BackgroundColor="Transparent"
+                                     WidthRequest="48"
+                                     HeightRequest="48"
+                                     Aspect="AspectFit"
+                                     ToolTipProperties.Text="Herstart les"
+                                     Clicked="OnRestartClicked">
+                            <ImageButton.GestureRecognizers>
+                                <PointerGestureRecognizer
+                                    PointerEntered="OnHoverEnter"
+                                    PointerExited="OnHoverExit"/>
+                            </ImageButton.GestureRecognizers>
+                        </ImageButton>
+
+                        <ImageButton Source="home.png"
+                                     BackgroundColor="Transparent"
+                                     WidthRequest="48"
+                                     HeightRequest="48"
+                                     Aspect="AspectFit"
+                                     ToolTipProperties.Text="Terug naar home"
+                                     Clicked="OnContinueClicked">
+                            <ImageButton.GestureRecognizers>
+                                <PointerGestureRecognizer
+                                    PointerEntered="OnHoverEnter"
+                                    PointerExited="OnHoverExit"/>
+                            </ImageButton.GestureRecognizers>
+                        </ImageButton>
+
+                        <ImageButton Source="next.png"
+                                     BackgroundColor="Transparent"
+                                     WidthRequest="48"
+                                     HeightRequest="48"
+                                     Aspect="AspectFit"
+                                     ToolTipProperties.Text="Volgende les"
+                                     Clicked="OnNextLessonClicked">
+                            <ImageButton.GestureRecognizers>
+                                <PointerGestureRecognizer
+                                    PointerEntered="OnHoverEnter"
+                                    PointerExited="OnHoverExit"/>
+                            </ImageButton.GestureRecognizers>
+                        </ImageButton>
                     </HorizontalStackLayout>
                 </VerticalStackLayout>
-                <HorizontalStackLayout
-                    Spacing="300"
-                    VerticalOptions="End"
-                    HorizontalOptions="Center">
-                    
-                    <ImageButton Source="herstart.png"
-                 BackgroundColor="Transparent"
-                 BorderColor="Transparent"
-                 BorderWidth="0"
-                 CornerRadius="0"
-                 Padding="0"
-                 WidthRequest="48"
-                 HeightRequest="48"
-                 Aspect="AspectFit"
-                 Clicked="OnRestartClicked">
-                        <ImageButton.GestureRecognizers>
-                            <PointerGestureRecognizer
-                PointerEntered="OnHoverEnter"
-                PointerExited="OnHoverExit"/>
-                        </ImageButton.GestureRecognizers>
-                    </ImageButton>
-                    <ImageButton Source="home.png"
-                             Clicked="OnContinueClicked"
-                             BackgroundColor="Transparent"
-                             BorderColor="Transparent"
-                             BorderWidth="0"
-                             CornerRadius="0"
-                             Padding="0"
-                             WidthRequest="48"
-                             HeightRequest="48"
-                             Aspect="AspectFit" >
-                        <ImageButton.GestureRecognizers>
-                            <PointerGestureRecognizer
-                PointerEntered="OnHoverEnter"
-                PointerExited="OnHoverExit"/>
-                        </ImageButton.GestureRecognizers>
-                    </ImageButton>
-                    <ImageButton Source="arrowright.png"
-                             Clicked="OnNextLessonClicked"
-                             BackgroundColor="Transparent"
-                             BorderColor="Transparent"
-                             BorderWidth="0"
-                             CornerRadius="0"
-                             Padding="0"
-                             WidthRequest="48"
-                             HeightRequest="48"
-                             Aspect="AspectFit" >
-                        <ImageButton.GestureRecognizers>
-                            <PointerGestureRecognizer
-                                PointerEntered="OnHoverEnter"
-                                PointerExited="OnHoverExit"/>
-                        </ImageButton.GestureRecognizers>
-                    </ImageButton>
-                </HorizontalStackLayout>
-            </VerticalStackLayout>
+            </ScrollView>
         </Grid>
     </Frame>
 </ContentPage>

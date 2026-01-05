@@ -277,6 +277,7 @@ namespace FoutloosTypen.ViewModels
                 MoveToNextMaterial();
             }
         }
+
         private void ApplyDisplayStateOptimized(TypingDisplayState state)
         {
             // Check of er iets veranderd is
@@ -313,8 +314,7 @@ namespace FoutloosTypen.ViewModels
                 formatted.Spans.Add(new Span
                 {
                     Text = state.ErrorText,
-                    TextColor = Colors.White,
-                    BackgroundColor = Colors.Red,
+                    TextColor = Colors.Red,
                     FontSize = 32
                 });
             }
@@ -325,19 +325,19 @@ namespace FoutloosTypen.ViewModels
                 formatted.Spans.Add(new Span
                 {
                     Text = state.CursorChar,
-                    TextColor = Colors.LightGrey,
+                    TextColor = Colors.Black,
                     TextDecorations = TextDecorations.Underline,
                     FontSize = 32
                 });
             }
 
-            // Rest van de tekst (grijs)
+            // Resterende tekst (grijs)
             if (!string.IsNullOrEmpty(state.RemainingText))
             {
                 formatted.Spans.Add(new Span
                 {
                     Text = state.RemainingText,
-                    TextColor = Colors.LightGray,
+                    TextColor = Colors.Gray,
                     FontSize = 32
                 });
             }
@@ -456,14 +456,31 @@ namespace FoutloosTypen.ViewModels
 
             if (_currentAssignmentIndex >= Assignments.Count)
             {
+                // All assignments completed - Show results popup
                 if (SelectedLesson != null)
+                {
                     _resultService.EndLesson(SelectedLesson.Id);
+                }
 
-                ShowLessonResults();
+                // Call async method properly on UI thread
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    try
+                    {
+                        await ShowLessonResultsAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"ERROR showing results: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                    }
+                });
                 return;
             }
 
             RestartTimer();
+
+            // Move to next assignment
             SelectedAssignment = Assignments[_currentAssignmentIndex];
         }
 
@@ -472,14 +489,14 @@ namespace FoutloosTypen.ViewModels
             if (SelectedLesson == null)
                 return null;
 
-            // Vind lessen in dezelfde cursus, gesorteerd op ID
+            // Haal alle lessen uit dezelfde cursus op
             var lessonsInCourse = Lessons
                 .Where(l => l.CourseId == SelectedLesson.CourseId)
                 .OrderBy(l => l.Id)
                 .ToList();
 
-            // Vind de index van de huidige les
-            var currentIndex = lessonsInCourse.FindIndex(l => l.Id == SelectedLesson.Id);
+            // Vind de huidige les index
+            int currentIndex = lessonsInCourse.FindIndex(l => l.Id == SelectedLesson.Id);
 
             // Return de volgende les als die bestaat
             if (currentIndex >= 0 && currentIndex < lessonsInCourse.Count - 1)
@@ -507,7 +524,7 @@ namespace FoutloosTypen.ViewModels
 
         #endregion
 
-        #region Timer & Results
+        #region Timer
 
         private async void OnTimerExpired(object? sender, EventArgs e)
         {
@@ -518,6 +535,10 @@ namespace FoutloosTypen.ViewModels
 
             await ShowLessonResultsAsync();
         }
+
+        #endregion
+
+        #region Results
 
         private async Task ShowLessonResultsAsync()
         {
@@ -530,12 +551,15 @@ namespace FoutloosTypen.ViewModels
             if (progress == null)
                 return;
 
-            var popup = new ResultatenPopUp(progress);
+         
+            var result = ConvertLessonProgressToResult(progress);
+
+            var popup = new ResultatenPopUp(result);
             await Application.Current.MainPage.Navigation.PushModalAsync(popup);
 
-            var result = await popup.WaitForUserResponseAsync();
+            var popupResult = await popup.WaitForUserResponseAsync();
 
-            switch (result)
+            switch (popupResult)
             {
                 case ResultatenPopUp.PopupResult.Home:
                     await Shell.Current.Navigation.PopToRootAsync();
@@ -549,27 +573,23 @@ namespace FoutloosTypen.ViewModels
             }
         }
 
-        private async void ShowLessonResults()
+        private Result ConvertLessonProgressToResult(Core.Interfaces.Services.LessonProgress progress)
         {
-            await ShowLessonResultsAsync();
-        }
-
-        public void RestartLesson()
-        {
-            _currentAssignmentIndex = 0;
-            OnPropertyChanged(nameof(AssignmentProgress));
-            OnPropertyChanged(nameof(ProgressText));
-
-            if (Assignments.Any())
-                SelectedAssignment = Assignments.First();
-
-            ResetTyping();
-            RestartTimer();
-        }
-
-        private void UpdateTotalCharactersCount()
-        {
-            TotalCharactersCount = CurrentMaterial?.Sentence?.Length ?? 0;
+            return new Result
+            {
+                LessonId = progress.LessonId,
+                TotalMistakes = progress.TotalMistakes,
+                SentencesCompleted = progress.SentencesCompleted,
+                TotalCharactersTyped = progress.CharactersTyped,
+                CompletedSentences = new List<string>(),
+                CurrentIncompleteText = progress.CurrentText,
+                StartTime = progress.StartTime,
+                EndTime = DateTime.Now,
+                ExpectedTime = 60,
+                TimerExpired = progress.TimerExpired,
+                StudentId = 0, 
+                IsEndlessMode = false
+            };
         }
 
         #endregion
@@ -606,6 +626,33 @@ namespace FoutloosTypen.ViewModels
         {
             ResetTyping();
             RestartTimer();
+        }
+
+        #endregion
+
+        #region Helpers
+
+        private void RestartLesson()
+        {
+            // Reset naar de eerste opdracht
+            _currentAssignmentIndex = 0;
+            OnPropertyChanged(nameof(AssignmentProgress));
+            OnPropertyChanged(nameof(ProgressText));
+
+            // Selecteer de eerste opdracht
+            if (Assignments.Any())
+            {
+                SelectedAssignment = Assignments.First();
+            }
+
+            // Reset typing en timer
+            ResetTyping();
+            RestartTimer();
+        }
+
+        private void UpdateTotalCharactersCount()
+        {
+            TotalCharactersCount = CurrentMaterial?.Sentence?.Length ?? 0;
         }
 
         #endregion
