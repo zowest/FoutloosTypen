@@ -69,6 +69,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Update="Views\LeaderboardView.xaml.cs">
+	    <DependentUpon>LeaderboardView.xaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="Views\LessonLeaderboardView.xaml.cs">
+	    <DependentUpon>LessonLeaderboardView.xaml</DependentUpon>
+	  </Compile>
 	  <Compile Update="Views\ProfileView.xaml.cs">
 	    <DependentUpon>ProfileView.xaml</DependentUpon>
 	  </Compile>

@@ -16,7 +16,8 @@ namespace FoutloosTypen.ViewModels
         private readonly IPracticeMaterialService _practiceMaterialService;
         private readonly ITimerService _timerService;
         private readonly ITypingComparisonService _typingComparisonService;
-        private readonly IResultService _resultService;
+        private readonly IResultService _ResultService;
+        private readonly GlobalViewModel _globalViewModel; // ADD THIS
 
         private const double TIMER_DURATION = 60;
         public enum PopupResult
@@ -312,34 +313,16 @@ namespace FoutloosTypen.ViewModels
             {
                 formatted.Spans.Add(new Span
                 {
-                    Text = state.ErrorText,
-                    TextColor = Colors.White,
-                    BackgroundColor = Colors.Red,
-                    FontSize = 32
-                });
+                    SelectedLesson = targetLesson;
+                    Debug.WriteLine($"Selected lesson: {targetLesson.Name} (ID: {targetLesson.Id}) with TotalTime: {targetLesson.TotalTime}");
+                    return;
+                }
             }
 
             // Cursor karakter (onderstreept)
             if (!string.IsNullOrEmpty(state.CursorChar))
             {
-                formatted.Spans.Add(new Span
-                {
-                    Text = state.CursorChar,
-                    TextColor = Colors.LightGrey,
-                    TextDecorations = TextDecorations.Underline,
-                    FontSize = 32
-                });
-            }
-
-            // Rest van de tekst (grijs)
-            if (!string.IsNullOrEmpty(state.RemainingText))
-            {
-                formatted.Spans.Add(new Span
-                {
-                    Text = state.RemainingText,
-                    TextColor = Colors.LightGray,
-                    FontSize = 32
-                });
+                SelectedLesson = Lessons.First();
             }
 
             FormattedText = formatted;
@@ -416,7 +399,7 @@ namespace FoutloosTypen.ViewModels
             if (Assignments.Any())
                 SelectedAssignment = Assignments.First();
 
-            _resultService.StartLesson(SelectedLesson.Id, Assignments.Count);
+            _ResultService.StartLesson(SelectedLesson.Id, Assignments.Count);
         }
 
         private void LoadPracticeMaterials()
@@ -456,30 +439,57 @@ namespace FoutloosTypen.ViewModels
 
             if (_currentAssignmentIndex >= Assignments.Count)
             {
-                if (SelectedLesson != null)
-                    _resultService.EndLesson(SelectedLesson.Id);
+                // All assignments completed - Show results popup
+                Debug.WriteLine("All assignments completed! Showing results...");
 
-                ShowLessonResults();
+                if (SelectedLesson != null)
+                {
+                    _ResultService.EndLesson(SelectedLesson.Id);
+                }
+
+                // Call async method properly on UI thread
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    try
+                    {
+                        await ShowLessonResultsAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"ERROR showing results: {ex.Message}");
+                        Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                    }
+                });
                 return;
             }
 
             RestartTimer();
+
+            // Move to next assignment
             SelectedAssignment = Assignments[_currentAssignmentIndex];
         }
 
-        private Lesson? GetNextLesson()
+        public void RestartLesson()
         {
-            if (SelectedLesson == null)
-                return null;
+            Debug.WriteLine("Restarting lesson...");
 
-            // Vind lessen in dezelfde cursus, gesorteerd op ID
-            var lessonsInCourse = Lessons
-                .Where(l => l.CourseId == SelectedLesson.CourseId)
-                .OrderBy(l => l.Id)
-                .ToList();
+            // Reset naar de eerste opdracht
+            _currentAssignmentIndex = 0;
+            OnPropertyChanged(nameof(AssignmentProgress));
+            OnPropertyChanged(nameof(ProgressText));
 
-            // Vind de index van de huidige les
-            var currentIndex = lessonsInCourse.FindIndex(l => l.Id == SelectedLesson.Id);
+            // Selecteer de eerste opdracht
+            if (Assignments.Any())
+            {
+                SelectedAssignment = Assignments.First();
+            }
+
+            // Reset typing en timer
+            ResetTyping();
+            RestartTimer();
+
+            Debug.WriteLine("Lesson restarted successfully");
+        }
 
             // Return de volgende les als die bestaat
             if (currentIndex >= 0 && currentIndex < lessonsInCourse.Count - 1)
@@ -507,7 +517,18 @@ namespace FoutloosTypen.ViewModels
 
         #endregion
 
-        #region Timer & Results
+            // Check if user made a mistake with the newly typed character
+            if (_typingComparisonService.IsCharacterIncorrect(
+                CurrentMaterial.Sentence,
+                _previousUserInput,
+                typedText))
+            {
+                if (SelectedLesson != null)
+                {
+                    _ResultService.RecordMistake(SelectedLesson.Id);
+                    Debug.WriteLine($"Mistake recorded! Total: {_ResultService.GetProgress(SelectedLesson.Id)?.TotalMistakes}");
+                }
+            }
 
         private async void OnTimerExpired(object? sender, EventArgs e)
         {
@@ -516,7 +537,19 @@ namespace FoutloosTypen.ViewModels
             _resultService.MarkTimerExpired(SelectedLesson.Id);
             _resultService.EndLesson(SelectedLesson.Id);
 
-            await ShowLessonResultsAsync();
+            // Check if sentence is complete and correct
+            if (typedText == CurrentMaterial.Sentence)
+            {
+                if (SelectedLesson != null)
+                {
+                    _ResultService.CompleteSentence(SelectedLesson.Id, typedText);
+                    var progress = _ResultService.GetProgress(SelectedLesson.Id);
+                    Debug.WriteLine($"Sentence completed! Total mistakes: {progress?.TotalMistakes}, Sentences: {progress?.SentencesCompleted}");
+                }
+
+                // Move to next sentence or assignment
+                MoveToNextMaterial();
+            }
         }
 
         private async Task ShowLessonResultsAsync()
@@ -572,7 +605,16 @@ namespace FoutloosTypen.ViewModels
             TotalCharactersCount = CurrentMaterial?.Sentence?.Length ?? 0;
         }
 
-        #endregion
+        public override void OnDisappearing()
+        {
+            base.OnDisappearing();
+
+            if (SelectedLesson != null)
+            {
+                _ResultService.EndLesson(SelectedLesson.Id);
+                var progress = _ResultService.GetProgress(SelectedLesson.Id);
+                Debug.WriteLine($"Lesson ended. Total mistakes: {progress?.TotalMistakes}, Time: {progress?.TimeSpent:F2}s");
+            }
 
         #region Commands
 
