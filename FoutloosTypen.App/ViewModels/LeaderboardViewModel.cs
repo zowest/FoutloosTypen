@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Models;
 using FoutloosTypen.Views;
+using FoutloosTypen.Core.Interfaces.Repositories;
 
 namespace FoutloosTypen.ViewModels
 {
@@ -16,6 +17,7 @@ namespace FoutloosTypen.ViewModels
         private readonly IResultService _resultService;
         private readonly ILessonService _lessonService;
         private readonly IStudentService _studentService;
+        private readonly IResultRepository _resultRepository;
         private readonly GlobalViewModel _global;
 
         // Display model used in the UI so we can expose Rank easily
@@ -61,12 +63,14 @@ namespace FoutloosTypen.ViewModels
             IResultService resultService,
             ILessonService lessonService,
             IStudentService studentService,
+            IResultRepository resultRepository,
             GlobalViewModel global)
         {
             _leaderboardService = leaderboardService;
             _resultService = resultService;
             _lessonService = lessonService;
             _studentService = studentService;
+            _resultRepository = resultRepository;
             _global = global;
         }
 
@@ -201,8 +205,45 @@ namespace FoutloosTypen.ViewModels
         {
             PageTitle = "Algemeen Klassement - Endless Mode";
             EndlessResults.Clear();
-            CurrentStudentRank = 0;
-            Debug.WriteLine("[LeaderboardViewModel] Endless leaderboard placeholder");
+            
+            try
+            {
+                var endlessData = _resultRepository.GetEndlessModeLeaderboard(10);
+                
+                int rank = 1;
+                foreach (var (studentId, bestScore) in endlessData)
+                {
+                    var student = _studentService.Get(studentId);
+                    if (student != null)
+                    {
+                        EndlessResults.Add(new LeaderboardStudent
+                        {
+                            Id = studentId,
+                            Rank = rank++,
+                            Name = student.Name,
+                            TotalScore = bestScore,
+                            IsCurrentUser = _global.Student?.Id == studentId
+                        });
+                    }
+                }
+
+                if (_global.Student != null)
+                {
+                    var idx = endlessData.FindIndex(e => e.StudentId == _global.Student.Id);
+                    CurrentStudentRank = idx >= 0 ? idx + 1 : 0;
+                }
+                else
+                {
+                    CurrentStudentRank = 0;
+                }
+
+                Debug.WriteLine($"[LeaderboardViewModel] Loaded {EndlessResults.Count} endless mode results");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.WriteLine($"[LeaderboardViewModel] LoadEndlessLeaderboard failed: {ex}");
+                CurrentStudentRank = 0;
+            }
         }
 
         [RelayCommand]
