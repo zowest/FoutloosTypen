@@ -7,6 +7,7 @@ namespace FoutloosTypen.Core.Interfaces.Repositories
         Student? Get(string username);
         Student? Get(int id);
         List<Student> GetAll();
+        void Add(Student student);
         void UpdateStatistics(int studentId, double avgSpeed, double avgPrecision);
         void UpdateProgress(int studentId, int completedLessons, int totalScore);
         void UpdateTtsMode(int studentId, bool useTtsMode);
