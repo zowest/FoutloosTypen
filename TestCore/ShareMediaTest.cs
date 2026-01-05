@@ -8,7 +8,7 @@ using SkiaSharp;
 
 namespace TestCore
 {
-        [TestFixture]
+    [TestFixture]
     public class ShareMediaTest
     {
         private Mock<IMediaUploadRepository>? _mediaRepo;
@@ -38,7 +38,7 @@ namespace TestCore
         {
             // Arrange
             _shareImageRepo!
-                .Setup(s => s.SaveImageToCacheAsync(It.IsAny<SKBitmap>()))
+                .Setup(s => s.SaveImageToCacheAsync(It.IsAny<SKBitmap>(), It.IsAny<string>()))
                 .ReturnsAsync("/tmp/test.png");
 
             _mediaRepo!
@@ -84,30 +84,44 @@ namespace TestCore
 
         /// Test FR5: Credentials validation
         [Test]
-        public void UC15_FR5_Credentials_MustBeValidated()
+        public async Task UC15_FR5_Credentials_MustBeValidated()
         {
             // Arrange
-            var validSettings = new XAuthSettings
-            {
-                ConsumerKey = "ck",
-                ConsumerSecret = "cs",
-                OAuthToken = "tok",
-                OAuthTokenSecret = "tsec"
-            };
+            int ownerUserId = 1;
+            
+            // Setup valid credentials scenario
+            _xAuthRepo!
+                .Setup(x => x.GetSettings())
+                .Returns(new XAuthSettings
+                {
+                    ConsumerKey = "ck",
+                    ConsumerSecret = "cs",
+                    CallbackUrl = "callback"
+                });
 
-            var invalidSettings = new XAuthSettings
-            {
-                ConsumerKey = "ck",
-                ConsumerSecret = "cs",
-                OAuthToken = "",
-                OAuthTokenSecret = ""
-            };
+            _xAuthRepo
+                .Setup(x => x.GetOAuth1TokensAsync(ownerUserId))
+                .ReturnsAsync(("valid_token", "valid_secret"));
+
+            // Setup invalid credentials scenario (no tokens)
+            _xAuthRepo
+                .Setup(x => x.GetOAuth1TokensAsync(999))
+                .ReturnsAsync((ValueTuple<string, string>?)null);
+
+            // Act
+            var settings = _xAuthRepo.Object.GetSettings();
+            var validTokens = await _xAuthRepo.Object.GetOAuth1TokensAsync(ownerUserId);
+            var invalidTokens = await _xAuthRepo.Object.GetOAuth1TokensAsync(999);
 
             // Assert
-            Assert.That(string.IsNullOrEmpty(validSettings.OAuthToken), Is.False,
-                "FR5: Geldige credentials moeten token bevatten");
-            Assert.That(string.IsNullOrEmpty(invalidSettings.OAuthToken), Is.True,
-                "FR5: Ongeldige credentials hebben geen token");
+            Assert.That(string.IsNullOrEmpty(settings.ConsumerKey), Is.False,
+                "FR5: Geldige credentials moeten consumer key bevatten");
+            Assert.That(string.IsNullOrEmpty(settings.ConsumerSecret), Is.False,
+                "FR5: Geldige credentials moeten consumer secret bevatten");
+            Assert.That(validTokens, Is.Not.Null,
+                "FR5: Geldige credentials moeten OAuth tokens bevatten");
+            Assert.That(invalidTokens, Is.Null,
+                "FR5: Ongeldige credentials hebben geen tokens");
         }
 
         /// Test FR6 + NFR3: Tweet text validation
@@ -182,11 +196,11 @@ namespace TestCore
             // Arrange
             var bitmap = new SKBitmap(100, 100);
             _shareImageRepo!
-                .Setup(s => s.SaveImageToCacheAsync(bitmap))
+                .Setup(s => s.SaveImageToCacheAsync(bitmap, "png"))
                 .ReturnsAsync("/cache/image.png");
 
             // Act
-            var path = await _shareImageRepo.Object.SaveImageToCacheAsync(bitmap);
+            var path = await _shareImageRepo.Object.SaveImageToCacheAsync(bitmap, "png");
 
             // Assert
             Assert.That(path, Is.Not.Null.And.Not.Empty, 
@@ -203,7 +217,7 @@ namespace TestCore
             var bitmap = new SKBitmap(100, 100);
             
             _shareImageRepo!
-                .Setup(s => s.SaveImageToCacheAsync(bitmap))
+                .Setup(s => s.SaveImageToCacheAsync(bitmap, "png"))
                 .ReturnsAsync("/cache/share_image.png");
 
             _mediaRepo!
@@ -221,14 +235,14 @@ namespace TestCore
                 .Returns(Task.CompletedTask);
 
             // Act
-            var imagePath = await _shareImageRepo.Object.SaveImageToCacheAsync(bitmap);
+            var imagePath = await _shareImageRepo.Object.SaveImageToCacheAsync(bitmap, "png");
             var mediaId = await _mediaRepo.Object.UploadMediaAsync(
                 imagePath, "image/png", "ck", "cs", "tok", "tsec");
             await _mediaRepo.Object.PostTweetAsync(
                 "Les 1 - 80% voltooid #BolType", mediaId, "ck", "cs", "tok", "tsec");
 
             // Assert
-            _shareImageRepo.Verify(s => s.SaveImageToCacheAsync(bitmap), 
+            _shareImageRepo.Verify(s => s.SaveImageToCacheAsync(bitmap, "png"), 
                 Times.Once, "Afbeelding moet opgeslagen worden");
             
             _mediaRepo.Verify(m => m.UploadMediaAsync(
@@ -238,6 +252,82 @@ namespace TestCore
             _mediaRepo.Verify(m => m.PostTweetAsync(
                 It.IsAny<string>(), mediaId, "ck", "cs", "tok", "tsec"), 
                 Times.Once, "Tweet moet gepost worden");
+        }
+
+        /// Test: OAuth token storage per user
+        [Test]
+        public async Task UC15_OAuthTokens_MustBeSavedAndRetrievedPerUser()
+        {
+            // Arrange
+            int ownerUserId = 123;
+            string accessToken = "test_access_token";
+            string accessSecret = "test_access_secret";
+
+            _xAuthRepo!
+                .Setup(x => x.SaveOAuth1TokensAsync(ownerUserId, accessToken, accessSecret))
+                .Returns(Task.CompletedTask);
+
+            _xAuthRepo
+                .Setup(x => x.GetOAuth1TokensAsync(ownerUserId))
+                .ReturnsAsync((accessToken, accessSecret));
+
+            // Act
+            await _xAuthRepo.Object.SaveOAuth1TokensAsync(ownerUserId, accessToken, accessSecret);
+            var tokens = await _xAuthRepo.Object.GetOAuth1TokensAsync(ownerUserId);
+
+            // Assert
+            Assert.That(tokens, Is.Not.Null, "Tokens moeten opgehaald kunnen worden");
+            Assert.That(tokens.Value.AccessToken, Is.EqualTo(accessToken), "Access token moet correct zijn");
+            Assert.That(tokens.Value.AccessSecret, Is.EqualTo(accessSecret), "Access secret moet correct zijn");
+            
+            _xAuthRepo.Verify(x => x.SaveOAuth1TokensAsync(ownerUserId, accessToken, accessSecret), 
+                Times.Once, "Tokens moeten opgeslagen worden");
+            _xAuthRepo.Verify(x => x.GetOAuth1TokensAsync(ownerUserId), 
+                Times.Once, "Tokens moeten opgehaald worden");
+        }
+
+        /// Test: X user info storage
+        [Test]
+        public async Task UC15_XUserInfo_MustBeSavedAndRetrieved()
+        {
+            // Arrange
+            int ownerUserId = 123;
+            string xUserId = "987654321";
+            string xUsername = "@testuser";
+
+            _xAuthRepo!
+                .Setup(x => x.SaveXUserInfoAsync(ownerUserId, xUserId, xUsername))
+                .Returns(Task.CompletedTask);
+
+            _xAuthRepo
+                .Setup(x => x.GetXUserInfoAsync(ownerUserId))
+                .ReturnsAsync((xUserId, xUsername));
+
+            // Act
+            await _xAuthRepo.Object.SaveXUserInfoAsync(ownerUserId, xUserId, xUsername);
+            var userInfo = await _xAuthRepo.Object.GetXUserInfoAsync(ownerUserId);
+
+            // Assert
+            Assert.That(userInfo, Is.Not.Null, "User info moet opgehaald kunnen worden");
+            Assert.That(userInfo.Value.XUserId, Is.EqualTo(xUserId), "X user ID moet correct zijn");
+            Assert.That(userInfo.Value.XUsername, Is.EqualTo(xUsername), "X username moet correct zijn");
+        }
+
+        /// Test: Clear all tokens
+        [Test]
+        public async Task UC15_ClearAllTokens_MustRemoveAllStoredData()
+        {
+            // Arrange
+            _xAuthRepo!
+                .Setup(x => x.ClearAllTokensAsync())
+                .Returns(Task.CompletedTask);
+
+            // Act
+            await _xAuthRepo.Object.ClearAllTokensAsync();
+
+            // Assert
+            _xAuthRepo.Verify(x => x.ClearAllTokensAsync(), Times.Once, 
+                "Alle tokens moeten gewist kunnen worden");
         }
     }
 }
