@@ -343,30 +343,21 @@
                                  IsVisible="{Binding CanShare}"
                                  ZIndex="100">
 
-                <!-- Frame wrapper for shadow effect around X Share Button - FIXED SIZE -->
-                <Frame BackgroundColor="White"
-                       BorderColor="#E0E0E0"
-                       CornerRadius="22"
-                       Padding="6"
-                       HasShadow="True"
-                       WidthRequest="44"
-                       HeightRequest="44">
-                    <ImageButton Source="x.png"
-                                 BackgroundColor="Transparent"
-                                 Command="{Binding ShareToTwitterCommand}"
-                                 IsEnabled="{Binding CanShare}"
-                                 ToolTipProperties.Text="Deel op X (Twitter)"
-                                 WidthRequest="32"
-                                 HeightRequest="32"
-                                 Padding="0"
-                                 Aspect="AspectFit">
-                        <ImageButton.GestureRecognizers>
-                            <PointerGestureRecognizer
-                                PointerEntered="OnHoverEnter"
-                                PointerExited="OnHoverExit"/>
-                        </ImageButton.GestureRecognizers>
-                    </ImageButton>
-                </Frame>
+                <ImageButton Source="x.png"
+                             BackgroundColor="Transparent"
+                             Command="{Binding ShareToTwitterCommand}"
+                             IsEnabled="{Binding CanShare}"
+                             ToolTipProperties.Text="Deel op X (Twitter)"
+                             WidthRequest="32"
+                             HeightRequest="32"
+                             Padding="0"
+                             Aspect="AspectFit">
+                    <ImageButton.GestureRecognizers>
+                        <PointerGestureRecognizer
+                            PointerEntered="OnHoverEnter"
+                            PointerExited="OnHoverExit"/>
+                    </ImageButton.GestureRecognizers>
+                </ImageButton>
 
                 <!-- X Account Switch Section -->
                 <VerticalStackLayout Spacing="4"
@@ -379,13 +370,13 @@
                            BackgroundColor="White"
                            Padding="4,2"
                            Opacity="0.9"/>
-                    <Button Text="Wissel"
+                    <Button Text="Wissel X-account"
                             FontSize="9"
                             Padding="4,2"
                             BackgroundColor="#F0F0F0"
                             TextColor="#333333"
                             CornerRadius="4"
-                            WidthRequest="50"
+                            WidthRequest="100"
                             HeightRequest="25"
                             Command="{Binding SwitchXAccountCommand}">
                         <Button.GestureRecognizers>
