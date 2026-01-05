@@ -47,6 +47,11 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IAssignmentRepository, AssignmentRepository>();
             builder.Services.AddSingleton<IPracticeMaterialRepository, PracticeMaterialRepository>();
             builder.Services.AddSingleton<IStudentRepository, StudentRepository>();
+            builder.Services.AddSingleton<IEndlessModeRepository, EndlessModeRepository>();
+            builder.Services.AddSingleton<IResultRepository, ResultRepository>();
+            builder.Services.AddSingleton<ILeaderboardRepository, LeaderboardRepository>();
+
+            // Services
             builder.Services.AddSingleton<IMediaUploadRepository, MediaUploadRepository>();
             builder.Services.AddSingleton<IXAuthRepository, XAuthRepository>();
             builder.Services.AddSingleton<IXAuthApiRepository, XAuthApiRepository>();
@@ -62,11 +67,15 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IStudentService, StudentService>();
             builder.Services.AddSingleton<ITimerService, TimerService>();
             builder.Services.AddSingleton<IXAuthService, XAuthService>();
+            builder.Services.AddSingleton<ITtsService, TtsService>();
 
             builder.Services.AddSingleton<ITypingComparisonService, TypingComparisonService>();
           
             builder.Services.AddSingleton<IResultService, ResultService>();
+            builder.Services.AddSingleton<IEndlessModeService, EndlessModeService>();
+            builder.Services.AddSingleton<IEndlessModeService, EndlessModeService>();
             builder.Services.AddSingleton<IAudioAssignmentService, AudioAssignmentService>();
+            builder.Services.AddSingleton<ILeaderboardService, LeaderboardService>();
 
             // Use XAuthRepository to provide XAuthSettings in DI
             builder.Services.AddSingleton<FoutloosTypen.Core.Models.XAuthSettings>(provider => provider.GetRequiredService<IXAuthRepository>().GetSettings());
@@ -84,7 +93,10 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<GlobalViewModel>();
             builder.Services.AddTransient<LoginView>().AddTransient<LoginViewModel>();
             builder.Services.AddTransient<ProfileView>().AddTransient<ProfileViewModel>();
+            builder.Services.AddTransient<EndlessModeView>().AddTransient<EndlessModeViewModel>();
             builder.Services.AddTransient<SettingsView>().AddTransient<SettingsViewModel>();
+            builder.Services.AddTransient<LeaderboardViewModel>();
+            builder.Services.AddTransient<LeaderboardView>(); 
 #if WINDOWS
             builder.ConfigureLifecycleEvents(events =>
             {
@@ -133,13 +145,12 @@ namespace FoutloosTypen
 
             var app = builder.Build();
 
-            // Debug: log loaded XAuthSettings to confirm values at startup
             try
             {
                 var settings = app.Services.GetRequiredService<FoutloosTypen.Core.Models.XAuthSettings>();
-                Debug.WriteLine($"Startup: XAuthSettings.ClientId set: {!string.IsNullOrEmpty(settings.ClientId)}");
-                Debug.WriteLine($"Startup: XAuthSettings.RedirectUri set: {!string.IsNullOrEmpty(settings.RedirectUri)}");
-                Debug.WriteLine($"Startup: XAuthSettings.Scopes count: {settings.Scopes?.Length ?? 0}");
+                Debug.WriteLine($"Startup: XAuthSettings.ConsumerKey set: {!string.IsNullOrEmpty(settings.ConsumerKey)}");
+                Debug.WriteLine($"Startup: XAuthSettings.ConsumerSecret set: {!string.IsNullOrEmpty(settings.ConsumerSecret)}");
+                Debug.WriteLine($"Startup: XAuthSettings.CallbackUrl: {settings.CallbackUrl}");
             }
             catch (Exception ex)
             {

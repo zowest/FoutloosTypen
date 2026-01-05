@@ -13,7 +13,27 @@
 
     <TabBar>
         <Tab Title="Lessen" Icon="dotnet_bot.png">
-            <ShellContent Title="Lessen" ContentTemplate="{DataTemplate views:LessonView}" />
+            <ShellContent Title="Lessen"
+                          ContentTemplate="{DataTemplate views:LessonView}"
+                          Route="LessonView"
+                          Shell.TabBarIsVisible="False"
+                          Shell.NavBarIsVisible="False"
+                          Shell.FlyoutBehavior="Disabled" />
+        </Tab>
+
+        <Tab Title="Klassement" Icon="dotnet_bot.png">
+            <ShellContent Title="Klassement"
+                         ContentTemplate="{DataTemplate views:LeaderboardView}"
+                         Route="LeaderboardView"
+                         Shell.TabBarIsVisible="False"
+                         Shell.NavBarIsVisible="False"
+                         Shell.FlyoutBehavior="Disabled" />
+        </Tab>
+
+        <Tab Title="Profiel" Icon="dotnet_bot.png">
+            <ShellContent Title="Profiel"
+                         ContentTemplate="{DataTemplate views:ProfileView}"
+                         Route="ProfileView" />
         </Tab>
     </TabBar>
 </Shell>

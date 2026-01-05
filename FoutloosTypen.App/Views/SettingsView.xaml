@@ -2,25 +2,13 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="FoutloosTypen.Views.SettingsView"
-             Title="Instellingen">
-    <Grid RowDefinitions="Auto,*,Auto" Padding="12">
-        <Image 
-            Grid.Row="0"
-            Source="boltype.png"
-            HeightRequest="140"
-            WidthRequest="140"
-            HorizontalOptions="Start"
-            VerticalOptions="Start" 
-            Margin="0,0,0,10" />
-        <ImageButton Grid.Column="1"
-             Source="home.png"
-             HeightRequest="40"
-             WidthRequest="40"
-             HorizontalOptions="End"
-             VerticalOptions="Start"
-             Clicked="OnHomeClicked"/>
+             Title="Instellingen"
+             BackgroundColor="White"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="*" Padding="12">
+        <!-- TopBar removed - only content area -->
         <VerticalStackLayout
-                Grid.Row="1"
+                Grid.Row="0"
                 Spacing="24"
                 VerticalOptions="Center"
                 HorizontalOptions="Center">
@@ -33,11 +21,22 @@
             <HorizontalStackLayout Spacing="12" HorizontalOptions="Center">
                 <Label Text="Text-to-Speech Mode" 
                        VerticalOptions="Center"
+                       TextColor="Black"
                        FontSize="16"/>
                 <Switch IsToggled="{Binding UseTtsMode}"
                         OnColor="#ffcb05"
                         ThumbColor="LightYellow"/>
             </HorizontalStackLayout>
+            
+            <!-- Back button -->
+            <Button Text="← Terug"
+                    FontSize="16"
+                    Clicked="OnHomeClicked"
+                    BackgroundColor="LightGray"
+                    TextColor="Black"
+                    Margin="0,40,0,0"
+                    Padding="20,10"
+                    HorizontalOptions="Center"/>
         </VerticalStackLayout>
     </Grid>
 </ContentPage>

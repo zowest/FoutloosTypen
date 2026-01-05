@@ -1,7 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.Input;
 using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Models;
-using FoutloosTypen.Core.Services;
 using FoutloosTypen.Views;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -27,6 +26,29 @@ namespace FoutloosTypen.ViewModels
         private int _currentAssignmentIndex = 0;
         private string _previousUserInput = string.Empty;
 
+        // Optimalisatie: cache vorige display state waarden
+        private string _lastCorrectText = string.Empty;
+        private string _lastErrorText = string.Empty;
+        private string _lastCursorChar = string.Empty;
+        private string _lastRemainingText = string.Empty;
+        private int _lastWordCount = 0;
+
+        #region Bindable Properties
+
+        private string _userInput = string.Empty;
+        public string UserInput
+        {
+            get => _userInput;
+            set
+            {
+                if (_userInput != value)
+                {
+                    _userInput = value;
+                    OnPropertyChanged(nameof(UserInput));
+                }
+            }
+        }
+
         private int _lessonId;
         public int LessonId
         {
@@ -37,7 +59,9 @@ namespace FoutloosTypen.ViewModels
                 OnPropertyChanged(nameof(LessonId));
             }
         }
+
         public ITtsService Tts => _ttsService;
+
         private PracticeMaterial _currentMaterial;
         public PracticeMaterial CurrentMaterial
         {
@@ -48,8 +72,7 @@ namespace FoutloosTypen.ViewModels
                 OnPropertyChanged(nameof(CurrentMaterial));
                 UpdateTotalCharactersCount();
                 ResetTyping();
-                UpdateFormattedText();
-                _ = SpeakCurrentMaterialAsync(); // Speak the sentence when it loads
+                _ = SpeakCurrentMaterialAsync(); // TTS: Speak the sentence when it loads
             }
         }
 
@@ -78,26 +101,17 @@ namespace FoutloosTypen.ViewModels
             }
         }
 
-        private string _userInput = string.Empty;
-        public string UserInput
-        {
-            get => _userInput;
-            set
-            {
-                _userInput = value;
-                OnPropertyChanged(nameof(UserInput));
-                UpdateTypedCharactersCount();
-            }
-        }
-
-        private FormattedString _formattedText;
+        private FormattedString _formattedText = new();
         public FormattedString FormattedText
         {
             get => _formattedText;
             set
             {
-                _formattedText = value;
-                OnPropertyChanged(nameof(FormattedText));
+                if (_formattedText != value)
+                {
+                    _formattedText = value;
+                    OnPropertyChanged(nameof(FormattedText));
+                }
             }
         }
 
@@ -132,10 +146,13 @@ namespace FoutloosTypen.ViewModels
             get => _totalCharactersCount;
             set
             {
-                _totalCharactersCount = value;
-                OnPropertyChanged(nameof(TotalCharactersCount));
-                OnPropertyChanged(nameof(Progress));
-                OnPropertyChanged(nameof(ProgressText));
+                if (_totalCharactersCount != value)
+                {
+                    _totalCharactersCount = value;
+                    OnPropertyChanged(nameof(TotalCharactersCount));
+                    OnPropertyChanged(nameof(Progress));
+                    OnPropertyChanged(nameof(ProgressText));
+                }
             }
         }
 
@@ -154,6 +171,8 @@ namespace FoutloosTypen.ViewModels
             get => $"{Math.Round(Progress * 100)}% - {AssignmentProgress}";
         }
 
+        #endregion
+
         public TTSAssignmentViewModel(
             ILessonService lessonService,
             IAssignmentService assignmentService,
@@ -170,6 +189,8 @@ namespace FoutloosTypen.ViewModels
             _ttsService = ttsService;
             FormattedText = new FormattedString();
         }
+
+        #region TTS Methods
 
         private async Task SpeakCurrentMaterialAsync()
         {
@@ -195,6 +216,11 @@ namespace FoutloosTypen.ViewModels
                 Debug.WriteLine($"TTS Error: {ex.Message}");
             }
         }
+
+        #endregion
+
+        #region Lifecycle
+
         public async Task OnAppearingAsync()
         {
             // Get all lessons with TotalTime calculated
@@ -229,6 +255,202 @@ namespace FoutloosTypen.ViewModels
                 SelectedLesson = Lessons.First();
             }
         }
+
+        public override void OnDisappearing()
+        {
+            base.OnDisappearing();
+            _ttsService.Cancel(); // TTS: Stop speech when leaving
+
+            if (SelectedLesson != null)
+            {
+                _ResultService.EndLesson(SelectedLesson.Id);
+                var progress = _ResultService.GetProgress(SelectedLesson.Id);
+                Debug.WriteLine($"Lesson ended. Total mistakes: {progress?.TotalMistakes}, Time: {progress?.TimeSpent:F2}s");
+            }
+        }
+
+        #endregion
+
+        #region Typing Logic
+
+        public void UpdateTypedText(string typedText)
+        {
+            if (CurrentMaterial == null || string.IsNullOrEmpty(CurrentMaterial.Sentence))
+                return;
+
+            string targetText = CurrentMaterial.Sentence;
+
+            // Delegate mistake detection to BL
+            if (_typingComparisonService.IsCharacterIncorrect(targetText, _previousUserInput, typedText))
+            {
+                if (SelectedLesson != null)
+                {
+                    _ResultService.RecordMistake(SelectedLesson.Id);
+                    Debug.WriteLine($"Mistake recorded! Total: {_ResultService.GetProgress(SelectedLesson.Id)?.TotalMistakes}");
+                }
+            }
+
+            _previousUserInput = typedText;
+
+            // Bereken display state
+            var displayState = _typingComparisonService.CalculateDisplayState(targetText, typedText);
+
+            // Pas alleen gewijzigde waarden toe - now passing typed text for error display
+            ApplyDisplayStateOptimized(displayState, typedText, targetText);
+
+            // Update progress alleen na woorden (spatie of einde)
+            UpdateProgressOnWordBoundary(typedText, displayState.CorrectCharacterCount);
+
+            // Update result service
+            if (SelectedLesson != null)
+                _ResultService.UpdateCurrentProgress(SelectedLesson.Id, typedText.Length, typedText);
+
+            // Check completion
+            if (displayState.IsComplete)
+            {
+                if (SelectedLesson != null)
+                {
+                    _ResultService.CompleteSentence(SelectedLesson.Id, typedText);
+                    var progress = _ResultService.GetProgress(SelectedLesson.Id);
+                    Debug.WriteLine($"Sentence completed! Total mistakes: {progress?.TotalMistakes}, Sentences: {progress?.SentencesCompleted}");
+                }
+
+                // Move to next sentence or assignment
+                MoveToNextMaterial();
+            }
+        }
+
+        private void ApplyDisplayStateOptimized(TypingDisplayState state, string typedText, string targetText)
+        {
+            // Calculate what user actually typed incorrectly
+            int correctCount = state.CorrectCharacterCount;
+            string actualErrorText = string.Empty;
+
+            // Get the incorrect characters the USER typed (not the expected ones)
+            if (typedText.Length > correctCount && correctCount < targetText.Length)
+            {
+                int errorEnd = Math.Min(typedText.Length, targetText.Length);
+                actualErrorText = typedText.Substring(correctCount, errorEnd - correctCount);
+            }
+
+            // Check of er iets veranderd is
+            if (_lastCorrectText == state.CorrectText &&
+                _lastErrorText == actualErrorText &&
+                _lastCursorChar == state.CursorChar &&
+                _lastRemainingText == state.RemainingText)
+            {
+                return; // Niets gewijzigd, skip UI update
+            }
+
+            _lastCorrectText = state.CorrectText;
+            _lastErrorText = actualErrorText;
+            _lastCursorChar = state.CursorChar;
+            _lastRemainingText = state.RemainingText;
+
+            // Bouw FormattedString voor UI
+            var formatted = new FormattedString();
+
+            // Correct getypte tekst (zwart)
+            if (!string.IsNullOrEmpty(state.CorrectText))
+            {
+                formatted.Spans.Add(new Span
+                {
+                    Text = state.CorrectText,
+                    TextColor = Colors.Black,
+                    FontSize = 32
+                });
+            }
+
+            // Fouten - SHOW WHAT USER TYPED (not expected characters)
+            if (!string.IsNullOrEmpty(actualErrorText))
+            {
+                formatted.Spans.Add(new Span
+                {
+                    Text = actualErrorText,
+                    TextColor = Colors.White,
+                    BackgroundColor = Colors.Red,
+                    FontSize = 32
+                });
+            }
+
+            // Cursor karakter (onderstreept)
+            if (!string.IsNullOrEmpty(state.CursorChar))
+            {
+                formatted.Spans.Add(new Span
+                {
+                    Text = state.CursorChar,
+                    TextColor = Colors.Transparent,
+                    BackgroundColor = Colors.LightGray,
+                    FontSize = 32
+                });
+            }
+
+            // Rest van de tekst (doorzichtig)
+            if (!string.IsNullOrEmpty(state.RemainingText))
+            {
+                formatted.Spans.Add(new Span
+                {
+                    Text = state.RemainingText,
+                    TextColor = Colors.Transparent,
+                    FontSize = 32
+                });
+            }
+
+            FormattedText = formatted;
+        }
+
+        private void UpdateProgressOnWordBoundary(string typedText, int correctChars)
+        {
+            _typedCharactersCount = correctChars;
+
+            int currentWordCount = 0;
+            for (int i = 0; i < typedText.Length; i++)
+            {
+                if (typedText[i] == ' ')
+                    currentWordCount++;
+            }
+
+            // Update UI alleen bij nieuw woord of bij voltooiing
+            bool isComplete = correctChars == TotalCharactersCount;
+            if (currentWordCount != _lastWordCount || isComplete)
+            {
+                _lastWordCount = currentWordCount;
+                OnPropertyChanged(nameof(Progress));
+                OnPropertyChanged(nameof(ProgressText));
+            }
+        }
+
+        private void ResetTyping()
+        {
+            _previousUserInput = string.Empty;
+            _typedCharactersCount = 0;
+            _lastWordCount = 0;
+            _lastCorrectText = string.Empty;
+            _lastErrorText = string.Empty;
+            _lastCursorChar = string.Empty;
+            _lastRemainingText = string.Empty;
+            UserInput = string.Empty;
+
+            if (CurrentMaterial?.Sentence != null)
+            {
+                var displayState = _typingComparisonService.CalculateDisplayState(CurrentMaterial.Sentence, string.Empty);
+
+                // Reset cache zodat ApplyDisplayStateOptimized alles opnieuw bouwt
+                _lastCorrectText = "FORCE_RESET";
+                ApplyDisplayStateOptimized(displayState, string.Empty, CurrentMaterial.Sentence);
+            }
+            else
+            {
+                FormattedText = new FormattedString();
+            }
+
+            OnPropertyChanged(nameof(Progress));
+            OnPropertyChanged(nameof(ProgressText));
+        }
+
+        #endregion
+
+        #region Navigation
 
         private void FilterAssignmentsByLesson()
         {
@@ -280,6 +502,26 @@ namespace FoutloosTypen.ViewModels
                 CurrentMaterial = new PracticeMaterial { Sentence = "Geen zinnen gevonden." };
         }
 
+        private void MoveToNextMaterial()
+        {
+            if (_materials == null || !_materials.Any())
+                return;
+
+            _materialIndex++;
+
+            if (_materialIndex < _materials.Count)
+            {
+                CurrentMaterial = _materials[_materialIndex];
+                Debug.WriteLine($"Moved to next material: {_materialIndex + 1}/{_materials.Count}");
+            }
+            else
+            {
+                // All materials in current assignment completed, move to next assignment
+                Debug.WriteLine("All materials completed in this assignment");
+                MoveToNextAssignment();
+            }
+        }
+
         private void MoveToNextAssignment()
         {
             _currentAssignmentIndex++;
@@ -302,6 +544,99 @@ namespace FoutloosTypen.ViewModels
             // Move to next assignment
             SelectedAssignment = Assignments[_currentAssignmentIndex];
             Debug.WriteLine($"Moved to assignment {_currentAssignmentIndex + 1}/{Assignments.Count}");
+        }
+
+        private Lesson? GetNextLesson()
+        {
+            if (SelectedLesson == null)
+                return null;
+
+            // Vind lessen in dezelfde cursus, gesorteerd op ID
+            var lessonsInCourse = Lessons
+                .Where(l => l.CourseId == SelectedLesson.CourseId)
+                .OrderBy(l => l.Id)
+                .ToList();
+
+            // Vind de index van de huidige les
+            var currentIndex = lessonsInCourse.FindIndex(l => l.Id == SelectedLesson.Id);
+
+            // Return de volgende les als die bestaat
+            if (currentIndex >= 0 && currentIndex < lessonsInCourse.Count - 1)
+            {
+                return lessonsInCourse[currentIndex + 1];
+            }
+
+            return null;
+        }
+
+        private async Task NavigateToNextLessonAsync()
+        {
+            var nextLesson = GetNextLesson();
+            if (nextLesson != null)
+            {
+                // Navigeer naar de volgende les in TTS mode
+                await Shell.Current.GoToAsync($"..?lessonId={nextLesson.Id}");
+            }
+            else
+            {
+                // Geen volgende les, ga terug naar home
+                await Shell.Current.Navigation.PopToRootAsync();
+            }
+        }
+
+        #endregion
+
+        #region Results
+
+        private async void ShowLessonResults()
+        {
+            // Toon custom popup
+            if (Application.Current?.MainPage != null && SelectedLesson != null)
+            {
+                var progress = _ResultService.GetProgress(SelectedLesson.Id);
+                if (progress == null)
+                    return;
+
+                // Convert LessonProgress to Result
+                var result = ConvertLessonProgressToResult(progress);
+
+                var popup = new ResultatenPopUp(result);
+                await Application.Current.MainPage.Navigation.PushModalAsync(popup);
+
+                var popupResult = await popup.WaitForUserResponseAsync();
+
+                switch (popupResult)
+                {
+                    case ResultatenPopUp.PopupResult.Home:
+                        await Shell.Current.Navigation.PopToRootAsync();
+                        break;
+                    case ResultatenPopUp.PopupResult.Restart:
+                        RestartLesson();
+                        break;
+                    case ResultatenPopUp.PopupResult.NextLesson:
+                        await NavigateToNextLessonAsync();
+                        break;
+                }
+            }
+        }
+
+        private Result ConvertLessonProgressToResult(Core.Interfaces.Services.LessonProgress progress)
+        {
+            return new Result
+            {
+                LessonId = progress.LessonId,
+                TotalMistakes = progress.TotalMistakes,
+                SentencesCompleted = progress.SentencesCompleted,
+                TotalCharactersTyped = progress.CharactersTyped,
+                CompletedSentences = new List<string>(),
+                CurrentIncompleteText = progress.CurrentText,
+                StartTime = progress.StartTime,
+                EndTime = DateTime.Now,
+                ExpectedTime = 60,
+                TimerExpired = progress.TimerExpired,
+                StudentId = 0,
+                IsEndlessMode = false
+            };
         }
 
         /// <summary>
@@ -327,29 +662,6 @@ namespace FoutloosTypen.ViewModels
             Debug.WriteLine("Lesson restarted successfully");
         }
 
-        private async void ShowLessonResults()
-        {
-            // Toon custom popup
-            if (Application.Current?.MainPage != null && SelectedLesson != null)
-            {
-                var progress = _ResultService.GetProgress(SelectedLesson.Id);
-                var popup = new Views.ResultatenPopUp(progress);
-                var popupResult = await popup.WaitForUserResponseAsync();
-
-                // true = Ga verder, false = Herstart
-                if (popupResult == Views.ResultatenPopUp.PopupResult.NextLesson)
-                {
-                    // Gebruiker klikte op "Ga verder" - navigeer terug
-                    await Shell.Current.GoToAsync("..");
-                }
-                else
-                {
-                    // Gebruiker klikte op "Herstart" - herstart de les
-                    RestartLesson();
-                }
-            }
-        }
-
         private void UpdateTotalCharactersCount()
         {
             if (CurrentMaterial == null || string.IsNullOrWhiteSpace(CurrentMaterial.Sentence))
@@ -361,164 +673,9 @@ namespace FoutloosTypen.ViewModels
             TotalCharactersCount = CurrentMaterial.Sentence.Length;
         }
 
-        private void UpdateTypedCharactersCount()
-        {
-            if (string.IsNullOrEmpty(UserInput) || CurrentMaterial == null)
-            {
-                TypedCharactersCount = 0;
-                return;
-            }
+        #endregion
 
-            string targetText = CurrentMaterial.Sentence ?? string.Empty;
-            int correctChars = 0;
-
-            for (int i = 0; i < UserInput.Length && i < targetText.Length; i++)
-            {
-                if (UserInput[i] == targetText[i])
-                {
-                    correctChars++;
-                }
-            }
-
-            TypedCharactersCount = correctChars;
-        }
-
-        public void UpdateTypedText(string typedText)
-        {
-            if (CurrentMaterial == null || string.IsNullOrEmpty(CurrentMaterial.Sentence))
-                return;
-
-            // Check if user made a mistake with the newly typed character
-            if (_typingComparisonService.IsCharacterIncorrect(
-                CurrentMaterial.Sentence,
-                _previousUserInput,
-                typedText))
-            {
-                if (SelectedLesson != null)
-                {
-                    _ResultService.RecordMistake(SelectedLesson.Id);
-                    Debug.WriteLine($"Mistake recorded! Total: {_ResultService.GetProgress(SelectedLesson.Id)?.TotalMistakes}");
-                }
-            }
-
-            _previousUserInput = typedText;
-            UserInput = typedText;
-            UpdateFormattedText();
-
-            // Update current progress (including incomplete sentences)
-            if (SelectedLesson != null)
-            {
-                _ResultService.UpdateCurrentProgress(SelectedLesson.Id, typedText.Length, typedText);
-            }
-
-            // Check if sentence is complete and correct
-            if (typedText == CurrentMaterial.Sentence)
-            {
-                if (SelectedLesson != null)
-                {
-                    _ResultService.CompleteSentence(SelectedLesson.Id, typedText);
-                    var progress = _ResultService.GetProgress(SelectedLesson.Id);
-                    Debug.WriteLine($"Sentence completed! Total mistakes: {progress?.TotalMistakes}, Sentences: {progress?.SentencesCompleted}");
-                }
-
-                // Move to next sentence or assignment
-                MoveToNextMaterial();
-            }
-        }
-
-        private void MoveToNextMaterial()
-        {
-            if (_materials == null || !_materials.Any())
-                return;
-
-            _materialIndex++;
-
-            if (_materialIndex < _materials.Count)
-            {
-                CurrentMaterial = _materials[_materialIndex];
-                Debug.WriteLine($"Moved to next material: {_materialIndex + 1}/{_materials.Count}");
-            }
-            else
-            {
-                // All materials in current assignment completed, move to next assignment
-                Debug.WriteLine("All materials completed in this assignment");
-                MoveToNextAssignment();
-            }
-        }
-
-        private void UpdateFormattedText()
-        {
-            var formatted = new FormattedString();
-            string targetText = CurrentMaterial?.Sentence ?? string.Empty;
-            string typedText = UserInput ?? string.Empty;
-
-            Debug.WriteLine($"UpdateFormattedText called - Target: '{targetText}', Typed: '{typedText}'");
-
-            for (int i = 0; i < targetText.Length; i++)
-            {
-                var span = new Span
-                {
-                    FontSize = 32,
-                };
-
-                if (i < typedText.Length)
-                {
-                    if (typedText[i] == targetText[i])
-                    {
-                        // Correct character - show the target character in black
-                        span.Text = targetText[i].ToString();
-                        span.TextColor = Colors.Black;
-                        span.BackgroundColor = Colors.Transparent;
-                    }
-                    else
-                    {
-                        // Incorrect character - show what the USER TYPED in white with red background
-                        span.Text = typedText[i].ToString();
-                        span.TextColor = Colors.White;
-                        span.BackgroundColor = Colors.Red;
-                    }
-                }
-                else if (i == typedText.Length)
-                {
-                    // Current character cursor position - show expected character
-                    span.Text = targetText[i].ToString();
-                    span.TextColor = Colors.Transparent;
-                    span.BackgroundColor = Colors.LightGray;
-                }
-                else
-                {
-                    // Not yet typed - show expected character in light gray
-                    span.Text = targetText[i].ToString();
-                    span.TextColor = Colors.Transparent;
-                    span.BackgroundColor = Colors.Transparent;
-                }
-
-                formatted.Spans.Add(span);
-            }
-
-            FormattedText = formatted;
-            Debug.WriteLine($"FormattedText updated with {formatted.Spans.Count} spans");
-        }
-
-        private void ResetTyping()
-        {
-            UserInput = string.Empty;
-            _previousUserInput = string.Empty;
-
-            TypedCharactersCount = 0;
-        }
-
-        public override void OnDisappearing()
-        {
-            base.OnDisappearing();
-            _ttsService.Cancel();
-            if (SelectedLesson != null)
-            {
-                _ResultService.EndLesson(SelectedLesson.Id);
-                var progress = _ResultService.GetProgress(SelectedLesson.Id);
-                Debug.WriteLine($"Lesson ended. Total mistakes: {progress?.TotalMistakes}, Time: {progress?.TimeSpent:F2}s");
-            }
-        }
+        #region Commands
 
         [RelayCommand]
         private void SelectLesson(Lesson lesson)
@@ -544,10 +701,13 @@ namespace FoutloosTypen.ViewModels
             _ttsService.Cancel();
             await SpeakCurrentMaterialAsync();
         }
+
         [RelayCommand]
         private async Task StopSpeech()
         {
             _ttsService.Cancel();
         }
+
+        #endregion
     }
 }

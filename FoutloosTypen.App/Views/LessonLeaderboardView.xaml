@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="FoutloosTypen.Views.LessonLeaderboardView"
+             Title="Les Klassement"
+             BackgroundColor="White">
+    <Grid Padding="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Image Grid.Column="0"
+                   Source="boltype.png"
+                   HeightRequest="120"
+                   WidthRequest="120"
+                   HorizontalOptions="Start"/>
+
+            <ImageButton Grid.Column="1"
+                         Source="home.png"
+                         HeightRequest="40"
+                         WidthRequest="40"
+                         Command="{Binding NavigateHomeCommand}"/>
+        </Grid>
+
+        <!-- Title -->
+        <VerticalStackLayout Grid.Row="1" Margin="0,20">
+            <Label Text="Les Klassement"
+                   TextColor="Black"
+                   FontSize="48"
+                   FontAttributes="Bold"/>
+            <Label Text="{Binding LessonName}"
+                   TextColor="#FF6200EE"
+                   FontSize="24"/>
+        </VerticalStackLayout>
+
+        <!-- Leaderboard -->
+        <ScrollView Grid.Row="2">
+            <VerticalStackLayout Spacing="10">
+                <!-- Header Row -->
+                <Grid Padding="10" BackgroundColor="#F0F0F0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="60"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="80"/>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="80"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Label Grid.Column="0" Text="Rang" FontAttributes="Bold" TextColor="Black"/>
+                    <Label Grid.Column="1" Text="Naam" FontAttributes="Bold" TextColor="Black"/>
+                    <Label Grid.Column="2" Text="WPM" FontAttributes="Bold" TextColor="Black" HorizontalOptions="End"/>
+                    <Label Grid.Column="3" Text="Nauwkeurigheid" FontAttributes="Bold" TextColor="Black" HorizontalOptions="End"/>
+                    <Label Grid.Column="4" Text="Score" FontAttributes="Bold" TextColor="Black" HorizontalOptions="End"/>
+                </Grid>
+
+                <!-- Leaderboard Items -->
+                <CollectionView ItemsSource="{Binding TopResults}">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Padding="10" Margin="0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="80"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Grid.Triggers>
+                                    <DataTrigger TargetType="Grid" Binding="{Binding IsCurrentUser}" Value="True">
+                                        <Setter Property="BackgroundColor" Value="#E3F2FD"/>
+                                    </DataTrigger>
+                                </Grid.Triggers>
+
+                                <Label Grid.Column="0" 
+                                       Text="{Binding Rank, StringFormat='#{0}'}" 
+                                       TextColor="Black" 
+                                       FontSize="18" 
+                                       FontAttributes="Bold"/>
+                                <Label Grid.Column="1" Text="{Binding StudentName}" TextColor="Black" FontSize="18"/>
+                                <Label Grid.Column="2" Text="{Binding Speed}" TextColor="Black" FontSize="18" HorizontalOptions="End"/>
+                                <Label Grid.Column="3" Text="{Binding Accuracy, StringFormat='{0:F1}%'}" TextColor="Black" FontSize="18" HorizontalOptions="End"/>
+                                <Label Grid.Column="4" Text="{Binding Score}" TextColor="Black" FontSize="18" FontAttributes="Bold" HorizontalOptions="End"/>
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Current Student Rank -->
+        <Border Grid.Row="3"
+                Stroke="#FF6200EE"
+                StrokeThickness="2"
+                BackgroundColor="#F8F8FF"
+                Padding="15"
+                Margin="0,20,0,10">
+            <HorizontalStackLayout Spacing="10">
+                <Label Text="Jouw beste score - Rang:"
+                       TextColor="Black"
+                       FontSize="18"
+                       FontAttributes="Bold"/>
+                <Label Text="{Binding CurrentStudentRank, StringFormat='#{0}'}"
+                       TextColor="#FF6200EE"
+                       FontSize="24"
+                       FontAttributes="Bold"/>
+            </HorizontalStackLayout>
+        </Border>
+
+        <!-- Action Buttons -->
+        <HorizontalStackLayout Grid.Row="4" 
+                               Spacing="20" 
+                               HorizontalOptions="Center">
+            <Button Text="Terug naar Lessen"
+                    Command="{Binding NavigateHomeCommand}"
+                    BackgroundColor="#FF6200EE"
+                    TextColor="White"
+                    Padding="20,10"/>
+            <Button Text="Algemeen Klassement"
+                    Command="{Binding ViewGeneralLeaderboardCommand}"
+                    BackgroundColor="#4CAF50"
+                    TextColor="White"
+                    Padding="20,10"/>
+        </HorizontalStackLayout>
+    </Grid>
+</ContentPage>

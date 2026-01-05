@@ -4,76 +4,14 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="FoutloosTypen.Views.TTSAssignmentView"
     Title="TTS Opdracht"
-    BackgroundColor="White">
+    BackgroundColor="White"
+    Shell.NavBarIsVisible="False">
     <ContentPage.Content>
-        <Grid RowDefinitions="Auto,*,Auto" Padding="12">
-            <Grid Grid.Row="0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-
-                <HorizontalStackLayout
-                    Grid.Column="0"
-                    Spacing="24"
-                    VerticalOptions="Center"
-                    HorizontalOptions="StartAndExpand">
-                    <Image 
-    Source="boltype.png"
-    HeightRequest="140"
-    WidthRequest="140"
-    HorizontalOptions="Center"
-    VerticalOptions="End" 
-    Margin="0,0,0,10" />
-                </HorizontalStackLayout>
-
-                <HorizontalStackLayout 
-                    Grid.Column="1" 
-                    Spacing="12"
-                    VerticalOptions="Center" 
-                    HorizontalOptions="End" 
-                    Margin="0,0,16,0"
-                    BackgroundColor="Transparent">
-
-                    <ImageButton Source="person.png"
-                                 Command="{Binding ProfileCommand}"
-                                 BackgroundColor="Transparent"
-                                 BorderColor="Transparent"
-                                 BorderWidth="0"
-                                 CornerRadius="0"
-                                 Padding="0"
-                                 WidthRequest="48"
-                                 HeightRequest="48"
-                                 Aspect="AspectFit" >
-                        <ImageButton.GestureRecognizers>
-                            <PointerGestureRecognizer
-                                PointerEntered="OnHoverEnter"
-                                PointerExited="OnHoverExit"/>
-                        </ImageButton.GestureRecognizers>
-                    </ImageButton>
-                    <ImageButton Source="home.png"
-                                 Clicked="OnHomeClicked"
-                                 BackgroundColor="Transparent"
-                                 BorderColor="Transparent"
-                                 BorderWidth="0"
-                                 CornerRadius="0"
-                                 Padding="0"
-                                 WidthRequest="48"
-                                 HeightRequest="48"
-                                 Aspect="AspectFit" >
-                        <ImageButton.GestureRecognizers>
-                            <PointerGestureRecognizer
-                                PointerEntered="OnHoverEnter"
-                                PointerExited="OnHoverExit"/>
-                        </ImageButton.GestureRecognizers>
-                    </ImageButton>
-                </HorizontalStackLayout>
-            </Grid>
-
-
+        <Grid RowDefinitions="*,Auto" Padding="12">
+            <!-- REMOVED Grid.Row="0" - TopBar section completely removed -->
 
             <VerticalStackLayout 
-                Grid.Row="1" 
+                Grid.Row="0" 
                 Spacing="12" 
                 HorizontalOptions="FillAndExpand" 
                 VerticalOptions="CenterAndExpand">
@@ -156,7 +94,7 @@
                 </VerticalStackLayout>
             </VerticalStackLayout>
 
-            <HorizontalStackLayout Grid.Row="2" HorizontalOptions="Center" Spacing="30">
+            <HorizontalStackLayout Grid.Row="1" HorizontalOptions="Center" Spacing="30">
             </HorizontalStackLayout>
         </Grid>
     </ContentPage.Content>

@@ -2,9 +2,9 @@ using System;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using FoutloosTypen.Core.Models;
 using FoutloosTypen.Core.Interfaces.Repositories;
 using FoutloosTypen.Core.Interfaces.Services;
+using FoutloosTypen.Core.Models;
 using Microsoft.Maui.ApplicationModel;
 using SkiaSharp;
 
@@ -14,12 +14,14 @@ namespace FoutloosTypen.ViewModels
     {
         private readonly IMediaUploadRepository _mediaUploadRepository;
         private readonly IXAuthRepository _xAuthRepository;
+        private readonly IXAuthService _xAuthService;
         private readonly IShareImageRepository _shareImageRepository;
         private readonly XAuthSettings _xSettings;
 
         private readonly string _lessonName;
         private readonly string _progressText;
         private readonly int _lessonId;
+        private readonly int _ownerUserId;
         private readonly SKBitmap _bitmap;
         private readonly string _tweetText;
 
@@ -29,27 +31,33 @@ namespace FoutloosTypen.ViewModels
         [ObservableProperty]
         private string _statusMessage = string.Empty;
 
+        public bool ShareSuccessful { get; private set; }
+
         public string TweetText => _tweetText;
         public byte[] ImageBytes { get; }
 
         public SharePreviewViewModel(
             IMediaUploadRepository mediaUploadRepository,
             IXAuthRepository xAuthRepository,
+            IXAuthService xAuthService,
             IShareImageRepository shareImageRepository,
             XAuthSettings xSettings,
             string lessonName,
             string progressText,
             int lessonId,
+            int ownerUserId,
             SKBitmap bitmap,
             string tweetText)
         {
             _mediaUploadRepository = mediaUploadRepository;
             _xAuthRepository = xAuthRepository;
+            _xAuthService = xAuthService;
             _shareImageRepository = shareImageRepository;
             _xSettings = xSettings;
             _lessonName = lessonName;
             _progressText = progressText;
             _lessonId = lessonId;
+            _ownerUserId = ownerUserId;
             _bitmap = bitmap;
             _tweetText = tweetText;
 
@@ -64,38 +72,49 @@ namespace FoutloosTypen.ViewModels
             try
             {
                 IsSharing = true;
+                ShareSuccessful = false;
 
-                if (!ValidateOAuth1Credentials())
+                // Get per-user OAuth1 tokens
+                var tokens = await _xAuthService.GetUserAccessTokensAsync(_ownerUserId);
+                if (tokens == null)
                 {
-                    await ShowErrorAsync("Configuratiefout", "OAuth1 credentials ontbreken.");
+                    await ShowErrorAsync("Geen tokens", "OAuth1 tokens ontbreken voor deze gebruiker. Start eerst de OAuth1 flow.");
+                    IsSharing = false;
+                    return;
+                }
+
+                if (!ValidateOAuth1Credentials(tokens.Value.AccessToken, tokens.Value.AccessSecret))
+                {
+                    await ShowErrorAsync("Configuratiefout", "OAuth1 credentials zijn ongeldig.");
                     IsSharing = false;
                     return;
                 }
 
                 var imagePath = await SaveImageAsync();
                 
-                var mediaId = await UploadMediaAsync(imagePath);
-                await PostTweetAsync(mediaId);
+                var mediaId = await UploadMediaAsync(imagePath, tokens.Value.AccessToken, tokens.Value.AccessSecret);
+                await PostTweetAsync(mediaId, tokens.Value.AccessToken, tokens.Value.AccessSecret);
 
+                ShareSuccessful = true;
                 await ShowSuccessAsync();
-                await OpenXProfileAsync();
 
                 IsSharing = false;
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Fout: {ex.Message}";
+                ShareSuccessful = false;
                 IsSharing = false;
                 await ShowErrorAsync("Delen mislukt", $"Er is een fout opgetreden: {ex.Message}");
             }
         }
 
-        private bool ValidateOAuth1Credentials()
+        private bool ValidateOAuth1Credentials(string accessToken, string accessSecret)
         {
             return !string.IsNullOrEmpty(_xSettings.ConsumerKey) &&
                    !string.IsNullOrEmpty(_xSettings.ConsumerSecret) &&
-                   !string.IsNullOrEmpty(_xSettings.OAuthToken) &&
-                   !string.IsNullOrEmpty(_xSettings.OAuthTokenSecret);
+                   !string.IsNullOrEmpty(accessToken) &&
+                   !string.IsNullOrEmpty(accessSecret);
         }
 
         private async Task<string> SaveImageAsync()
@@ -104,7 +123,7 @@ namespace FoutloosTypen.ViewModels
             return await _shareImageRepository.SaveImageToCacheAsync(_bitmap);
         }
 
-        private async Task<string> UploadMediaAsync(string imagePath)
+        private async Task<string> UploadMediaAsync(string imagePath, string accessToken, string accessSecret)
         {
             StatusMessage = "Afbeelding uploaden naar X...";
             return await _mediaUploadRepository.UploadMediaAsync(
@@ -112,11 +131,11 @@ namespace FoutloosTypen.ViewModels
                 "image/png",
                 _xSettings.ConsumerKey,
                 _xSettings.ConsumerSecret,
-                _xSettings.OAuthToken,
-                _xSettings.OAuthTokenSecret);
+                accessToken,
+                accessSecret);
         }
 
-        private async Task PostTweetAsync(string mediaId)
+        private async Task PostTweetAsync(string mediaId, string accessToken, string accessSecret)
         {
             StatusMessage = "Tweet posten...";
             await _mediaUploadRepository.PostTweetAsync(
@@ -124,8 +143,8 @@ namespace FoutloosTypen.ViewModels
                 mediaId,
                 _xSettings.ConsumerKey,
                 _xSettings.ConsumerSecret,
-                _xSettings.OAuthToken,
-                _xSettings.OAuthTokenSecret);
+                accessToken,
+                accessSecret);
             StatusMessage = "Gelukt!";
         }
 
@@ -137,7 +156,7 @@ namespace FoutloosTypen.ViewModels
                 {
                     await Application.Current.MainPage.DisplayAlert(
                         "Gelukt!",
-                        "Je bericht is succesvol gedeeld op X! Je wordt doorgestuurd naar de hoofdpagina.",
+                        "Je bericht is succesvol gedeeld op X! Je browser opent nu je X-profiel.",
                         "OK");
                 }
             });
@@ -152,23 +171,6 @@ namespace FoutloosTypen.ViewModels
                     await Application.Current.MainPage.DisplayAlert(title, message, "OK");
                 }
             });
-        }
-
-        private async Task OpenXProfileAsync()
-        {
-            try
-            {
-                var handle = await _xAuthRepository.GetAuthenticatedHandleAsync();
-                var profileUrl = !string.IsNullOrEmpty(handle)
-                    ? $"https://x.com/{handle}"
-                    : "https://x.com/home";
-
-                await Launcher.OpenAsync(new Uri(profileUrl));
-            }
-            catch
-            {
-                // Silent fail - not critical
-            }
         }
     }
 }

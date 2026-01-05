@@ -111,7 +111,5 @@ public partial class TTSAssignmentView : ContentPage
     private void OnEntryUnfocused(object sender, FocusEventArgs e)
     {
         Debug.WriteLine("Entry unfocused");
-        // Optionally refocus automatically
-        // HiddenEntry?.Focus();
     }
 }
