@@ -16,8 +16,9 @@ namespace FoutloosTypen.Core.Models
         public double AvgPrecision { get; set; }
         public int CompletedLessons { get; set; }
         public int TotalScore { get; set; }
+        public bool UseTtsMode { get; set; }
 
-        public Student(int id, string username, string name, string password, int level, double avgSpeed, double avgPrecision, int completedLessons = 0, int totalScore = 0)
+        public Student(int id, string username, string name, string password, int level, double avgSpeed, double avgPrecision, int completedLessons = 0, int totalScore = 0, bool useTtsMode = false)
             : base(id)
         {
             Username = username;
@@ -28,6 +29,7 @@ namespace FoutloosTypen.Core.Models
             AvgPrecision = avgPrecision;
             CompletedLessons = completedLessons;
             TotalScore = totalScore;
+            UseTtsMode = useTtsMode;
         }
     }
 }

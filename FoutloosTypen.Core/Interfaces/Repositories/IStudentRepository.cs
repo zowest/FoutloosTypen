@@ -9,5 +9,6 @@ namespace FoutloosTypen.Core.Interfaces.Repositories
         List<Student> GetAll();
         void UpdateStatistics(int studentId, double avgSpeed, double avgPrecision);
         void UpdateProgress(int studentId, int completedLessons, int totalScore);
+        void UpdateTtsMode(int studentId, bool useTtsMode);
     }
 }

@@ -203,5 +203,30 @@ namespace FoutloosTypen.Core.Data.Repositories
             command.ExecuteNonQuery();
             CloseConnection();
         }
+
+        public void UpdateTtsMode(int studentId, bool useTtsMode)
+        {
+            OpenConnection();
+
+            using var command = Connection.CreateCommand();
+            command.CommandText = """
+                UPDATE students
+                SET UseTtsMode = @useTtsMode
+                WHERE id = @id
+            """;
+
+            var pId = command.CreateParameter();
+            pId.ParameterName = "@id";
+            pId.Value = studentId;
+            command.Parameters.Add(pId);
+
+            var pTtsMode = command.CreateParameter();
+            pTtsMode.ParameterName = "@useTtsMode";
+            pTtsMode.Value = useTtsMode ? 1 : 0;
+            command.Parameters.Add(pTtsMode);
+
+            command.ExecuteNonQuery();
+            CloseConnection();
+        }
     }
 }

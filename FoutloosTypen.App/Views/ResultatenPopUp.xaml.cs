@@ -1,7 +1,6 @@
 using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Models;
 using FoutloosTypen.ViewModels;
-using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Interfaces.Repositories;
 using Microsoft.Maui.Controls;
 using Microsoft.Extensions.DependencyInjection;
@@ -152,6 +151,11 @@ namespace FoutloosTypen.Views
         {
             _userResponseTcs.TrySetResult(PopupResult.NextLesson);
             await Navigation.PopModalAsync();
+        }
+
+        private async void OnSettingsClicked(object sender, EventArgs e)
+        {
+            await Shell.Current.GoToAsync("//Settings");
         }
 
         private void OnHoverEnter(object sender, PointerEventArgs e)

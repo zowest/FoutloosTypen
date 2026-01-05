@@ -13,5 +13,7 @@ namespace FoutloosTypen.Core.Interfaces.Repositories
         List<Result> GetTopByScore(int limit = 10);
 
         List<Result> GetAllAttemptsByStudentAndLesson(int studentId, int lessonId);
+
+        void SaveEndlessModeResult(int studentId, int score);
     }
 }

@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FoutloosTypen.Core.Interfaces.Services;
 using FoutloosTypen.Core.Models;
+using FoutloosTypen.Views;
 
 namespace FoutloosTypen.ViewModels
 {
@@ -214,6 +215,12 @@ namespace FoutloosTypen.ViewModels
         private async System.Threading.Tasks.Task NavigateHome()
         {
             await Microsoft.Maui.Controls.Shell.Current.GoToAsync("//LessonView");
+        }
+
+        [RelayCommand]
+        private async System.Threading.Tasks.Task NavigateSettings()
+        {
+            await Microsoft.Maui.Controls.Shell.Current.GoToAsync(nameof(SettingsView));
         }
     }
 }

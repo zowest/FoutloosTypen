@@ -94,7 +94,7 @@
             <!-- Description column with leaderboard above description -->
             <ScrollView Grid.Column="4">
                 <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Start" Spacing="20" Padding="20">
-                    <!-- trophy (image) + profile buttons aligned to the top-right - FIXED: Both 48x48 -->
+
                     <HorizontalStackLayout HorizontalOptions="End" Spacing="12" Margin="0,0,0,8">
                         <ImageButton Source="trophy_bw.png"
                                      Command="{Binding OpenLeaderboardCommand}"
@@ -104,8 +104,21 @@
                                      WidthRequest="48"
                                      HeightRequest="48"
                                      Aspect="AspectFill"
-                                     Scale="1.05"
-                                     SemanticProperties.Hint="Open algemeen klassement">
+                                     ToolTipProperties.Text="Open klassement">
+                            <ImageButton.GestureRecognizers>
+                                <PointerGestureRecognizer PointerEntered="OnHoverEnter" PointerExited="OnHoverExit"/>
+                            </ImageButton.GestureRecognizers>
+                        </ImageButton>
+
+                        <ImageButton Source="settings.png"
+                                     Command="{Binding SettingsCommand}"
+                                     BackgroundColor="Transparent"
+                                     BorderColor="Transparent"
+                                     Padding="0"
+                                     WidthRequest="48"
+                                     HeightRequest="48"
+                                     Aspect="AspectFit"
+                                     ToolTipProperties.Text="Instellingen">
                             <ImageButton.GestureRecognizers>
                                 <PointerGestureRecognizer PointerEntered="OnHoverEnter" PointerExited="OnHoverExit"/>
                             </ImageButton.GestureRecognizers>
@@ -119,7 +132,8 @@
                                      Padding="0"
                                      WidthRequest="48"
                                      HeightRequest="48"
-                                     Aspect="AspectFit">
+                                     Aspect="AspectFit"
+                                     ToolTipProperties.Text="Profiel">
                             <ImageButton.GestureRecognizers>
                                 <PointerGestureRecognizer PointerEntered="OnHoverEnter" PointerExited="OnHoverExit"/>
                             </ImageButton.GestureRecognizers>
