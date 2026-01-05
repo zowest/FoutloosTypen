@@ -25,14 +25,13 @@ namespace FoutloosTypen.ViewModels
             set
             {
                 Debug.WriteLine($"[LessonLeaderboard] LessonId setter called: old={_lessonId}, new={value}");
-                if (SetProperty(ref _lessonId, value))
+                _lessonId = value;
+                OnPropertyChanged(nameof(LessonId));
+                // Always reload when LessonId changes
+                if (value > 0)
                 {
-                    Debug.WriteLine($"[LessonLeaderboard] LessonId changed, calling LoadLeaderboard()");
+                    Debug.WriteLine($"[LessonLeaderboard] LessonId changed to {value}, calling LoadLeaderboard()");
                     LoadLeaderboard();
-                }
-                else
-                {
-                    Debug.WriteLine($"[LessonLeaderboard] LessonId not changed, skipping LoadLeaderboard()");
                 }
             }
         }
@@ -75,7 +74,11 @@ namespace FoutloosTypen.ViewModels
         {
             base.OnAppearing();
             Debug.WriteLine($"[LessonLeaderboard] OnAppearing called, LessonId={LessonId}");
-            LoadLeaderboard();
+            // Always refresh when page appears
+            if (LessonId > 0)
+            {
+                LoadLeaderboard();
+            }
         }
 
         private void LoadLeaderboard()
@@ -171,5 +174,10 @@ namespace FoutloosTypen.ViewModels
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }
