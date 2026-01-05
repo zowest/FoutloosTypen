@@ -594,12 +594,18 @@ namespace FoutloosTypen.ViewModels
             if (Application.Current?.MainPage != null && SelectedLesson != null)
             {
                 var progress = _ResultService.GetProgress(SelectedLesson.Id);
-                var popup = new ResultatenPopUp(progress);
+                if (progress == null)
+                    return;
+
+                // Convert LessonProgress to Result
+                var result = ConvertLessonProgressToResult(progress);
+
+                var popup = new ResultatenPopUp(result);
                 await Application.Current.MainPage.Navigation.PushModalAsync(popup);
 
-                var result = await popup.WaitForUserResponseAsync();
+                var popupResult = await popup.WaitForUserResponseAsync();
 
-                switch (result)
+                switch (popupResult)
                 {
                     case ResultatenPopUp.PopupResult.Home:
                         await Shell.Current.Navigation.PopToRootAsync();
@@ -612,6 +618,25 @@ namespace FoutloosTypen.ViewModels
                         break;
                 }
             }
+        }
+
+        private Result ConvertLessonProgressToResult(Core.Interfaces.Services.LessonProgress progress)
+        {
+            return new Result
+            {
+                LessonId = progress.LessonId,
+                TotalMistakes = progress.TotalMistakes,
+                SentencesCompleted = progress.SentencesCompleted,
+                TotalCharactersTyped = progress.CharactersTyped,
+                CompletedSentences = new List<string>(),
+                CurrentIncompleteText = progress.CurrentText,
+                StartTime = progress.StartTime,
+                EndTime = DateTime.Now,
+                ExpectedTime = 60,
+                TimerExpired = progress.TimerExpired,
+                StudentId = 0,
+                IsEndlessMode = false
+            };
         }
 
         /// <summary>

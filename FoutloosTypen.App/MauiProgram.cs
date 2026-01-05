@@ -48,7 +48,8 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IPracticeMaterialRepository, PracticeMaterialRepository>();
             builder.Services.AddSingleton<IStudentRepository, StudentRepository>();
             builder.Services.AddSingleton<IEndlessModeRepository, EndlessModeRepository>();
-            builder.Services.AddSingleton<IResultRepository, ResultRepository>(); //
+            builder.Services.AddSingleton<IResultRepository, ResultRepository>();
+            builder.Services.AddSingleton<ILeaderboardRepository, LeaderboardRepository>();
 
             // Services
             builder.Services.AddSingleton<IMediaUploadRepository, MediaUploadRepository>();
@@ -74,6 +75,7 @@ namespace FoutloosTypen
             builder.Services.AddSingleton<IEndlessModeService, EndlessModeService>();
             builder.Services.AddSingleton<IEndlessModeService, EndlessModeService>();
             builder.Services.AddSingleton<IAudioAssignmentService, AudioAssignmentService>();
+            builder.Services.AddSingleton<ILeaderboardService, LeaderboardService>();
 
             // Use XAuthRepository to provide XAuthSettings in DI
             builder.Services.AddSingleton<FoutloosTypen.Core.Models.XAuthSettings>(provider => provider.GetRequiredService<IXAuthRepository>().GetSettings());
@@ -93,6 +95,8 @@ namespace FoutloosTypen
             builder.Services.AddTransient<ProfileView>().AddTransient<ProfileViewModel>();
             builder.Services.AddTransient<EndlessModeView>().AddTransient<EndlessModeViewModel>();
             builder.Services.AddTransient<SettingsView>().AddTransient<SettingsViewModel>();
+            builder.Services.AddTransient<LeaderboardViewModel>();
+            builder.Services.AddTransient<LeaderboardView>(); 
 #if WINDOWS
             builder.ConfigureLifecycleEvents(events =>
             {
