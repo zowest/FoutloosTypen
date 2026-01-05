@@ -7,19 +7,18 @@ namespace FoutloosTypen.Core.Interfaces.Repositories
     {
         XAuthSettings GetSettings();
         
-        Task<string?> GetStoredAccessTokenAsync();
-        Task<string?> GetStoredRefreshTokenAsync();
         Task<string?> GetAuthenticatedHandleAsync();
-        Task<string?> GetStoredOAuth1TokenAsync();
-        Task<string?> GetStoredOAuth1SecretAsync();
-        Task<string?> GetPkceVerifierAsync();
-        
-        Task SaveAccessTokenAsync(string token);
-        Task SaveRefreshTokenAsync(string token);
-        Task SaveScopeAsync(string scope);
-        Task SaveClientInfoAsync(string clientId, string redirectUri);
-        Task SavePkceVerifierAsync(string verifier);
         
         Task ClearAllTokensAsync();
+
+        // Per-user OAuth1 support
+        Task SaveOAuth1TokensAsync(int ownerUserId, string accessToken, string accessSecret);
+        Task<(string AccessToken, string AccessSecret)?> GetOAuth1TokensAsync(int ownerUserId);
+        Task DeleteOAuth1TokensAsync(int ownerUserId);
+
+        // X user info management
+        Task SaveXUserInfoAsync(int ownerUserId, string xUserId, string xUsername);
+        Task<(string XUserId, string XUsername)?> GetXUserInfoAsync(int ownerUserId);
+        Task DeleteXUserInfoAsync(int ownerUserId);
     }
 }

@@ -12,6 +12,7 @@
            HorizontalOptions="Center"
            VerticalOptions="Center">
         <Grid>
+            <!-- X Share Button (top right) -->
             <ImageButton Source="x.png"
                          BackgroundColor="Transparent"
                          Command="{Binding ShareToTwitterCommand}"
@@ -30,10 +31,35 @@
                 </ImageButton.GestureRecognizers>
             </ImageButton>
 
+            <!-- Switch X Account info (below share button) -->
+            <VerticalStackLayout HorizontalOptions="End"
+                                 VerticalOptions="Start"
+                                 Margin="0,60,0,0"
+                                 Spacing="4"
+                                 x:Name="XAccountSwitcher">
+                <Label Text="{Binding CurrentXUsername}"
+                       FontSize="12"
+                       TextColor="Gray"
+                       HorizontalOptions="End"/>
+                <Button Text="Wissel X-account"
+                        FontSize="10"
+                        Padding="8,4"
+                        BackgroundColor="LightGray"
+                        TextColor="Black"
+                        CornerRadius="4"
+                        Command="{Binding SwitchXAccountCommand}"
+                        IsEnabled="{Binding CanShare}">
+                    <Button.GestureRecognizers>
+                        <PointerGestureRecognizer
+                            PointerEntered="OnHoverEnter"
+                            PointerExited="OnHoverExit"/>
+                    </Button.GestureRecognizers>
+                </Button>
+            </VerticalStackLayout>
+
             <VerticalStackLayout Spacing="80" 
                                  HorizontalOptions="Center" 
                                  VerticalOptions="Center">
-
                 <Label Text="{Binding ResultTitle}"
                        FontSize="48"
                        FontAttributes="Bold"
