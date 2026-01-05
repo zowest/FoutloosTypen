@@ -7,8 +7,13 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace FoutloosTypen.Core.Models
 {
-    public abstract partial class Model(int id) : ObservableObject
+    public abstract partial class Model : ObservableObject
     {
-        public int Id { get; set; } = id;
+        public int Id { get; set; }
+
+        protected Model(int id)
+        {
+            Id = id;
+        }
     }
 }
