@@ -33,8 +33,9 @@ namespace FoutloosTypen.Views
 
             var services = Application.Current?.Handler?.MauiContext?.Services;
             var globalViewModel = services?.GetService<GlobalViewModel>();
+            var resultService = services?.GetService<IResultService>();
 
-            _viewModel = globalViewModel != null
+            _viewModel = (globalViewModel != null && resultService != null)
                 ? new LessonResultViewModel(
                     progress,
                     lessonName,
@@ -44,12 +45,13 @@ namespace FoutloosTypen.Views
                     xAuthApiRepository,
                     shareImageRepository,
                     xSettings,
-                    globalViewModel)
-                : new LessonResultViewModel(progress); 
+                    globalViewModel,
+                    resultService)
+                : new LessonResultViewModel(progress);
 
             BindingContext = _viewModel;
             _userResponseTcs = new TaskCompletionSource<PopupResult>();
-            
+
             // Load current X account info
             _ = _viewModel.LoadCurrentXAccountAsync();
         }
@@ -67,6 +69,7 @@ namespace FoutloosTypen.Views
             var shareImageRepository = services?.GetService<IShareImageRepository>();
             var xSettings = services?.GetService<XAuthSettings>();
             var globalViewModel = services?.GetService<GlobalViewModel>();
+            var resultService = services?.GetService<IResultService>();
 
             if (xAuthService != null &&
                 mediaUploadRepository != null &&
@@ -74,7 +77,8 @@ namespace FoutloosTypen.Views
                 xAuthApiRepository != null &&
                 shareImageRepository != null &&
                 xSettings != null &&
-                globalViewModel != null)
+                globalViewModel != null &&
+                resultService != null)
             {
                 _viewModel = new LessonResultViewModel(
                     progress,
@@ -85,7 +89,8 @@ namespace FoutloosTypen.Views
                     xAuthApiRepository,
                     shareImageRepository,
                     xSettings,
-                    globalViewModel);
+                    globalViewModel,
+                    resultService);
             }
             else
             {
@@ -94,7 +99,7 @@ namespace FoutloosTypen.Views
 
             BindingContext = _viewModel;
             _userResponseTcs = new TaskCompletionSource<PopupResult>();
-            
+
             // Load current X account info
             _ = _viewModel.LoadCurrentXAccountAsync();
         }
@@ -112,6 +117,45 @@ namespace FoutloosTypen.Views
         {
             InitializeComponent();
 
+            var services = Application.Current?.Handler?.MauiContext?.Services;
+            var resultService = services?.GetService<IResultService>();
+
+            _viewModel = resultService != null
+                ? new LessonResultViewModel(
+                    progress,
+                    lessonName,
+                    xAuthService,
+                    mediaUploadRepository,
+                    xAuthRepository,
+                    xAuthApiRepository,
+                    shareImageRepository,
+                    xSettings,
+                    globalViewModel,
+                    resultService)
+                : new LessonResultViewModel(progress);
+
+            BindingContext = _viewModel;
+            _userResponseTcs = new TaskCompletionSource<PopupResult>();
+
+            // Load current X account info
+            _ = _viewModel.LoadCurrentXAccountAsync();
+        }
+
+        // Constructor with 10 parameters (already correct)
+        public ResultatenPopUp(
+            Result progress,
+            string lessonName,
+            IXAuthService xAuthService,
+            IMediaUploadRepository mediaUploadRepository,
+            IXAuthRepository xAuthRepository,
+            IXAuthApiRepository xAuthApiRepository,
+            IShareImageRepository shareImageRepository,
+            XAuthSettings xSettings,
+            GlobalViewModel globalViewModel,
+            IResultService resultService)
+        {
+            InitializeComponent();
+
             _viewModel = new LessonResultViewModel(
                 progress,
                 lessonName,
@@ -121,11 +165,12 @@ namespace FoutloosTypen.Views
                 xAuthApiRepository,
                 shareImageRepository,
                 xSettings,
-                globalViewModel);
+                globalViewModel,
+                resultService);
 
             BindingContext = _viewModel;
             _userResponseTcs = new TaskCompletionSource<PopupResult>();
-            
+
             // Load current X account info
             _ = _viewModel.LoadCurrentXAccountAsync();
         }

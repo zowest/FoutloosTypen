@@ -106,11 +106,11 @@ public partial class AssignmentView : ContentPage
 
     private void OnEntryFocused(object sender, FocusEventArgs e)
     {
-        Debug.WriteLine("Entry focused - ready for typing");
+
     }
 
     private void OnEntryUnfocused(object sender, FocusEventArgs e)
     {
-        Debug.WriteLine("Entry unfocused");
+
     }
 }

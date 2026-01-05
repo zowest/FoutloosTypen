@@ -2,168 +2,391 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="FoutloosTypen.Views.ResultatenPopUp"
-             BackgroundColor="#80000000">
+             BackgroundColor="#80000000"
+             Shell.NavBarIsVisible="False"
+             Shell.TabBarIsVisible="False">
     <Frame BackgroundColor="White"
-           BorderColor="Black"
-           CornerRadius="20"
-           Padding="30"
-           MaximumWidthRequest="1000"
-           MaximumHeightRequest="600"
+           BorderColor="#E0E0E0"
+           CornerRadius="16"
+           Padding="40"
+           MaximumWidthRequest="1200"
+           MaximumHeightRequest="700"
+           WidthRequest="1000"
            HorizontalOptions="Center"
-           VerticalOptions="Center">
-        <Grid>
-            <!-- Top right buttons -->
-            <HorizontalStackLayout HorizontalOptions="End"
-                                   VerticalOptions="Start"
-                                   Spacing="10">
-                <!-- Settings Button -->
-                <ImageButton Source="settings.png"
-                             BackgroundColor="Transparent"
-                             ToolTipProperties.Text="Instellingen"
-                             WidthRequest="48"
-                             HeightRequest="48"
-                             Padding="0"
-                             Opacity="1.0"
-                             Clicked="OnSettingsClicked">
-                    <ImageButton.GestureRecognizers>
-                        <PointerGestureRecognizer
-                            PointerEntered="OnHoverEnter"
-                            PointerExited="OnHoverExit"/>
-                    </ImageButton.GestureRecognizers>
-                </ImageButton>
+           VerticalOptions="Center"
+           HasShadow="True">
+        <Grid RowDefinitions="Auto,*" ColumnDefinitions="*,Auto">
 
-                <!-- X Share Button -->
+            <!-- Main Content Area -->
+            <ScrollView Grid.Row="0" 
+                        Grid.Column="0" 
+                        Grid.RowSpan="2"
+                        Grid.ColumnSpan="2">
+                <Grid RowDefinitions="Auto,*,Auto"
+                      ColumnDefinitions="*,*"
+                      Padding="20,20,80,20"
+                      RowSpacing="24"
+                      ColumnSpacing="40">
+
+                    <!-- Title Section - spans both columns -->
+                    <VerticalStackLayout Grid.Row="0" 
+                                         Grid.Column="0" 
+                                         Grid.ColumnSpan="2"
+                                         Spacing="8" 
+                                         HorizontalOptions="Center">
+                        <Label Text="{Binding ResultTitle}"
+                               FontSize="40"
+                               FontAttributes="Bold"
+                               TextColor="#1a1a1a"
+                               HorizontalOptions="Center"/>
+                        <BoxView BackgroundColor="#007ACC"
+                                 HeightRequest="3"
+                                 WidthRequest="80"
+                                 HorizontalOptions="Center"
+                                 CornerRadius="1.5"/>
+                    </VerticalStackLayout>
+
+                    <!-- Current Results Section - Left Column -->
+                    <Frame Grid.Row="1" 
+                           Grid.Column="0"
+                           BackgroundColor="#F8F9FA"
+                           BorderColor="#E9ECEF"
+                           CornerRadius="12"
+                           Padding="24"
+                           HasShadow="False"
+                           VerticalOptions="Start">
+                        <VerticalStackLayout Spacing="20">
+                            <Label Text="Jouw Resultaat" 
+                                   FontSize="24" 
+                                   FontAttributes="Bold" 
+                                   TextColor="#495057" 
+                                   HorizontalOptions="Center"
+                                   Margin="0,0,0,8"/>
+
+                            <!-- Results Grid for better alignment -->
+                            <Grid ColumnDefinitions="*, Auto" 
+                                  RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                                  ColumnSpacing="24"
+                                  RowSpacing="16">
+
+                                <!-- Score Row -->
+                                <Label Grid.Row="0" Grid.Column="0"
+                                       Text="Score:" 
+                                       FontSize="20" 
+                                       FontAttributes="Bold"
+                                       TextColor="#212529" 
+                                       HorizontalOptions="End"/>
+                                <Label Grid.Row="0" Grid.Column="1"
+                                       Text="{Binding Score}" 
+                                       FontSize="20" 
+                                       FontAttributes="Bold"
+                                       TextColor="#007ACC" 
+                                       HorizontalOptions="Start"
+                                       MinimumWidthRequest="80"/>
+
+                                <!-- WPM Row -->
+                                <Label Grid.Row="1" Grid.Column="0"
+                                       Text="Woorden per minuut:" 
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="#212529" 
+                                       HorizontalOptions="End"/>
+                                <Label Grid.Row="1" Grid.Column="1"
+                                       Text="{Binding WordsPerMinute}" 
+                                       FontSize="18" 
+                                       FontAttributes="Bold"
+                                       TextColor="#495057" 
+                                       HorizontalOptions="Start"/>
+
+                                <!-- APM Row -->
+                                <Label Grid.Row="2" Grid.Column="0"
+                                       Text="Aanslagen per minuut:" 
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="#212529" 
+                                       HorizontalOptions="End"/>
+                                <Label Grid.Row="2" Grid.Column="1"
+                                       Text="{Binding StrokesPerMinute}" 
+                                       FontSize="18" 
+                                       FontAttributes="Bold"
+                                       TextColor="#495057" 
+                                       HorizontalOptions="Start"/>
+
+                                <!-- Accuracy Row -->
+                                <Label Grid.Row="3" Grid.Column="0"
+                                       Text="Nauwkeurigheid:" 
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="#212529" 
+                                       HorizontalOptions="End"/>
+                                <Label Grid.Row="3" Grid.Column="1"
+                                       Text="{Binding Accuracy}" 
+                                       FontSize="18" 
+                                       FontAttributes="Bold"
+                                       TextColor="#28a745" 
+                                       HorizontalOptions="Start"/>
+
+                                <!-- Errors Row -->
+                                <Label Grid.Row="4" Grid.Column="0"
+                                       Text="Fouten:" 
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="#212529" 
+                                       HorizontalOptions="End"/>
+                                <Label Grid.Row="4" Grid.Column="1"
+                                       Text="{Binding TotalMistakes}" 
+                                       FontSize="18" 
+                                       FontAttributes="Bold"
+                                       TextColor="#dc3545" 
+                                       HorizontalOptions="Start"/>
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Best Score Comparison Section - Right Column -->
+                    <Frame Grid.Row="1" 
+                           Grid.Column="1"
+                           IsVisible="{Binding HasBestScore}"
+                           BackgroundColor="#FFF3CD"
+                           BorderColor="#FFEAA7"
+                           CornerRadius="12"
+                           Padding="24"
+                           HasShadow="False"
+                           VerticalOptions="Start">
+                        <VerticalStackLayout Spacing="20">
+                            <Label Text="Jouw Beste Poging" 
+                                   FontSize="24" 
+                                   FontAttributes="Bold" 
+                                   TextColor="#856404" 
+                                   HorizontalOptions="Center"
+                                   Margin="0,0,0,8"/>
+
+                            <!-- Best Results Grid -->
+                            <Grid ColumnDefinitions="*, Auto, Auto" 
+                                  RowDefinitions="Auto,Auto,Auto"
+                                  ColumnSpacing="20"
+                                  RowSpacing="16">
+
+                                <!-- Best Score Row -->
+                                <Label Grid.Row="0" Grid.Column="0"
+                                       Text="Score:" 
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="#856404" 
+                                       HorizontalOptions="End"/>
+                                <Label Grid.Row="0" Grid.Column="1"
+                                       Text="{Binding BestScore}" 
+                                       FontSize="18" 
+                                       FontAttributes="Bold"
+                                       TextColor="#856404" 
+                                       HorizontalOptions="Start"
+                                       MinimumWidthRequest="60"/>
+                                <Label Grid.Row="0" Grid.Column="2"
+                                       Text="{Binding ScoreDifferenceText}" 
+                                       TextColor="{Binding ScoreDifferenceColor}" 
+                                       FontSize="18" 
+                                       FontAttributes="Bold"
+                                       HorizontalOptions="Start"/>
+
+                                <!-- Best WPM Row -->
+                                <Label Grid.Row="1" Grid.Column="0"
+                                       Text="WPM:" 
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="#856404" 
+                                       HorizontalOptions="End"/>
+                                <Label Grid.Row="1" Grid.Column="1"
+                                       Text="{Binding BestWPM}" 
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="#856404" 
+                                       HorizontalOptions="Start"/>
+
+                                <!-- Best Accuracy Row -->
+                                <Label Grid.Row="2" Grid.Column="0"
+                                       Text="Nauwkeurigheid:" 
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="#856404" 
+                                       HorizontalOptions="End"/>
+                                <Label Grid.Row="2" Grid.Column="1"
+                                       Text="{Binding BestAccuracy}" 
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="#856404" 
+                                       HorizontalOptions="Start"/>
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Placeholder for when no best score - Right Column -->
+                    <Frame Grid.Row="1" 
+                           Grid.Column="1"
+                           IsVisible="{Binding IsFirstAttempt}"
+                           BackgroundColor="#F8F9FA"
+                           BorderColor="#E9ECEF"
+                           CornerRadius="12"
+                           Padding="24"
+                           HasShadow="False"
+                           VerticalOptions="Center">
+                        <VerticalStackLayout Spacing="16" HorizontalOptions="Center">
+                            <Label Text="🎯" 
+                                   FontSize="48"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="Eerste Poging!" 
+                                   FontSize="20" 
+                                   FontAttributes="Bold" 
+                                   TextColor="#495057" 
+                                   HorizontalOptions="Center"/>
+                            <Label Text="Dit is je eerste resultaat voor deze les." 
+                                   FontSize="16"
+                                   TextColor="#6c757d" 
+                                   HorizontalOptions="Center"
+                                   HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Action Buttons Section - spans both columns -->
+                    <VerticalStackLayout Grid.Row="2" 
+                                         Grid.Column="0" 
+                                         Grid.ColumnSpan="2"
+                                         Spacing="20" 
+                                         HorizontalOptions="Center">
+                        <Label Text="Wat wil je doen?"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               TextColor="#495057"
+                               HorizontalOptions="Center"/>
+
+                        <HorizontalStackLayout Spacing="60"
+                                               HorizontalOptions="Center">
+
+                            <VerticalStackLayout Spacing="12" HorizontalOptions="Center">
+                                <ImageButton Source="herstart.png"
+                                             BackgroundColor="Transparent"
+                                             WidthRequest="64"
+                                             HeightRequest="64"
+                                             Aspect="AspectFit"
+                                             ToolTipProperties.Text="Herstart les"
+                                             Clicked="OnRestartClicked">
+                                    <ImageButton.GestureRecognizers>
+                                        <PointerGestureRecognizer
+                                            PointerEntered="OnHoverEnter"
+                                            PointerExited="OnHoverExit"/>
+                                    </ImageButton.GestureRecognizers>
+                                </ImageButton>
+                                <Label Text="Opnieuw"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="#495057"
+                                       HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout Spacing="12" HorizontalOptions="Center">
+                                <ImageButton Source="home.png"
+                                             BackgroundColor="Transparent"
+                                             WidthRequest="64"
+                                             HeightRequest="64"
+                                             Aspect="AspectFit"
+                                             ToolTipProperties.Text="Terug naar home"
+                                             Clicked="OnContinueClicked">
+                                    <ImageButton.GestureRecognizers>
+                                        <PointerGestureRecognizer
+                                            PointerEntered="OnHoverEnter"
+                                            PointerExited="OnHoverExit"/>
+                                    </ImageButton.GestureRecognizers>
+                                </ImageButton>
+                                <Label Text="Home"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="#495057"
+                                       HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout Spacing="12" HorizontalOptions="Center">
+                                <!-- Use Border with Label for Arrow Right icon instead of ImageButton -->
+                                <Border BackgroundColor="Transparent"
+                                        WidthRequest="64"
+                                        HeightRequest="64"
+                                        StrokeShape="RoundRectangle 8">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnNextLessonClicked"/>
+                                        <PointerGestureRecognizer
+                                            PointerEntered="OnHoverEnter"
+                                            PointerExited="OnHoverExit"/>
+                                    </Border.GestureRecognizers>
+                                    <Label Text="→" 
+                                           FontSize="48"
+                                           FontAttributes="Bold"
+                                           TextColor="#495057"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"/>
+                                </Border>
+                                <Label Text="Volgende"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="#495057"
+                                       HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+                </Grid>
+            </ScrollView>
+
+            <!-- Top right share buttons - positioned absolutely -->
+            <VerticalStackLayout Grid.Row="0" 
+                                 Grid.Column="1"
+                                 HorizontalOptions="End"
+                                 VerticalOptions="Start"
+                                 Spacing="8"
+                                 Margin="0,10,10,0"
+                                 IsVisible="{Binding CanShare}"
+                                 ZIndex="100">
+
                 <ImageButton Source="x.png"
                              BackgroundColor="Transparent"
                              Command="{Binding ShareToTwitterCommand}"
                              IsEnabled="{Binding CanShare}"
                              ToolTipProperties.Text="Deel op X (Twitter)"
-                             WidthRequest="48"
-                             HeightRequest="48"
+                             WidthRequest="32"
+                             HeightRequest="32"
                              Padding="0"
-                             Opacity="1.0">
+                             Aspect="AspectFit">
                     <ImageButton.GestureRecognizers>
                         <PointerGestureRecognizer
                             PointerEntered="OnHoverEnter"
                             PointerExited="OnHoverExit"/>
                     </ImageButton.GestureRecognizers>
                 </ImageButton>
-            </HorizontalStackLayout>
 
-            <!-- Switch X Account info (below share button) -->
-            <VerticalStackLayout HorizontalOptions="End"
-                                 VerticalOptions="Start"
-                                 Margin="0,60,0,0"
-                                 Spacing="4"
-                                 x:Name="XAccountSwitcher">
-                <Label Text="{Binding CurrentXUsername}"
-                       FontSize="12"
-                       TextColor="Gray"
-                       HorizontalOptions="End"/>
-                <Button Text="Wissel X-account"
-                        FontSize="10"
-                        Padding="8,4"
-                        BackgroundColor="LightGray"
-                        TextColor="Black"
-                        CornerRadius="4"
-                        Command="{Binding SwitchXAccountCommand}"
-                        IsEnabled="{Binding CanShare}">
-                    <Button.GestureRecognizers>
-                        <PointerGestureRecognizer
-                            PointerEntered="OnHoverEnter"
-                            PointerExited="OnHoverExit"/>
-                    </Button.GestureRecognizers>
-                </Button>
-            </VerticalStackLayout>
-
-            <ScrollView>
-                <VerticalStackLayout Spacing="40" 
-                                     HorizontalOptions="Center" 
-                                     VerticalOptions="Center"
-                                     Padding="20">
-                    <Label Text="{Binding ResultTitle}"
-                           FontSize="32"
-                           FontAttributes="Bold"
-                           TextColor="Black"
-                           HorizontalOptions="Center"/>
-
-                    <!-- Results -->
-                    <VerticalStackLayout Spacing="10">
-                        <HorizontalStackLayout Spacing="20" HorizontalOptions="Center">
-                            <Label Text="Score:" TextColor="Black" FontSize="18" FontAttributes="Bold"/>
-                            <Label Text="{Binding Score}" TextColor="Black" FontSize="18" FontAttributes="Bold"/>
-                        </HorizontalStackLayout>
-
-                        <HorizontalStackLayout Spacing="20" HorizontalOptions="Center">
-                            <Label Text="WPM:" TextColor="Black" FontSize="16"/>
-                            <Label Text="{Binding WordsPerMinute}" TextColor="Black" FontSize="16"/>
-                        </HorizontalStackLayout>
-
-                        <HorizontalStackLayout Spacing="20" HorizontalOptions="Center">
-                            <Label Text="APM:" TextColor="Black" FontSize="16"/>
-                            <Label Text="{Binding StrokesPerMinute}" TextColor="Black" FontSize="16"/>
-                        </HorizontalStackLayout>
-
-                        <HorizontalStackLayout Spacing="20" HorizontalOptions="Center">
-                            <Label Text="Nauwkeurigheid:" TextColor="Black" FontSize="16"/>
-                            <Label Text="{Binding Accuracy}" TextColor="Black" FontSize="16"/>
-                        </HorizontalStackLayout>
-
-                        <HorizontalStackLayout Spacing="20" HorizontalOptions="Center">
-                            <Label Text="Fouten:" TextColor="Black" FontSize="16"/>
-                            <Label Text="{Binding TotalMistakes}" TextColor="Black" FontSize="16"/>
-                        </HorizontalStackLayout>
-                    </VerticalStackLayout>
-
-                    <!-- Buttons -->
-                    <HorizontalStackLayout Spacing="60"
-                                           HorizontalOptions="Center"
-                                           Margin="0,20,0,0">
-
-                        <ImageButton Source="herstart.png"
-                                     BackgroundColor="Transparent"
-                                     WidthRequest="48"
-                                     HeightRequest="48"
-                                     Aspect="AspectFit"
-                                     ToolTipProperties.Text="Herstart les"
-                                     Clicked="OnRestartClicked">
-                            <ImageButton.GestureRecognizers>
-                                <PointerGestureRecognizer
-                                    PointerEntered="OnHoverEnter"
-                                    PointerExited="OnHoverExit"/>
-                            </ImageButton.GestureRecognizers>
-                        </ImageButton>
-
-                        <ImageButton Source="home.png"
-                                     BackgroundColor="Transparent"
-                                     WidthRequest="48"
-                                     HeightRequest="48"
-                                     Aspect="AspectFit"
-                                     ToolTipProperties.Text="Terug naar home"
-                                     Clicked="OnContinueClicked">
-                            <ImageButton.GestureRecognizers>
-                                <PointerGestureRecognizer
-                                    PointerEntered="OnHoverEnter"
-                                    PointerExited="OnHoverExit"/>
-                            </ImageButton.GestureRecognizers>
-                        </ImageButton>
-
-                        <ImageButton Source="next.png"
-                                     BackgroundColor="Transparent"
-                                     WidthRequest="48"
-                                     HeightRequest="48"
-                                     Aspect="AspectFit"
-                                     ToolTipProperties.Text="Volgende les"
-                                     Clicked="OnNextLessonClicked">
-                            <ImageButton.GestureRecognizers>
-                                <PointerGestureRecognizer
-                                    PointerEntered="OnHoverEnter"
-                                    PointerExited="OnHoverExit"/>
-                            </ImageButton.GestureRecognizers>
-                        </ImageButton>
-                    </HorizontalStackLayout>
+                <!-- X Account Switch Section -->
+                <VerticalStackLayout Spacing="4"
+                                     x:Name="XAccountSwitcher"
+                                     HorizontalOptions="End">
+                    <Label Text="{Binding CurrentXUsername}"
+                           FontSize="10"
+                           TextColor="#666666"
+                           HorizontalOptions="End"
+                           BackgroundColor="White"
+                           Padding="4,2"
+                           Opacity="0.9"/>
+                    <Button Text="Wissel X-account"
+                            FontSize="9"
+                            Padding="4,2"
+                            BackgroundColor="#F0F0F0"
+                            TextColor="#333333"
+                            CornerRadius="4"
+                            WidthRequest="100"
+                            HeightRequest="25"
+                            Command="{Binding SwitchXAccountCommand}">
+                        <Button.GestureRecognizers>
+                            <PointerGestureRecognizer
+                                PointerEntered="OnHoverEnter"
+                                PointerExited="OnHoverExit"/>
+                        </Button.GestureRecognizers>
+                    </Button>
                 </VerticalStackLayout>
-            </ScrollView>
+            </VerticalStackLayout>
         </Grid>
     </Frame>
 </ContentPage>

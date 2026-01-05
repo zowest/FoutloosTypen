@@ -25,6 +25,16 @@ namespace FoutloosTypen.Core.Data.Repositories
                 );
             """);
 
+            // Create EndlessModeResults table if it doesn't exist
+            CreateTable("""
+                CREATE TABLE IF NOT EXISTS EndlessModeResults (
+                    Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    StudentId INT NOT NULL,
+                    Score INT NOT NULL,
+                    CompletedAt DATETIME NOT NULL
+                );
+            """);
+
             try
             {
                 OpenConnection();
@@ -66,9 +76,9 @@ namespace FoutloosTypen.Core.Data.Repositories
             AddParam(command, "@completedAt", result.EndTime ?? DateTime.Now);
 
             command.ExecuteNonQuery();
-            
+
             Debug.WriteLine($"[ResultRepository] Saved new result for student {result.StudentId}, lesson {result.LessonId}, score {result.Score}");
-            
+
             CloseConnection();
         }
 
@@ -90,6 +100,32 @@ namespace FoutloosTypen.Core.Data.Repositories
 
             command.ExecuteNonQuery();
             CloseConnection();
+        }
+
+        public List<(int StudentId, int BestScore)> GetEndlessModeLeaderboard(int limit = 10)
+        {
+            OpenConnection();
+
+            using var command = Connection.CreateCommand();
+            command.CommandText = $"""
+                SELECT StudentId, MAX(Score) as BestScore
+                FROM EndlessModeResults
+                GROUP BY StudentId
+                ORDER BY BestScore DESC
+                LIMIT {limit}
+            """;
+
+            var results = new List<(int, int)>();
+            using DbDataReader reader = command.ExecuteReader();
+
+            while (reader.Read())
+            {
+                results.Add((reader.GetInt32(0), reader.GetInt32(1)));
+            }
+
+            Debug.WriteLine($"[ResultRepository] Found {results.Count} endless mode results");
+            CloseConnection();
+            return results;
         }
 
         public Result? GetByStudentAndLesson(int studentId, int lessonId)

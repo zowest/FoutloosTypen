@@ -2,7 +2,7 @@
 
 namespace FoutloosTypen.Core.Helpers
 {
-    public class EndlessModeRules
+    public class EndlessModeHelper
     {
         private const int BASE_SCORE = 10;
 

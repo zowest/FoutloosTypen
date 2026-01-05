@@ -19,7 +19,9 @@ namespace FoutloosTypen.ViewModels
         private readonly IShareImageRepository? _shareImageRepository;
         private readonly XAuthSettings? _xSettings;
         private readonly GlobalViewModel? _globalViewModel;
+        private readonly IResultService? _resultService;
         private readonly string _lessonName;
+        private Result? _bestResult;
 
         [ObservableProperty]
         private bool _isSharing;
@@ -36,7 +38,8 @@ namespace FoutloosTypen.ViewModels
             IXAuthApiRepository xAuthApiRepository,
             IShareImageRepository shareImageRepository,
             XAuthSettings xSettings,
-            GlobalViewModel globalViewModel)
+            GlobalViewModel globalViewModel,
+            IResultService resultService)
         {
             _progress = progress;
             _lessonName = lessonName;
@@ -47,6 +50,10 @@ namespace FoutloosTypen.ViewModels
             _shareImageRepository = shareImageRepository;
             _xSettings = xSettings;
             _globalViewModel = globalViewModel;
+            _resultService = resultService;
+
+            // Load best result for comparison
+            LoadBestResult();
         }
 
         public LessonResultViewModel(Result progress)
@@ -55,6 +62,7 @@ namespace FoutloosTypen.ViewModels
             _lessonName = string.Empty;
         }
 
+        // Current result properties
         public int Score => _progress.Score;
         public int StrokesPerMinute => _progress.StrokesPerMinute;
         public int WordsPerMinute => _progress.WordsPerMinute;
@@ -63,7 +71,61 @@ namespace FoutloosTypen.ViewModels
         public string ResultTitle => _progress.Score > 0 ? "Les Voltooid!" : "Les Gefaald";
         public bool CanShare => _xAuthService != null;
 
+        // Best result properties
+        public bool HasBestScore => _bestResult != null && _bestResult.Score > 0;
+        public bool IsFirstAttempt => !HasBestScore; // NEW: Inverse of HasBestScore
+        public int BestScore => _bestResult?.Score ?? 0;
+        public int BestWPM => _bestResult?.WordsPerMinute ?? 0;
+        public string BestAccuracy => _bestResult != null ? $"{Math.Round(_bestResult.AccuracyPercent, 1)}%" : "0%";
+
+        public string ScoreDifferenceText
+        {
+            get
+            {
+                if (_bestResult == null) return string.Empty;
+                var diff = Score - _bestResult.Score;
+                if (diff > 0) return $"(+{diff})";
+                if (diff < 0) return $"({diff})";
+                return "(gelijk)";
+            }
+        }
+
+        public Color ScoreDifferenceColor
+        {
+            get
+            {
+                if (_bestResult == null) return Colors.Gray;
+                var diff = Score - _bestResult.Score;
+                if (diff > 0) return Colors.Green;
+                if (diff < 0) return Colors.Red;
+                return Colors.Gray;
+            }
+        }
+
         public Result GetResult() => _progress;
+
+        private void LoadBestResult()
+        {
+            if (_resultService == null || _globalViewModel?.Student == null) return;
+
+            try
+            {
+                _bestResult = _resultService.GetStudentBestResult(_progress.LessonId, _globalViewModel.Student.Id);
+
+                // Update UI
+                OnPropertyChanged(nameof(HasBestScore));
+                OnPropertyChanged(nameof(IsFirstAttempt)); // NEW: Update the new property
+                OnPropertyChanged(nameof(BestScore));
+                OnPropertyChanged(nameof(BestWPM));
+                OnPropertyChanged(nameof(BestAccuracy));
+                OnPropertyChanged(nameof(ScoreDifferenceText));
+                OnPropertyChanged(nameof(ScoreDifferenceColor));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[LessonResultViewModel] Error loading best result: {ex.Message}");
+            }
+        }
 
         public async Task LoadCurrentXAccountAsync()
         {
@@ -314,7 +376,6 @@ namespace FoutloosTypen.ViewModels
             var tokens = await _xAuthRepository.GetOAuth1TokensAsync(ownerUserId);
             if (tokens == null)
             {
-                Debug.WriteLine($"[XAuthRepository] No OAuth1 tokens found for ownerUserId={ownerUserId}");
                 await ShowErrorAsync("Tokens ontbreken", "Geen OAuth1 tokens gevonden. Start eerst de OAuth1 autorisatie en voltooi de callback.");
                 return false;
             }

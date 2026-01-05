@@ -6,12 +6,10 @@ namespace FoutloosTypen.Core.Services
 {
     public class TypingComparisonService : ITypingComparisonService
     {
-        // Cache voor hergebruik - voorkomt herhaalde allocaties
         private readonly TypingDisplayState _cachedState = new();
 
         public bool IsCharacterIncorrect(string expectedText, string previousInput, string currentInput)
         {
-            // Alleen controleren als er een karakter is toegevoegd (niet verwijderd)
             if (currentInput.Length <= previousInput.Length)
                 return false;
 

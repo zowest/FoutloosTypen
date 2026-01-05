@@ -15,5 +15,6 @@ namespace FoutloosTypen.Core.Interfaces.Repositories
         List<Result> GetAllAttemptsByStudentAndLesson(int studentId, int lessonId);
 
         void SaveEndlessModeResult(int studentId, int score);
+        List<(int StudentId, int BestScore)> GetEndlessModeLeaderboard(int limit = 10);
     }
 }

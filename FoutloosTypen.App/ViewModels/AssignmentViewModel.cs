@@ -551,10 +551,47 @@ namespace FoutloosTypen.ViewModels
             if (progress == null)
                 return;
 
-         
             var result = ConvertLessonProgressToResult(progress);
 
-            var popup = new ResultatenPopUp(result);
+            // Get all required services from DI
+            var services = Application.Current.Handler?.MauiContext?.Services;
+            
+            var xAuthService = services?.GetService<Core.Interfaces.Services.IXAuthService>();
+            var mediaUploadRepository = services?.GetService<Core.Interfaces.Repositories.IMediaUploadRepository>();
+            var xAuthRepository = services?.GetService<Core.Interfaces.Repositories.IXAuthRepository>();
+            var xAuthApiRepository = services?.GetService<Core.Interfaces.Repositories.IXAuthApiRepository>();
+            var shareImageRepository = services?.GetService<Core.Interfaces.Repositories.IShareImageRepository>();
+            var xSettings = services?.GetService<Core.Models.XAuthSettings>();
+            var globalViewModel = services?.GetService<GlobalViewModel>();
+
+            ResultatenPopUp popup;
+            
+            if (xAuthService != null && 
+                mediaUploadRepository != null && 
+                xAuthRepository != null && 
+                xAuthApiRepository != null && 
+                shareImageRepository != null && 
+                xSettings != null && 
+                globalViewModel != null)
+            {
+
+                popup = new ResultatenPopUp(
+                    result,
+                    SelectedLesson.Name,
+                    xAuthService,
+                    mediaUploadRepository,
+                    xAuthRepository,
+                    xAuthApiRepository,
+                    shareImageRepository,
+                    xSettings,
+                    globalViewModel,
+                    _resultService);  
+            }
+            else
+            {
+                popup = new ResultatenPopUp(result);
+            }
+
             await Application.Current.MainPage.Navigation.PushModalAsync(popup);
 
             var popupResult = await popup.WaitForUserResponseAsync();
@@ -575,19 +612,50 @@ namespace FoutloosTypen.ViewModels
 
         private Result ConvertLessonProgressToResult(Core.Interfaces.Services.LessonProgress progress)
         {
+            // Calculate time spent
+            var timeSpent = (DateTime.Now - progress.StartTime).TotalSeconds;
+
+            // Calculate Words Per Minute (WPM)
+            // Average word length is 5 characters, so divide characters by 5, then by minutes
+            var minutes = timeSpent / 60.0;
+            var wordsTyped = progress.CharactersTyped / 5.0;
+            var wordsPerMinute = minutes > 0 ? (int)Math.Round(wordsTyped / minutes) : 0;
+
+            // Calculate Strokes Per Minute (characters including mistakes)
+            var totalStrokes = progress.CharactersTyped + progress.TotalMistakes;
+            var strokesPerMinute = minutes > 0 ? (int)Math.Round(totalStrokes / minutes) : 0;
+
+            // Calculate Accuracy Percentage
+            var totalAttempts = progress.CharactersTyped + progress.TotalMistakes;
+            var accuracyPercent = totalAttempts > 0
+                ? Math.Round((double)progress.CharactersTyped / totalAttempts * 100, 1)
+                : 0;
+
+            // Calculate Score
+            // Base score on accuracy and speed
+            var baseScore = progress.CharactersTyped;
+            var accuracyMultiplier = accuracyPercent / 100.0;
+            var speedBonus = wordsPerMinute * 2;
+            var mistakePenalty = progress.TotalMistakes * 5;
+            var score = Math.Max(0, (int)Math.Round(baseScore * accuracyMultiplier + speedBonus - mistakePenalty));
+
             return new Result
             {
                 LessonId = progress.LessonId,
                 TotalMistakes = progress.TotalMistakes,
                 SentencesCompleted = progress.SentencesCompleted,
                 TotalCharactersTyped = progress.CharactersTyped,
+                Score = score,
+                WordsPerMinute = wordsPerMinute,
+                StrokesPerMinute = strokesPerMinute,
+                AccuracyPercent = accuracyPercent,
                 CompletedSentences = new List<string>(),
                 CurrentIncompleteText = progress.CurrentText,
                 StartTime = progress.StartTime,
                 EndTime = DateTime.Now,
                 ExpectedTime = 60,
                 TimerExpired = progress.TimerExpired,
-                StudentId = 0, 
+                StudentId = 0,
                 IsEndlessMode = false
             };
         }

@@ -51,7 +51,7 @@ namespace FoutloosTypen.Views
             try
             {
                 Debug.WriteLine("[LessonView] Trophy button clicked - navigating to LeaderboardView");
-                await Shell.Current.GoToAsync(nameof(LeaderboardView));
+                await Shell.Current.GoToAsync($"///{nameof(LeaderboardView)}");
             }
             catch (Exception ex)
             {

@@ -4,7 +4,8 @@
              x:Class="FoutloosTypen.Views.SettingsView"
              Title="Instellingen"
              BackgroundColor="White"
-             Shell.NavBarIsVisible="False">
+             Shell.NavBarIsVisible="False"
+             Shell.TabBarIsVisible="False">
     <Grid RowDefinitions="*" Padding="12">
         <!-- TopBar removed - only content area -->
         <VerticalStackLayout
