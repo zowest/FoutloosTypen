@@ -320,10 +320,8 @@ namespace FoutloosTypen.ViewModels
 
         private async Task<bool> ShowPreviewPopupAndShareAsync(int ownerUserId)
         {
-            Debug.WriteLine("ShowPreviewPopupAndShareAsync aangeroepen");
             if (_mediaUploadRepository == null || _xAuthRepository == null || _shareImageRepository == null || _xSettings == null)
             {
-                Debug.WriteLine($"Dependency nulls: media={_mediaUploadRepository!=null}, xRepo={_xAuthRepository!=null}, shareImg={_shareImageRepository!=null}, settings={_xSettings!=null}");
                 return false;
             }
 
@@ -331,7 +329,6 @@ namespace FoutloosTypen.ViewModels
             var tokens = await _xAuthRepository.GetOAuth1TokensAsync(ownerUserId);
             if (tokens == null)
             {
-                Debug.WriteLine($"[XAuthRepository] No OAuth1 tokens found for ownerUserId={ownerUserId}");
                 await ShowErrorAsync("Tokens ontbreken", "Geen OAuth1 tokens gevonden. Start eerst de OAuth1 autorisatie en voltooi de callback.");
                 return false;
             }

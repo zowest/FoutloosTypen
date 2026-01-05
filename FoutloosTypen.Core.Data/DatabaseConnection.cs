@@ -19,7 +19,6 @@ namespace FoutloosTypen.Core.Data
                 "Pooling=true;";
 
             Connection = new MySqlConnection(connectionString);
-            Debug.WriteLine("[DB] Using MySQL");
         }
 
         protected void OpenConnection()

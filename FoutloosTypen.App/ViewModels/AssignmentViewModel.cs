@@ -627,6 +627,4 @@ namespace FoutloosTypen.ViewModels
             _timerService.Stop();
         }
     }
-
-    // Add this enum at the top of the file or in a shared location if it is used elsewhere
 }

@@ -108,15 +108,5 @@ namespace FoutloosTypen.Views
         {
             HiddenEntry?.Focus();
         }
-
-        private void OnEntryFocused(object sender, FocusEventArgs e)
-        {
-            Debug.WriteLine("Typing focus");
-        }
-
-        private void OnEntryUnfocused(object sender, FocusEventArgs e)
-        {
-            Debug.WriteLine("Typing unfocused");
-        }
     }
 }
