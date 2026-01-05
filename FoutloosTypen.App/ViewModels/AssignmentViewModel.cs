@@ -555,7 +555,7 @@ namespace FoutloosTypen.ViewModels
 
             // Get all required services from DI
             var services = Application.Current.Handler?.MauiContext?.Services;
-            
+
             var xAuthService = services?.GetService<Core.Interfaces.Services.IXAuthService>();
             var mediaUploadRepository = services?.GetService<Core.Interfaces.Repositories.IMediaUploadRepository>();
             var xAuthRepository = services?.GetService<Core.Interfaces.Repositories.IXAuthRepository>();
@@ -565,13 +565,13 @@ namespace FoutloosTypen.ViewModels
             var globalViewModel = services?.GetService<GlobalViewModel>();
 
             ResultatenPopUp popup;
-            
-            if (xAuthService != null && 
-                mediaUploadRepository != null && 
-                xAuthRepository != null && 
-                xAuthApiRepository != null && 
-                shareImageRepository != null && 
-                xSettings != null && 
+
+            if (xAuthService != null &&
+                mediaUploadRepository != null &&
+                xAuthRepository != null &&
+                xAuthApiRepository != null &&
+                shareImageRepository != null &&
+                xSettings != null &&
                 globalViewModel != null)
             {
 
@@ -585,7 +585,7 @@ namespace FoutloosTypen.ViewModels
                     shareImageRepository,
                     xSettings,
                     globalViewModel,
-                    _resultService);  
+                    _resultService);
             }
             else
             {
@@ -639,9 +639,14 @@ namespace FoutloosTypen.ViewModels
             var mistakePenalty = progress.TotalMistakes * 5;
             var score = Math.Max(0, (int)Math.Round(baseScore * accuracyMultiplier + speedBonus - mistakePenalty));
 
-            return new Result
+            var services = Application.Current?.Handler?.MauiContext?.Services;
+            var globalViewModel = services?.GetService<GlobalViewModel>();
+            var studentId = globalViewModel?.Student?.Id ?? 0;
+
+            var result = new Result
             {
                 LessonId = progress.LessonId,
+                StudentId = studentId,  // FIXED: Set the actual student ID
                 TotalMistakes = progress.TotalMistakes,
                 SentencesCompleted = progress.SentencesCompleted,
                 TotalCharactersTyped = progress.CharactersTyped,
@@ -655,9 +660,46 @@ namespace FoutloosTypen.ViewModels
                 EndTime = DateTime.Now,
                 ExpectedTime = 60,
                 TimerExpired = progress.TimerExpired,
-                StudentId = 0,
                 IsEndlessMode = false
             };
+
+            try
+            {
+                var resultRepository = services?.GetService<Core.Interfaces.Repositories.IResultRepository>();
+                var studentRepository = services?.GetService<Core.Interfaces.Repositories.IStudentRepository>();
+
+                if (resultRepository != null && studentId > 0)
+                {
+                    resultRepository.Save(result);
+                    System.Diagnostics.Debug.WriteLine($"[AssignmentViewModel] Saved result for student {studentId}, lesson {progress.LessonId}, score {score}");
+
+                    if (studentRepository != null)
+                    {
+                        var student = studentRepository.Get(studentId);
+                        if (student != null)
+                        {
+                            var newAvgSpeed = (student.AvgSpeed + wordsPerMinute) / 2.0;
+                            var newAvgPrecision = (student.AvgPrecision + accuracyPercent) / 2.0;
+
+                            studentRepository.UpdateStatistics(studentId, newAvgSpeed, newAvgPrecision);
+
+                            var newCompletedLessons = student.CompletedLessons + 1;
+                            var newTotalScore = student.TotalScore + score;
+                            studentRepository.UpdateProgress(studentId, newCompletedLessons, newTotalScore);
+                        }
+                    }
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[AssignmentViewModel] Could not save result - missing repository or studentId. StudentId={studentId}, HasResultRepo={resultRepository != null}");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AssignmentViewModel] Error saving result: {ex.Message}");
+            }
+
+            return result;
         }
 
         #endregion
