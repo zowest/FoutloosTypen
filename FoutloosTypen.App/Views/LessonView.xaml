@@ -97,21 +97,21 @@
 
                     <HorizontalStackLayout HorizontalOptions="End" Spacing="12" Margin="0,0,0,8">
                         <ImageButton Source="trophy_bw.png"
-                                     Command="{Binding OpenLeaderboardCommand}"
+                                     Clicked="OnTrophyClicked"
                                      BackgroundColor="Transparent"
                                      BorderColor="Transparent"
                                      Padding="0"
                                      WidthRequest="48"
                                      HeightRequest="48"
-                                     Aspect="AspectFill"
+                                     Aspect="AspectFit"
                                      ToolTipProperties.Text="Open klassement">
                             <ImageButton.GestureRecognizers>
                                 <PointerGestureRecognizer PointerEntered="OnHoverEnter" PointerExited="OnHoverExit"/>
                             </ImageButton.GestureRecognizers>
                         </ImageButton>
 
-                        <ImageButton Source="settings.png"
-                                     Command="{Binding SettingsCommand}"
+                        <ImageButton Source="gear.png"
+                                     Clicked="OnSettingsClicked"
                                      BackgroundColor="Transparent"
                                      BorderColor="Transparent"
                                      Padding="0"
@@ -125,7 +125,7 @@
                         </ImageButton>
 
                         <ImageButton Source="person.png"
-                                     Command="{Binding ProfileCommand}"
+                                     Clicked="OnProfileClicked"
                                      BackgroundColor="Transparent"
                                      BorderColor="Transparent"
                                      BorderWidth="0"
