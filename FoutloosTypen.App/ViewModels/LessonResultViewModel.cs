@@ -376,7 +376,6 @@ namespace FoutloosTypen.ViewModels
             var tokens = await _xAuthRepository.GetOAuth1TokensAsync(ownerUserId);
             if (tokens == null)
             {
-                Debug.WriteLine($"[XAuthRepository] No OAuth1 tokens found for ownerUserId={ownerUserId}");
                 await ShowErrorAsync("Tokens ontbreken", "Geen OAuth1 tokens gevonden. Start eerst de OAuth1 autorisatie en voltooi de callback.");
                 return false;
             }

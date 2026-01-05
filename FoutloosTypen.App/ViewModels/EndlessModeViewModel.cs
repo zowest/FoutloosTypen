@@ -350,27 +350,15 @@ namespace FoutloosTypen.ViewModels
             _comboTimer.Stop();
             IsGameOver = true;
             
-            // Save the endless mode score to database
             SaveEndlessModeScore();
         }
 
         private void SaveEndlessModeScore()
         {
-            try
+
+            if (_globalViewModel?.Student != null)
             {
-                if (_globalViewModel?.Student != null)
-                {
-                    _resultRepository.SaveEndlessModeResult(_globalViewModel.Student.Id, Score);
-                    Debug.WriteLine($"Endless mode score saved: StudentId={_globalViewModel.Student.Id}, Score={Score}");
-                }
-                else
-                {
-                    Debug.WriteLine("Cannot save endless mode score: No student logged in");
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error saving endless mode score: {ex.Message}");
+                _resultRepository.SaveEndlessModeResult(_globalViewModel.Student.Id, Score);
             }
         }
     }

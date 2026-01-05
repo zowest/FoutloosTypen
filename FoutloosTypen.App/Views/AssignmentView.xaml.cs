@@ -103,14 +103,4 @@ public partial class AssignmentView : ContentPage
     {
         HiddenEntry?.Focus();
     }
-
-    private void OnEntryFocused(object sender, FocusEventArgs e)
-    {
-        Debug.WriteLine("Entry focused - ready for typing");
-    }
-
-    private void OnEntryUnfocused(object sender, FocusEventArgs e)
-    {
-        Debug.WriteLine("Entry unfocused");
-    }
 }

@@ -5,12 +5,12 @@ namespace TestCore
 {
     public class TestEndless
     {
-        private EndlessModeRules Rules;
+        private EndlessModeHelper Rules;
 
         [SetUp]
         public void Setup()
         {
-            Rules = new EndlessModeRules();
+            Rules = new EndlessModeHelper();
             Rules.Reset();
         }
 
@@ -72,7 +72,7 @@ namespace TestCore
 
         // UT18-06: Fout trekt 5 seconden van de timer af
         [Test]
-        public void Mistake_SubtractsFiveSeconds()
+        public void MistakeSubtractsFiveSeconds()
         {
             var result = Rules.Process("abc", "x");
 
