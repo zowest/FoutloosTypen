@@ -141,7 +141,7 @@
                     </HorizontalStackLayout>
 
                     <Label Text="{Binding LessonsVM.SelectedLesson.Name}" FontSize="40" WidthRequest="500" HorizontalTextAlignment="Center" VerticalTextAlignment="Start" LineBreakMode="WordWrap" TextColor="Black"/>
-                    <Label Text="☆ ☆ ☆" HorizontalOptions="Center" TextColor="Black" FontSize="160"/>
+                    <Label Text="☆ ☆ ☆" HorizontalOptions="Center" TextColor="Black" FontSize="150"/>
                     <Label Text="Score: 0" HorizontalOptions="Center" TextColor="Black"/>
 
                     <!-- Leaderboard Section: visible only when a lesson is selected -->
