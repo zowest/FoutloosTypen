@@ -1,95 +1,71 @@
-﻿using FoutloosTypen.Core.Data.Helpers;
-using Microsoft.Data.Sqlite;
+﻿using MySqlConnector;
+using System.Data;
 using System.Diagnostics;
-using Microsoft.Maui.Storage;
 
 namespace FoutloosTypen.Core.Data
 {
     public abstract class DatabaseConnection : IDisposable
     {
-        protected SqliteConnection Connection { get; }
-        string databaseName;
+        protected MySqlConnection Connection { get; }
 
-        public DatabaseConnection()
+        protected DatabaseConnection()
         {
-            databaseName = ConnectionHelper.ConnectionStringValue("FoutloosTypenDb");
+            var connectionString =
+                "Server=localhost;" +
+                "Port=3306;" +
+                "Database=boltype;" +
+                "User=bolType_user;" +
+                "Password=boltype;" +
+                "Pooling=true;";
 
-            string dbDirectory = FileSystem.AppDataDirectory;
-            string dbpath = Path.Combine(dbDirectory, databaseName);
-
-            // Log the database path for debugging
-            Debug.WriteLine($"Database path: {dbpath}");
-
-            Connection = new SqliteConnection($"Data Source={dbpath}");
+            Connection = new MySqlConnection(connectionString);
         }
 
         protected void OpenConnection()
         {
-            if (Connection.State != System.Data.ConnectionState.Open) 
-            {
+            if (Connection.State != ConnectionState.Open)
                 Connection.Open();
-                Debug.WriteLine("Database connection opened");
-            }
         }
 
         protected void CloseConnection()
         {
-            if (Connection.State != System.Data.ConnectionState.Closed) 
-            {
+            if (Connection.State != ConnectionState.Closed)
                 Connection.Close();
-                Debug.WriteLine("Database connection closed");
-            }
         }
 
-        public void CreateTable(string commandText)
-        {
-            try
-            {
-                OpenConnection();
-                using (var command = Connection.CreateCommand())
-                {
-                    command.CommandText = commandText;
-                    command.ExecuteNonQuery();
-                    Debug.WriteLine($"Table created: {commandText}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error creating table: {ex.Message}");
-                throw;
-            }
-        }
-
-        public void InsertMultipleWithTransaction(List<string> linesToInsert)
+        protected void CreateTable(string sql)
         {
             OpenConnection();
-            var transaction = Connection.BeginTransaction();
+            using var cmd = new MySqlCommand(sql, Connection);
+            cmd.ExecuteNonQuery();
+        }
+
+        protected void InsertMultipleWithTransaction(IEnumerable<string> statements)
+        {
+            OpenConnection();
+            using var tx = Connection.BeginTransaction();
 
             try
             {
-                linesToInsert.ForEach(l => 
+                foreach (var sql in statements)
                 {
-                    Connection.ExecuteNonQuery(l);
-                    Debug.WriteLine($"Executed: {l}");
-                });
-                transaction.Commit();
-                Debug.WriteLine("Transaction committed");
+                    using var cmd = new MySqlCommand(sql, Connection, tx);
+                    cmd.ExecuteNonQuery();
+                }
+
+                tx.Commit();
             }
-            catch (Exception ex)
+            catch
             {
-                Debug.WriteLine($"Transaction error: {ex.Message}");
-                transaction.Rollback();
+                tx.Rollback();
                 throw;
-            }
-            finally
-            {
-                transaction.Dispose();
             }
         }
 
         public void Dispose()
         {
             CloseConnection();
+            Connection.Dispose();
         }
     }
 }

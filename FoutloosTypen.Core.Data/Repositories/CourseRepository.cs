@@ -1,8 +1,11 @@
 ﻿using FoutloosTypen.Core.Interfaces.Repositories;
 using FoutloosTypen.Core.Models;
-using Microsoft.Data.Sqlite;
+using Microsoft.Maui.Storage;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Text.Json;
+using System.Data.Common;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
@@ -12,103 +15,68 @@ namespace FoutloosTypen.Core.Data.Repositories
 
         public CourseRepository()
         {
-            try
-            {
-                CreateTable(@"
+            CreateTable("""
                 CREATE TABLE IF NOT EXISTS Courses (
-                    [Id] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                    [Name] NVARCHAR(80) UNIQUE NOT NULL,
-                    [Description] NVARCHAR(250),
-                    [Difficulty] INTEGER
-                )");
-
-                List<string> insertQueries = new()
-                {
-                    @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('Course 1', 'Leer de basics van typen', 1)",
-                    @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('Course 2', 'Voor snelle typers', 2)",
-                    @"INSERT OR IGNORE INTO Courses(Name, Description, Difficulty) VALUES('Course 3', 'Voor de echte pro''s', 3)"
-                };
-
-                InsertMultipleWithTransaction(insertQueries);
-                Debug.WriteLine("CourseRepository initialized successfully");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"CourseRepository initialization error: {ex.Message}");
-                throw;
-            }
+                    Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    Name VARCHAR(80) UNIQUE NOT NULL,
+                    Description VARCHAR(250),
+                    Difficulty INT
+                );
+            """);
         }
 
         public List<Course> GetAll()
         {
             courses.Clear();
+            OpenConnection();
 
-            try
+            using var command = Connection.CreateCommand();
+            command.CommandText =
+                "SELECT Id, Name, Description, Difficulty FROM Courses";
+
+            using DbDataReader reader = command.ExecuteReader();
+            while (reader.Read())
             {
-                string selectQuery = "SELECT Id, Name, Description, Difficulty FROM Courses";
-                OpenConnection();
-
-                using (SqliteCommand command = new(selectQuery, Connection))
-                {
-                    SqliteDataReader reader = command.ExecuteReader();
-
-                    while (reader.Read())
-                    {
-                        int id = reader.GetInt32(0);
-                        string name = reader.GetString(1);
-                        string description = reader.IsDBNull(2) ? "" : reader.GetString(2);
-                        int difficulty = reader.GetInt32(3);
-
-                        courses.Add(new Course(id, name, description, difficulty));
-                        Debug.WriteLine($"Loaded course: {id} - {name}");
-                    }
-                }
-
-                CloseConnection();
-                Debug.WriteLine($"Total courses loaded: {courses.Count}");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error loading courses: {ex.Message}");
-                CloseConnection();
+                courses.Add(new Course(
+                    reader.GetInt32(0),
+                    reader.GetString(1),
+                    reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    reader.GetInt32(3)
+                ));
             }
 
+            CloseConnection();
             return courses;
         }
 
-        public Course Get(int id)
+        public Course? Get(int id)
         {
-            string selectQuery = $"SELECT Id, Name, Description, Difficulty FROM Courses WHERE Id = {id}";
-            Course tmpCourse = null;
+            OpenConnection();
 
-            try
+            using var command = Connection.CreateCommand();
+            command.CommandText =
+                "SELECT Id, Name, Description, Difficulty FROM Courses WHERE Id = @id";
+
+            var p = command.CreateParameter();
+            p.ParameterName = "@id";
+            p.Value = id;
+            command.Parameters.Add(p);
+
+            using DbDataReader reader = command.ExecuteReader();
+            Course? result = null;
+
+            if (reader.Read())
             {
-                OpenConnection();
-
-                using (SqliteCommand command = new(selectQuery, Connection))
-                {
-                    SqliteDataReader reader = command.ExecuteReader();
-
-                    if (reader.Read())
-                    {
-                        int Id = reader.GetInt32(0);
-                        string name = reader.GetString(1);
-                        string description = reader.IsDBNull(2) ? "" : reader.GetString(2);
-                        int difficulty = reader.GetInt32(3);
-
-                        tmpCourse = new Course(Id, name, description, difficulty);
-                    }
-                }
-
-                CloseConnection();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error loading course {id}: {ex.Message}");
-                CloseConnection();
+                result = new Course(
+                    reader.GetInt32(0),
+                    reader.GetString(1),
+                    reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    reader.GetInt32(3)
+                );
             }
 
-            return tmpCourse;
+            CloseConnection();
+            return result;
         }
     }
 }

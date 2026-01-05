@@ -1,6 +1,7 @@
 ﻿using FoutloosTypen.Core.Interfaces.Repositories;
 using FoutloosTypen.Core.Models;
-using Microsoft.Data.Sqlite;
+using System.Diagnostics;
+using System.Data.Common;
 
 namespace FoutloosTypen.Core.Data.Repositories
 {
@@ -10,84 +11,80 @@ namespace FoutloosTypen.Core.Data.Repositories
 
         public LessonRepository()
         {
-            CreateTable(@"CREATE TABLE IF NOT EXISTS Lessons (
-                        [Id] INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                        [Name] NVARCHAR(80) UNIQUE NOT NULL,
-                        [Description] NVARCHAR(250),
-                        [IsTest] BOOL,
-                        [IsDone] BOOL,
-                        [CourseId] INTEGER NOT NULL
-                )");
-
-            List<string> insertQueries = new()
-        {
-            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 1', 'Dit is de allereerste les', False, False, 1)",
-            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 2', 'Dit is de tweede les', False, False, 1)",
-            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 3', 'Dit is de derde les', False, False, 1)",
-            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 4', 'Dit is de vierde les', False, False, 1)",
-            @"INSERT OR IGNORE INTO Lessons(Name, Description, IsTest, IsDone, CourseId) VALUES('Les 5', 'Dit is de vijfde les', False, False, 1)"
-        };
-
-            InsertMultipleWithTransaction(insertQueries);
-            GetAll();
+            CreateTable("""
+                CREATE TABLE IF NOT EXISTS Lessons (
+                    Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    Name VARCHAR(80) NOT NULL,
+                    Description VARCHAR(250),
+                    IsTest TINYINT(1),
+                    IsDone TINYINT(1),
+                    CourseId INT NOT NULL,
+                    UNIQUE(Name, CourseId)
+                );
+            """);
+            
+            // JSON loading removed - data komt nu uit de database
+            Debug.WriteLine("[LessonRepository] Table created, using database data");
         }
-
 
         public List<Lesson> GetAll()
         {
             lessons.Clear();
-
-            string selectQuery = "SELECT Id, Name, Description, IsTest, IsDone, CourseId FROM Lessons";
             OpenConnection();
 
-            using (SqliteCommand command = new(selectQuery, Connection))
+            using var command = Connection.CreateCommand();
+            command.CommandText =
+                "SELECT Id, Name, Description, IsTest, IsDone, CourseId FROM Lessons";
+
+            using DbDataReader reader = command.ExecuteReader();
+            while (reader.Read())
             {
-                SqliteDataReader reader = command.ExecuteReader();
-
-                while (reader.Read())
-                {
-                    int id = reader.GetInt32(0);
-                    string name = reader.GetString(1);
-                    string description = reader.GetString(2);
-                    bool isTest = reader.GetBoolean(3);
-                    bool isDone = reader.GetBoolean(4);
-                    int courseId = reader.GetInt32(5);
-
-                    lessons.Add(new Lesson(id, name, description, isTest, isDone, courseId));
-                }
+                lessons.Add(new Lesson(
+                    reader.GetInt32(0),
+                    reader.GetString(1),
+                    reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    reader.GetInt32(3) == 1,
+                    reader.GetInt32(4) == 1,
+                    reader.GetInt32(5),
+                    totalTime: 60
+                ));
             }
 
             CloseConnection();
             return lessons;
         }
 
-
-        public Lesson Get(int id)
+        public Lesson? Get(int id)
         {
-            string selectQuery = $"SELECT Id, Name, Description, IsTest, IsDone, CourseId FROM Lessons WHERE Id = {id}";
-            Lesson tmpLesson = null;
-
             OpenConnection();
 
-            using (SqliteCommand command = new(selectQuery, Connection))
+            using var command = Connection.CreateCommand();
+            command.CommandText =
+                "SELECT Id, Name, Description, IsTest, IsDone, CourseId FROM Lessons WHERE Id = @id";
+
+            var p = command.CreateParameter();
+            p.ParameterName = "@id";
+            p.Value = id;
+            command.Parameters.Add(p);
+
+            using DbDataReader reader = command.ExecuteReader();
+            Lesson? result = null;
+
+            if (reader.Read())
             {
-                SqliteDataReader reader = command.ExecuteReader();
-
-                if (reader.Read())
-                {
-                    int Id = reader.GetInt32(0);
-                    string name = reader.GetString(1);
-                    string description = reader.GetString(2);
-                    bool isTest = reader.GetBoolean(3);
-                    bool isDone = reader.GetBoolean(4);
-                    int courseId = reader.GetInt32(5);
-
-                    tmpLesson = new Lesson(Id, name, description, isTest, isDone, courseId);
-                }
+                result = new Lesson(
+                    reader.GetInt32(0),
+                    reader.GetString(1),
+                    reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    reader.GetInt32(3) == 1,
+                    reader.GetInt32(4) == 1,
+                    reader.GetInt32(5),
+                    totalTime: 60
+                );
             }
 
             CloseConnection();
-            return tmpLesson;
+            return result;
         }
     }
 }

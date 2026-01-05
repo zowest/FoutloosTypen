@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="FoutloosTypen.Views.AssignmentView"
+    Title="Opdracht"
+    BackgroundColor="White"
+    Shell.NavBarIsVisible="False"
+    Shell.TabBarIsVisible="False">
+    <ContentPage.Content>
+        <Grid RowDefinitions="*,Auto" Padding="12">
+            <!-- REMOVED Grid.Row="0" - TopBar section completely removed -->
+
+            <VerticalStackLayout 
+                Grid.Row="0" 
+                Spacing="12" 
+                HorizontalOptions="FillAndExpand" 
+                VerticalOptions="CenterAndExpand">
+                <Label Text="{Binding Timer.TimeRemainingFormatted}"
+                   FontSize="26"
+                   VerticalOptions="End"
+                       TextColor="MediumPurple"
+            HorizontalOptions="Center"/>
+                <ScrollView 
+                    HorizontalOptions="FillAndExpand"
+                    VerticalOptions="CenterAndExpand">
+                    <Frame 
+                        BackgroundColor="Transparent"
+                        Padding="24"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center">
+
+                        <!-- Character-by-character display -->
+                        <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                            <!-- Formatted text with colored characters -->
+                            <Label FormattedText="{Binding FormattedText}"
+                                   FontSize="32"
+                                   HorizontalTextAlignment="Center"
+                                   VerticalTextAlignment="Center"
+                                   LineBreakMode="WordWrap"
+                                   MaximumWidthRequest="800" />
+
+                            <Entry x:Name="HiddenEntry"
+                                   Text="{Binding UserInput, Mode=TwoWay}"
+                                   TextChanged="OnTextChanged"
+                                   Focused="OnEntryFocused"
+                                   Unfocused="OnEntryUnfocused"
+                                   Opacity="0"
+                                   HeightRequest="0"
+                                   IsEnabled="True" />
+
+                            <BoxView HeightRequest="100"
+                                     WidthRequest="800"
+                                     Color="Transparent"
+                                     HorizontalOptions="Center">
+                                <BoxView.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTapToFocus" />
+                                </BoxView.GestureRecognizers>
+                            </BoxView>
+                        </VerticalStackLayout>
+                    </Frame>
+                </ScrollView>
+
+                <Button Text="↻" Command="{Binding RefreshCommand}"
+                        BackgroundColor="Transparent"
+                        TextColor="Black"
+                        FontSize="50"
+                        WidthRequest="70"
+                        HeightRequest="70"
+                        HorizontalOptions="Center" >
+                    <Button.GestureRecognizers>
+                        <PointerGestureRecognizer
+                            PointerEntered="OnHoverEnter"
+                            PointerExited="OnHoverExit"/>
+                    </Button.GestureRecognizers>
+                </Button>
+
+                <VerticalStackLayout Spacing="0" Margin="20,12,20,12">
+                    <BoxView HeightRequest="5" Color="Black"/>
+                    <ProgressBar Progress="{Binding Progress}" 
+                                 ProgressColor="LightGreen"/>
+                    <ProgressBar Progress="{Binding Progress}" 
+                                 ProgressColor="LightGreen"/>
+                    <ProgressBar Progress="{Binding Progress}" 
+                                 ProgressColor="LightGreen"/>
+                    <ProgressBar Progress="{Binding Progress}" 
+                                 ProgressColor="LightGreen"/>
+                    <ProgressBar Progress="{Binding Progress}" 
+                                 ProgressColor="LightGreen"/>
+                    <BoxView HeightRequest="5" Color="Black"/>
+                    
+                    <Label 
+                        Text="{Binding ProgressText}"
+                        HorizontalOptions="Center"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        TextColor="Black"
+                        Margin="0,8,0,0"/>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Grid.Row="1" HorizontalOptions="Center" Spacing="10">
+            </VerticalStackLayout>
+        </Grid>
+    </ContentPage.Content>
+</ContentPage>
